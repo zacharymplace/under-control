@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { GameScreen } from "@/ui/GameScreen";
-
-const TARGET_TURN = 25;
+import { TUNING } from "@/game/tuning";
+import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telemetry";
 
 const initialGame = {
   turn: 1,
@@ -18,6 +18,8 @@ const initialGame = {
   driftVisible: false,
   actionHistory: [],
   runInsight: null,
+  telemetry: initTelemetry(),
+  summary: null,
   messages: [
     {
       id: "1",
@@ -54,32 +56,20 @@ export default function Page() {
   );
 }
 
-/* -------------------- helpers -------------------- */
+/* helpers */
 
 function msg(name: string, role: string, text: string, priority = "medium") {
-  return {
-    id: crypto.randomUUID(),
-    name,
-    role,
-    text,
-    priority,
-  };
+  return { id: crypto.randomUUID(), name, role, text, priority };
 }
 
 function clamp(n: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, n));
 }
 
-function getPhase(turn: number) {
-  if (turn >= 18) return "LATE";
-  if (turn >= 10) return "MID";
-  return "EARLY";
-}
-
-function getDifficultyMultiplier(turn: number) {
-  if (turn >= 18) return 1.75;
-  if (turn >= 10) return 1.35;
-  return 1;
+function phaseMult(turn: number) {
+  if (turn >= 18) return TUNING.LATE;
+  if (turn >= 10) return TUNING.MID;
+  return TUNING.EARLY;
 }
 
 function getPressure(game: any) {
@@ -94,151 +84,87 @@ function getPressure(game: any) {
   return "LOW";
 }
 
-/* -------------------- passive system pressure -------------------- */
-
 function applyPassiveDecay(game: any) {
-  const multiplier = getDifficultyMultiplier(game.turn);
+  const m = phaseMult(game.turn);
+  return {
+    ...game,
+    load: clamp(game.load + Math.round(TUNING.BASE_LOAD * m)),
+    drift: clamp(game.drift + Math.round(TUNING.BASE_DRIFT * m)),
+    integrity: clamp(game.integrity - Math.round(TUNING.BASE_INTEGRITY_DECAY * m)),
+  };
+}
+
+function finalizeRun(game: any) {
+  const summary = summarizeTelemetry(game.telemetry);
+
+  const cause =
+    game.load >= TUNING.MAX_LOAD
+      ? "Load exceeded capacity"
+      : game.drift >= TUNING.MAX_DRIFT
+      ? "Instability exceeded limits"
+      : "Integrity collapsed";
 
   return {
     ...game,
-    load: clamp(game.load + Math.round(3 * multiplier)),
-    drift: clamp(game.drift + Math.round(1 * multiplier)),
-    integrity: clamp(game.integrity - Math.round(1 * multiplier)),
+    summary,
+    feedback: {
+      title: game.state === "STABILIZED" ? "RUN COMPLETE" : "RUN ENDED",
+      effects: [`Reached turn ${game.turn}`],
+      note:
+        game.state === "STABILIZED"
+          ? "You held through the control window."
+          : `Cause: ${cause}. Avg pressure: ${summary.avgPressure}.`,
+    },
   };
 }
 
-/* -------------------- run insight -------------------- */
-
-function getRunInsight(game: any) {
-  const history = game.actionHistory || [];
-  const total = history.length || 1;
-
-  const reroutes = history.filter((a: string) => a === "REROUTE").length;
-  const observes = history.filter((a: string) => a === "OBSERVE").length;
-  const stabilizes = history.filter((a: string) => a === "STABILIZE").length;
-
-  const rerouteRate = reroutes / total;
-  const observeRate = observes / total;
-  const stabilizeRate = stabilizes / total;
-
-  if (rerouteRate >= 0.5) {
-    return {
-      title: "Pattern Detected: Early Reroute Bias",
-      text: "You reduced load quickly, but instability accumulated underneath it.",
-    };
-  }
-
-  if (observeRate >= 0.5) {
-    return {
-      title: "Pattern Detected: Delayed Action",
-      text: "You gathered signal, but pressure kept rising while the system moved without you.",
-    };
-  }
-
-  if (stabilizeRate >= 0.5) {
-    return {
-      title: "Pattern Detected: Conservative Stabilizer",
-      text: "You protected integrity, but load pressure remained a persistent threat.",
-    };
-  }
-
-  return {
-    title: "Pattern Detected: Mixed Response",
-    text: "You varied your actions, but the system still crossed its instability limit.",
-  };
-}
-
-/* -------------------- terminal states -------------------- */
-
-function checkWinOrFailure(game: any) {
-  if (game.turn >= TARGET_TURN && game.state !== "FAILED") {
-    return {
+function checkTerminal(game: any) {
+  if (game.turn >= TUNING.TARGET_TURN && game.state !== "FAILED") {
+    const next = {
       ...game,
       state: "STABILIZED",
       pressure: "LOW",
       eventTitle: "System Stabilized",
-      eventSub: "You maintained control through the assignment window",
+      eventSub: "You maintained control through the window",
       runInsight: {
         title: "Assignment Complete",
-        text: "You kept the system viable long enough to stabilize the operating window.",
-      },
-      feedback: {
-        title: "RUN COMPLETE",
-        effects: [`Reached turn ${game.turn}`, "System remained viable"],
-        note: "You survived the first control window.",
+        text: "Control was maintained under increasing pressure.",
       },
       messages: [
         msg("Mara", "Infrastructure", "The system is holding."),
-        msg("Ishaan", "Risk", "The decision path is defensible."),
+        msg("Ishaan", "Risk", "The path is defensible."),
       ],
     };
+    return finalizeRun(next);
   }
 
-  if (game.integrity <= 20 || game.drift >= 60 || game.load >= 100) {
-    return {
+  if (
+    game.load >= TUNING.MAX_LOAD ||
+    game.drift >= TUNING.MAX_DRIFT ||
+    game.integrity <= TUNING.MIN_INTEGRITY
+  ) {
+    const next = {
       ...game,
       state: "FAILED",
       pressure: "CRITICAL",
       eventTitle: "System Failure",
       eventSub: "Control was lost",
-      runInsight: getRunInsight(game),
-      feedback: {
-        title: "RUN ENDED",
-        effects: [`Reached turn ${game.turn}`],
-        note:
-          game.load >= 100
-            ? "Cause: load pressure exceeded system capacity."
-            : game.drift >= 60
-            ? "Cause: instability accumulated beyond recovery limits."
-            : "Cause: integrity collapsed under sustained pressure.",
+      runInsight: {
+        title: "Pattern",
+        text: "Review pressure vs. action timing.",
       },
       messages: [
         msg("Mara", "Infrastructure", "We lost it.", "high"),
         msg("Ishaan", "Risk", "The failure path is traceable.", "high"),
       ],
     };
+    return finalizeRun(next);
   }
 
   return game;
 }
 
-/* -------------------- event updates -------------------- */
-
-function updateEventState(game: any) {
-  const phase = getPhase(game.turn);
-
-  if (game.pressure === "CRITICAL") {
-    return {
-      ...game,
-      eventTitle: "Critical Instability",
-      eventSub: "System approaching failure",
-      messages: [
-        msg("Mara", "Infrastructure", "We are close to losing control.", "high"),
-        msg("Ishaan", "Risk", "Any action now carries heavy consequences.", "high"),
-      ],
-    };
-  }
-
-  if (phase === "LATE") {
-    return {
-      ...game,
-      eventTitle: "Sustained Pressure",
-      eventSub: "The system is degrading faster than recovery can stabilize",
-    };
-  }
-
-  if (phase === "MID") {
-    return {
-      ...game,
-      eventTitle: "Instability Increasing",
-      eventSub: "System behavior becoming less predictable",
-    };
-  }
-
-  return game;
-}
-
-/* -------------------- core loop -------------------- */
+/* core loop */
 
 function applyDemoAction(game: any, action: string) {
   if (game.state === "FAILED" || game.state === "STABILIZED") return game;
@@ -257,16 +183,10 @@ function applyDemoAction(game: any, action: string) {
     next.integrity -= 5;
     next.driftVisible = true;
 
-    next.feedback = {
-      title: "REROUTE EXECUTED",
-      effects: ["Load ↓↓↓", "Drift ↑↑", "Integrity ↓"],
-      note: "That helped… but at a cost",
-    };
-
     next.messages = [
       msg("Dane", "Operations", "Short-term relief achieved"),
       msg("Mara", "Infrastructure", "Instability rising rapidly", "high"),
-      msg("Ishaan", "Risk", "That decision compounds risk", "high"),
+      msg("Ishaan", "Risk", "Compounding risk", "high"),
     ];
   }
 
@@ -275,15 +195,9 @@ function applyDemoAction(game: any, action: string) {
     next.load += 6;
     next.drift += 2;
 
-    next.feedback = {
-      title: "OBSERVE EXECUTED",
-      effects: ["Signal ↑↑", "Load ↑", "Drift ↑"],
-      note: "You gained clarity, but the system kept moving",
-    };
-
     next.messages = [
       msg("Elena", "Signal", "Signal improved"),
-      msg("Dane", "Operations", "We are falling behind", "high"),
+      msg("Dane", "Operations", "Falling behind", "high"),
     ];
   }
 
@@ -291,12 +205,6 @@ function applyDemoAction(game: any, action: string) {
     next.integrity += 9;
     next.load += 5;
     next.drift -= 3;
-
-    next.feedback = {
-      title: "STABILIZE EXECUTED",
-      effects: ["Integrity ↑↑", "Load ↑", "Drift ↓"],
-      note: "You bought time",
-    };
 
     next.messages = [msg("Mara", "Infrastructure", "Stability improved")];
   }
@@ -306,15 +214,19 @@ function applyDemoAction(game: any, action: string) {
   next.drift = clamp(next.drift);
 
   next.pressure = getPressure(next);
+  next.state =
+    next.drift > 25 || next.integrity < 60 || next.load > 80
+      ? "DEGRADED"
+      : "STABLE";
 
-  if (next.drift > 25 || next.integrity < 60 || next.load > 80) {
-    next.state = "DEGRADED";
-  } else {
-    next.state = "STABLE";
+  // telemetry update
+  next.telemetry = updateTelemetry(next.telemetry, next);
+
+  // events
+  if (next.pressure === "CRITICAL") {
+    next.eventTitle = "Critical Instability";
+    next.eventSub = "System approaching failure";
   }
 
-  next = updateEventState(next);
-  next = checkWinOrFailure(next);
-
-  return next;
+  return checkTerminal(next);
 }

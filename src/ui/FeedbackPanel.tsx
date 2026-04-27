@@ -1,4 +1,4 @@
-export function FeedbackPanel({ feedback }: any) {
+export function FeedbackPanel({ feedback, summary }: any) {
   if (!feedback) return null;
 
   return (
@@ -12,6 +12,12 @@ export function FeedbackPanel({ feedback }: any) {
       </div>
 
       <p className="mt-2 text-sm text-[#8A93A3]">{feedback.note}</p>
+
+      {summary && (
+        <div className="mt-3 text-xs text-[#8A93A3]">
+          Avg Pressure: {summary.avgPressure} • Peak Load: {summary.peakLoad} • Peak Drift: {summary.peakDrift}
+        </div>
+      )}
     </section>
   );
 }
