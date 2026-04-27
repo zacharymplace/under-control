@@ -1,0 +1,60 @@
+import { ActionBar } from "./ActionBar";
+import { FeedbackPanel } from "./FeedbackPanel";
+import { MessageFeed } from "./MessageFeed";
+import { SystemPanel } from "./SystemPanel";
+
+export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
+  const terminal = game.state === "FAILED" || game.state === "STABILIZED";
+
+  const pressureColor =
+    game.pressure === "CRITICAL"
+      ? "#C75C5C"
+      : game.pressure === "HIGH"
+      ? "#D4A84F"
+      : "#8A93A3";
+
+  return (
+    <main
+      className="min-h-screen px-5 py-6 text-[#E6EAF0]"
+      style={{
+        background: game.pressure === "CRITICAL" ? "#080A0D" : "#0B0D10",
+      }}
+    >
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-3 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
+          <div>State: {game.state}</div>
+          <div style={{ color: pressureColor }}>Pressure: {game.pressure}</div>
+          <div>Turn: {game.turn}</div>
+        </div>
+
+        <div className="mb-3 text-xs uppercase tracking-widest text-[#8A93A3]">
+          Best Run: {bestTurn}
+        </div>
+
+        <SystemPanel game={game} />
+        <MessageFeed messages={game.messages} />
+        <ActionBar onAction={onAction} disabled={terminal} />
+        <FeedbackPanel feedback={game.feedback} />
+
+        {game.runInsight && (
+          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+              Run Insight
+            </div>
+            <h2 className="mb-1 font-bold">{game.runInsight.title}</h2>
+            <p className="text-sm text-[#8A93A3]">{game.runInsight.text}</p>
+          </section>
+        )}
+
+        {terminal && (
+          <button
+            onClick={onReset}
+            className="mt-4 w-full border border-[#2A313A] bg-[#1A1F26] py-4 text-xs font-bold uppercase tracking-widest hover:bg-[#222A34]"
+          >
+            {game.state === "STABILIZED" ? "Run Again" : "Try Again"}
+          </button>
+        )}
+      </div>
+    </main>
+  );
+}
