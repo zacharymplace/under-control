@@ -1,3 +1,5 @@
+"use client";
+
 import { compressTimeline } from "@/game/timelineCompression";
 import { formatDelta, getTurnRisk, getTurnStory } from "@/game/timelineStory";
 import { getPhase } from "@/game/timelinePhase";
@@ -10,6 +12,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
 
   const items = compressTimeline(log);
   const finalEntry = log[log.length - 1];
+
   const criticalEntry = criticalTurn
     ? log.find((entry: any) => entry.turn === criticalTurn)
     : null;
@@ -186,14 +189,14 @@ function GroupedTurn({ item, phase }: any) {
 
   const title =
     item.action === "STABILIZE"
-      ? "Repeated Stabilization Loop"
+      ? "False Stability Loop"
       : item.action === "REROUTE"
       ? "Repeated Reroute Loop"
       : "Repeated Observation Loop";
 
   const detail =
     item.action === "STABILIZE"
-      ? "Structure improved, but pressure or drift still needed release."
+      ? "Structure improved, but drift or pressure still needed release."
       : item.action === "REROUTE"
       ? "Load dropped repeatedly, but instability accumulated underneath."
       : "Signal improved, but the system continued moving while action was delayed.";

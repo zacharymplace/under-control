@@ -1,35 +1,49 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs/promises";
-import path from "node:path";
+import fs from "fs";
+import path from "path";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const RUNS_FILE = path.join(DATA_DIR, "runs.ndjson");
 
-export async function POST(req: Request) {
-  const body = await req.json();
+function readRuns() {
+  if (!fs.existsSync(RUNS_FILE)) return [];
 
-  const record = {
-    ...body,
-    createdAt: new Date().toISOString(),
-  };
-
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.appendFile(RUNS_FILE, JSON.stringify(record) + "\n", "utf8");
-
-  return NextResponse.json({ ok: true });
+  return fs
+    .readFileSync(RUNS_FILE, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
 }
 
 export async function GET() {
-  try {
-    const raw = await fs.readFile(RUNS_FILE, "utf8");
-    const runs = raw
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => JSON.parse(line));
+  return NextResponse.json(readRuns());
+}
 
-    return NextResponse.json({ runs });
+export async function POST(request: Request) {
+  try {
+    const run = await request.json();
+
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    fs.appendFileSync(
+      RUNS_FILE,
+      JSON.stringify({
+        ...run,
+        ts: new Date().toISOString(),
+      }) + "\n"
+    );
+
+    return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ runs: [] });
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

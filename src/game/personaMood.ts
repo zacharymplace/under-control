@@ -1,8 +1,11 @@
+export type Mood = "CONFIDENT" | "FRUSTRATED" | "DISENGAGED" | "NEUTRAL";
 export type PersonaMood = "CALM" | "ASSERTIVE" | "DEFENSIVE" | "ERRATIC";
 
-function pickStable(items: string[], key: string) {
-  const sum = key.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return items[sum % items.length];
+export function getMood(trust: number, ignored: number): Mood {
+  if (trust >= 3 && ignored <= 1) return "CONFIDENT";
+  if (trust <= -2 && ignored >= 3) return "FRUSTRATED";
+  if (ignored >= 4) return "DISENGAGED";
+  return "NEUTRAL";
 }
 
 export function derivePersonaMood({
@@ -14,7 +17,7 @@ export function derivePersonaMood({
   ignored: number;
   game: any;
 }): PersonaMood {
-  if (game.drift >= 65) return "ERRATIC";
+  if (game?.drift >= 65) return "ERRATIC";
   if (trust <= -2) return "DEFENSIVE";
   if (ignored >= 4) return "ASSERTIVE";
   return "CALM";
@@ -23,42 +26,36 @@ export function derivePersonaMood({
 export function applyMoodToText({
   baseText,
   mood,
-  action,
   name,
-  turn,
 }: {
   baseText: string;
   mood: PersonaMood;
-  action: string;
-  name: string;
-  turn: number;
+  action?: string;
+  name?: string;
+  turn?: number;
 }) {
-  const key = `${name}-${mood}-${action}-${turn}`;
+  if (mood === "ASSERTIVE") {
+    if (name === "ELENA") return `${baseText} This is being overlooked in the signal.`;
+    if (name === "MARA") return `${baseText} Structural risk is being ignored.`;
+    if (name === "ISHAAN") return `${baseText} Downside risk is accelerating.`;
+    return `${baseText} This needs attention.`;
+  }
 
-  const byPersona: Record<string, Record<PersonaMood, string[]>> = {
-    ELENA: {
-      CALM: ["The signal supports this read.", "That is the cleanest interpretation of the data."],
-      ASSERTIVE: ["This is being overlooked in the signal.", "The signal is clear enough to act on this."],
-      DEFENSIVE: ["My read may be conservative, but the signal still points here.", "I am discounting my own confidence, but this remains the safest read."],
-      ERRATIC: ["The signal is unstable; I do not fully trust the picture.", "The readings are moving under us."],
-    },
-    MARA: {
-      CALM: ["System integrity is the concern.", "The structure can still be protected."],
-      ASSERTIVE: ["Structural risk is being ignored.", "We are underreacting to infrastructure stress."],
-      DEFENSIVE: ["I may be overcorrecting, but preserving structure matters here.", "I am taking the safer infrastructure read."],
-      ERRATIC: ["The system is behaving unevenly under load.", "The structure is sending mixed signals."],
-    },
-    ISHAAN: {
-      CALM: ["Risk exposure is rising.", "The downside profile is manageable if addressed now."],
-      ASSERTIVE: ["Downside risk is accelerating.", "This is where small delays become expensive."],
-      DEFENSIVE: ["I may be overweighting downside risk, but the exposure is real.", "The cautious read is warranted here."],
-      ERRATIC: ["The risk profile is unstable.", "The downside is moving faster than the system admits."],
-    },
-  };
+  if (mood === "DEFENSIVE") {
+    if (name === "ELENA") return `${baseText} I do not fully trust the picture.`;
+    if (name === "MARA") return `${baseText} The structure is sending mixed signals.`;
+    if (name === "ISHAAN") return `${baseText} The risk profile is unstable.`;
+    return `${baseText} Confidence is reduced.`;
+  }
 
-  const variants = byPersona[name]?.[mood] ?? ["This needs attention."];
+  if (mood === "ERRATIC") {
+    if (name === "ELENA") return `${baseText} The readings are moving under us.`;
+    if (name === "MARA") return `${baseText} The system is behaving unevenly under load.`;
+    if (name === "ISHAAN") return `${baseText} The downside is moving faster than the system admits.`;
+    return `${baseText} The system state is unstable.`;
+  }
 
-  return `${baseText} ${pickStable(variants, key)}`;
+  return baseText;
 }
 
 export function moodInfluence(mood: PersonaMood) {
