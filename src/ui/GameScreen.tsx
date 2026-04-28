@@ -120,18 +120,18 @@ advisors = applyPersonaBehavior(advisors, game);
                 </div>
 
                 {p.behaviorNote && (
-      <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 6 }}>
+      <div className="uc-footer-note" style={{ color: "#f59e0b", fontWeight: 500, textAlign: "left", marginTop: 6 }}>
         {p.behaviorNote}
       </div>
     )}
     {memoryNote && (
-                  <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 8 }}>
+                  <div className="uc-footer-note" style={{ color: "#f59e0b", fontWeight: 500, textAlign: "left", marginTop: 8 }}>
                     {memoryNote}
                   </div>
                 )}
 
                 {p.reactionNote && (
-                  <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 8 }}>
+                  <div className="uc-footer-note" style={{ color: "#f59e0b", fontWeight: 500, textAlign: "left", marginTop: 8 }}>
                     {p.reactionNote}
                   </div>
                 )}

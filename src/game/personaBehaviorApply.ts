@@ -18,7 +18,7 @@ export function applyPersonaBehavior(personas: any[], game: any) {
     const memoryIgnored = memory?.ignoredCount ?? 0;
     const anticipation = getAdvisorAnticipation(name, game);
 
-    if (anticipation?.forceSuggestion && threat !== "CRITICAL") {
+    if (anticipation?.forceSuggestion) {
       nextSuggestion = anticipation.forceSuggestion;
     }
 

@@ -9,14 +9,14 @@ export function getAdvisorAnticipation(personaName: string, game: any) {
   if (style === "OBSERVE") {
     if (name === "ELENA") {
       return {
-        note: "Anticipating another delay. Signal-seeking is becoming a pattern.",
+        note: "You are defaulting to observation again. This pattern is now working against you.",
         forceSuggestion: "REROUTE",
       };
     }
 
     if (name === "ISHAAN") {
       return {
-        note: "Observation bias is increasing downside exposure.",
+        note: "You keep waiting when action is required. Risk is compounding because of it.",
         forceSuggestion: "STABILIZE",
       };
     }
@@ -25,7 +25,7 @@ export function getAdvisorAnticipation(personaName: string, game: any) {
   if (style === "REROUTE") {
     if (name === "MARA") {
       return {
-        note: "Anticipating pressure relief at the cost of structure.",
+        note: "You are using reroute as an escape. Structural damage is accumulating.",
         forceSuggestion: "STABILIZE",
       };
     }
