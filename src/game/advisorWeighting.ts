@@ -11,11 +11,14 @@ export function getAdvisorWeight(name: string, memory?: AdvisorMemoryMap) {
     ? 1
     : (m.correctCalls + 1) / (totalCalls + 2);
 
-  const ignoredPenalty = Math.max(0.45, 1 - m.ignoredCount * 0.08);
-  const trustModifier = Math.max(0.5, Math.min(1.5, 1 + m.trustDelta * 0.08));
-  const stressPenalty = Math.max(0.7, 1 - m.stressLevel * 0.05);
+  const ignoredPenalty = Math.max(0.65, 1 - m.ignoredCount * 0.04);
+  const trustModifier = Math.max(0.7, Math.min(1.3, 1 + m.trustDelta * 0.05));
+  const stressPenalty = Math.max(0.85, 1 - m.stressLevel * 0.03);
 
-  return Number((reliability * ignoredPenalty * trustModifier * stressPenalty).toFixed(2));
+  const raw = reliability * ignoredPenalty * stressPenalty;
+  const weight = raw * 0.7 + trustModifier * 0.3;
+
+  return Number(weight.toFixed(2));
 }
 
 export function getAdvisorWeightLabel(weight: number) {
