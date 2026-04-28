@@ -28,6 +28,7 @@ import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { maybeInterruptAction } from "@/game/advisorInterruption";
+import { maybeForceAction } from "@/game/forcedExecution";
 import { logCompletedRun } from "@/game/runAnalytics";
 import { tickGame } from "@/game/tickEngine";
 
@@ -108,8 +109,13 @@ export default function Page() {
         game
       );
 
-      const interruption = maybeInterruptAction(action, game, advisorsForMemory);
-      const finalAction = interruption.action;
+      const forced = maybeForceAction(action, game, advisorsForMemory);
+
+      const interruption = forced.forced
+        ? { action: forced.action, interrupted: false }
+        : maybeInterruptAction(action, game, advisorsForMemory);
+
+      const finalAction = forced.forced ? forced.action : interruption.action;
 
       const feedback = getActionFeedback(finalAction, game, next);
       const judgment = getActionJudgment(finalAction, game, next);
@@ -130,7 +136,7 @@ export default function Page() {
 
       const afterBurst = applyBurstTicks(next, 3);
 
-      setGame({ interrupted: interruption.interrupted, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory });
+      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory });
     }, 100);
   }
 
@@ -139,6 +145,7 @@ export default function Page() {
     setGame({
       ...buildInitialGame(scenarioId),
       interrupted: false,
+      forced: false,
       trust: initialTrust,
       ignoredCounts: initialIgnoredCounts,
       actionHistory: [] as string[],

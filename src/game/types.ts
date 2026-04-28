@@ -27,4 +27,5 @@ export type Game = {
   playerTendency?: any;
   pointOfNoReturn?: any;
   interrupted?: boolean;
+  forced?: boolean;
 };

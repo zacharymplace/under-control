@@ -174,6 +174,12 @@ advisors = applyPersonaBehavior(advisors, game);
         <PlayerTendency tendency={game.playerTendency} />
         <Counterfactual game={{ ...game, personas: advisors }} />
 
+        {game.forced && (
+          <div style={{ color: "#7f1d1d", fontWeight: 900, marginBottom: 8 }}>
+            System override: action executed due to collapse conditions
+          </div>
+        )}
+
         {game.interrupted && (
           <div style={{ color: "#ef4444", fontWeight: 800, marginBottom: 8 }}>
             Advisor override: your decision was replaced under collapse pressure
