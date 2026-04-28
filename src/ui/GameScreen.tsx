@@ -5,6 +5,7 @@ import { SystemPanel } from "./SystemPanel";
 import { TrustBar } from "./TrustBar";
 import { RunReport } from "./RunReport";
 import { DecisionTimeline } from "./DecisionTimeline";
+import { analyzeFailure } from "@/game/failureAnalysis";
 import { getActionHints } from "@/game/decisionHints";
 import { getPersonaRecommendations } from "@/game/personaEngine";
 
@@ -15,7 +16,9 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
   const hints = terminal ? {} : getActionHints(game);
   const personas = getPersonaRecommendations(game);
 
-  return (
+  const failure = analyzeFailure(game.actionLog || []);
+
+return (
     <main className="min-h-screen px-5 py-6 text-[#E6EAF0] bg-[#0B0D10]">
       <div className="mx-auto max-w-3xl">
         <div className="mb-3 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
@@ -36,6 +39,22 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
         <RunReport game={game} />
         <DecisionTimeline game={game} />
+
+      {failure && (
+        <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+          <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+            Failure Analysis
+          </div>
+          <div className="text-lg font-bold">{failure.label}</div>
+          <div className="mt-1 text-sm text-[#8A93A3]">
+            {failure.insight}
+          </div>
+          <div className="mt-2 text-sm text-[#E6EAF0]">
+            Recommendation: {failure.recommendation}
+          </div>
+        </section>
+      )}
+
 
         {game.runInsight && (
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
