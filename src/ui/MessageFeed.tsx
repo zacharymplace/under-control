@@ -27,7 +27,9 @@ export function MessageFeed({ personas }: any) {
 
             <div className="mt-1 flex justify-between text-[10px] text-[#5A646F]">
               <span>Suggests: {p.action}</span>
-              <span>Trust: {p.trust ?? 0}</span>
+              <span>
+                Trust: {p.trust ?? 0} • Ignored: {p.ignoredCount ?? 0}
+              </span>
             </div>
           </div>
         );

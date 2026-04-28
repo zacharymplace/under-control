@@ -6,6 +6,7 @@ import { TUNING } from "@/game/tuning";
 import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telemetry";
 import { getPersonaRecommendations } from "@/game/personaEngine";
 import { initialTrust, updateTrust } from "@/game/trust";
+import { initialIgnoredCounts, updateIgnoredCounts } from "@/game/personaMemory";
 import { evaluateOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { logCompletedRun } from "@/game/runAnalytics";
@@ -28,6 +29,7 @@ const initialGame = {
   adaptiveModifiers: null,
   analyticsLogged: false,
   trust: initialTrust,
+  ignoredCounts: initialIgnoredCounts,
   messages: [
     {
       id: "1",
@@ -67,6 +69,7 @@ export default function Page() {
     setGame({
       ...initialGame,
       trust: initialTrust,
+  ignoredCounts: initialIgnoredCounts,
     });
   }
 
@@ -280,6 +283,11 @@ function applyDemoAction(game: any, action: string) {
   const personasAfter = getPersonaRecommendations(next);
   const outcome = evaluateOutcome(prev, next, action);
   next.trust = updateTrust(game.trust || initialTrust, personasBeforeAction, action, outcome);
+  next.ignoredCounts = updateIgnoredCounts(
+    game.ignoredCounts || initialIgnoredCounts,
+    personasBeforeAction,
+    action
+  );
 
   return checkTerminal(next);
 }
