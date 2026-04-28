@@ -6,6 +6,7 @@ import {
   getWeightedSupportMultiplier,
 } from "@/game/personaConfidence";
 import { getConflictSeverity, getLockedActions } from "@/game/conflictSystem";
+import { getPressureDistortionNote } from "@/game/pressureDistortion";
 
 function scoreAction(
   action: string,
@@ -97,7 +98,10 @@ export function ActionBar({
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
               </div>
               <div className="uc-action-reason">
-                {isLocked ? "Conflict lock" : explainAction(action, game)}
+                {isLocked
+                  ? "Conflict lock"
+                  : getPressureDistortionNote(action, game) ||
+                    explainAction(action, game)}
               </div>
             </button>
           );

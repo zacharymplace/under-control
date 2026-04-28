@@ -1,5 +1,6 @@
 import { getIgnoredPenalty, getTrustModifier } from "./personaPenalty";
 import { getAdvisorWeight } from "./advisorWeighting";
+import { getPressureDistortion } from "./pressureDistortion";
 
 export function getPersonaConfidence(persona: any, game: any) {
   const name = (persona.name || "").toUpperCase();
@@ -49,6 +50,13 @@ export function buildWeightedSupport(game: any) {
     if (!(suggestion in support)) return;
 
     support[suggestion] += getPersonaConfidence(persona, game);
+  });
+
+  // PRESSURE DISTORTION
+  Object.keys(support).forEach((action) => {
+    support[action] = Number(
+      (support[action] * getPressureDistortion(action, game)).toFixed(2)
+    );
   });
 
   // DOMINANCE MODEL
