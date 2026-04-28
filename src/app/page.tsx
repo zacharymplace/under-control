@@ -87,6 +87,7 @@ export default function Page() {
   function handleReset() {
     setBestTurn((prev) => Math.max(prev, game.turn));
     setGame({
+        actionHistory: [...(game.actionHistory || []), action],
       ...buildInitialGame(scenarioId),
       trust: initialTrust,
       ignoredCounts: initialIgnoredCounts,
