@@ -1,4 +1,5 @@
 import { getIgnoredPenalty, getTrustModifier } from "./personaPenalty";
+import { getAdvisorWeight } from "./advisorWeighting";
 
 export function getPersonaConfidence(persona: any, game: any) {
   const name = (persona.name || "").toUpperCase();
@@ -25,8 +26,11 @@ export function getPersonaConfidence(persona: any, game: any) {
 
   const trustModifier = getTrustModifier(name, game);
   const ignoredPenalty = getIgnoredPenalty(name, game);
+  const advisorMemoryWeight = getAdvisorWeight(name, game.advisorMemory);
 
-  return Number((base * trustModifier * ignoredPenalty).toFixed(2));
+  return Number(
+    (base * trustModifier * ignoredPenalty * advisorMemoryWeight).toFixed(2)
+  );
 }
 
 export function buildWeightedSupport(game: any) {

@@ -657,3 +657,7 @@ body {
 .uc-advisor .uc-footer-note {
   color: #7f8da1;
 }
+
+.uc-advisor-meta {
+  line-height: 1.45;
+}

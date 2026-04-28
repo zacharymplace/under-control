@@ -11,6 +11,7 @@ import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { buildPersonaConflict } from "@/game/personaConflict";
 import { getAdvisorMemoryNote } from "@/game/advisorMemory";
+import { getAdvisorWeight, getAdvisorWeightLabel } from "@/game/advisorWeighting";
 
 export function GameScreen({
   game,
@@ -89,6 +90,8 @@ advisors = applyPersonaBehavior(advisors, game);
             const suggestion = p.suggests || p.action || p.suggestion || "UNKNOWN";
             const memoryNote =
               p.memoryNote || getAdvisorMemoryNote(name, game.advisorMemory);
+            const advisorWeight = getAdvisorWeight(name, game.advisorMemory);
+            const advisorWeightLabel = getAdvisorWeightLabel(advisorWeight);
 
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
@@ -107,6 +110,8 @@ advisors = applyPersonaBehavior(advisors, game);
                   <div className="uc-advisor-meta">
                     Trust: {game.trust?.[name] ?? 0} • Ignored:{" "}
                     {game.ignoredCounts?.[name] ?? 0}
+                    <br />
+                    Influence: {advisorWeightLabel} ({advisorWeight.toFixed(2)})
                   </div>
                 </div>
 
