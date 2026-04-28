@@ -1,3 +1,5 @@
+import { getTrajectoryInsight } from "./trajectoryRisk";
+
 export function buildRunReplay(game: any) {
   const log = game.actionLog || [];
   if (!log.length) return null;
@@ -88,6 +90,11 @@ export function buildFailureExplanation(game: any) {
 
   if (lastThree.length >= 3 && new Set(lastThree).size === 1) {
     reasons.push(`Repeated ${lastThree[0]} decisions narrowed recovery options`);
+  }
+
+  const trajectoryInsight = getTrajectoryInsight(game);
+  if (trajectoryInsight) {
+    reasons.push(trajectoryInsight);
   }
 
   if (!reasons.length) {

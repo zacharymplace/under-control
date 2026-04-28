@@ -11,6 +11,7 @@ import {
 } from "@/game/conflictSystem";
 import { getLockedActions as getBehaviorLockedActions } from "@/game/lockIn";
 import { getPressureDistortionNote } from "@/game/pressureDistortion";
+import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
 
 function scoreAction(
   action: string,
@@ -27,8 +28,9 @@ function scoreAction(
   if (signal < 55 && action === "OBSERVE") score += 0.5;
 
   const weightedSupport = getWeightedSupportMultiplier(action, game);
+  const trajectoryPenalty = getTrajectoryPenalty(game);
 
-  return (score * disagreementMultiplier * weightedSupport).toFixed(2);
+  return (score * disagreementMultiplier * weightedSupport * trajectoryPenalty).toFixed(2);
 }
 
 function explainAction(action: string, game: any, isBehaviorLocked: boolean, isConflictLocked: boolean) {
@@ -111,6 +113,7 @@ export function ActionBar({
       </div>
 
       <div className="uc-footer-note">Alignment impact: {impact}</div>
+      <div className="uc-footer-note">Trajectory: {getTrajectoryRiskLabel(game)}</div>
       <div className="uc-footer-note">
         Scores reflect state pressure, disagreement, trust, ignored penalties,
         and confidence-weighted support.
