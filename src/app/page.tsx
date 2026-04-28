@@ -27,6 +27,7 @@ import { createInitialAdvisorMemory } from "@/game/advisorMemory";
 import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
+import { applyConsensusDrift } from "@/game/consensusDrift";
 import { maybeInterruptAction } from "@/game/advisorInterruption";
 import { maybeForceAction } from "@/game/forcedExecution";
 import { logCompletedRun } from "@/game/runAnalytics";
@@ -104,10 +105,12 @@ export default function Page() {
     }
 
     setTimeout(() => {
-      const advisorsForMemory = applyPersonaBehavior(
+      let advisorsForMemory = applyPersonaBehavior(
         game.personas?.length ? game.personas : getDefaultPersonas(game),
         game
       );
+
+      advisorsForMemory = applyConsensusDrift(advisorsForMemory, game);
 
       const forced = maybeForceAction(action, game, advisorsForMemory);
 
