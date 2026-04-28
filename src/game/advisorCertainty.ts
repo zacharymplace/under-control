@@ -1,4 +1,5 @@
 import { getDecisionWindow } from "./decisionWindow";
+import { getAdvisorConsensus } from "./advisorConsensus";
 
 export function getCollapseCertaintyLevel(game: any) {
   const window = getDecisionWindow(game);
@@ -18,6 +19,7 @@ export function getCollapseCertaintyLevel(game: any) {
 
 export function getAdvisorCertaintyTone(name: string, game: any) {
   const level = getCollapseCertaintyLevel(game);
+  const { strength } = getAdvisorConsensus(game.personas || []);
   if (level === "none") return null;
 
   const key = name.toUpperCase();

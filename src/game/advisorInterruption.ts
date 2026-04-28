@@ -1,4 +1,5 @@
 import { getDecisionWindow } from "./decisionWindow";
+import { getAdvisorConsensus } from "./advisorConsensus";
 
 function pickDominantAction(advisors: any[]) {
   const counts: Record<string, number> = {};
@@ -22,13 +23,21 @@ export function maybeInterruptAction(action: string, game: any, advisors: any[])
 
   if (turnsSince < 2) return { action, interrupted: false };
 
-  const probability = Math.min(0.35, 0.15 + turnsSince * 0.05);
+  const { dominant, strength } = getAdvisorConsensus(advisors);
+
+  // base probability grows with time
+  let probability = 0.1 + turnsSince * 0.05;
+
+  // amplify with consensus
+  probability += strength * 0.25;
+
+  probability = Math.min(0.6, probability);
 
   if (Math.random() > probability) {
     return { action, interrupted: false };
   }
 
-  const override = pickDominantAction(advisors);
+  const { dominant: override } = getAdvisorConsensus(advisors);
   if (!override || override === action) {
     return { action, interrupted: false };
   }
