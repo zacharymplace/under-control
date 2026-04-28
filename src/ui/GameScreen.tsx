@@ -72,6 +72,7 @@ const terminalComments = buildPersonaTerminalComments({
 
 const reflection = terminal
     ? buildPersonaReflection({
+  log: game.log || [],
         trust: game.trust || {},
         ignoredCounts: game.ignoredCounts || {},
   log: game.log || [],
@@ -157,7 +158,7 @@ const reflection = terminal
               </section>
             )}
 
-            {verdict && (
+            {false && (
           <section className="mt-4 rounded border border-[#2A313A] bg-[#0B0D10] p-4">
             <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
               Run Verdict

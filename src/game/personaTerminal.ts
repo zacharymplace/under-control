@@ -30,16 +30,22 @@ export function buildPersonaTerminalComments({
 
     // Structural warning
     else if (p.name === "MARA" && game.integrity < 70) {
+      text = "The structure degraded gradually. Intervention came too late to stabilize.";
+
       text = "Structure weakened over time. Stabilizing earlier would have kept recovery viable.";
     }
 
     // Risk warning
     else if (p.name === "ISHAAN" && game.drift > 40) {
+      text = "The downside expanded faster than the system could absorb.";
+
       text = "Instability compounded faster than it could be corrected.";
     }
 
     // Analytical
     else if (p.name === "ELENA") {
+      text = "The signal looked actionable, but timing confidence wasn’t there.";
+
       text = "Signal clarity didn’t translate into safe timing.";
     }
 
