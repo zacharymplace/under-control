@@ -7,6 +7,7 @@ import { TrustBar } from "./TrustBar";
 import { RunReport } from "./RunReport";
 import { DecisionTimeline } from "./DecisionTimeline";
 import { QuickGuide } from "./QuickGuide";
+import { TutorialPanel } from "./TutorialPanel";
 import { ActionHint } from "./ActionHint";
 import { analyzeFailure } from "@/game/failureAnalysis";
 import { detectFailurePattern } from "@/game/failurePatterns";
@@ -49,6 +50,7 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
         <div className="mb-3 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
           <div>Best Run: {displayBest}</div>
+          <div>Mode: {game.modeLabel || "Standard"}</div>
           <button
             onClick={() => setShowGuide((v) => !v)}
             className="hover:text-[#E6EAF0]"
@@ -60,6 +62,8 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
         {showGuide && <QuickGuide />}
 
         <TrustBar trust={game.trust || {}} />
+
+        <TutorialPanel game={game} />
 
         <SystemPanel game={game} />
 

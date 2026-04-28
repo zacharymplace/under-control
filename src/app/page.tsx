@@ -1,7 +1,14 @@
+type AdaptiveModifiers = {
+  loadPressureMult: number;
+  driftPenaltyMult: number;
+  signalDecayMult: number;
+};
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { GameScreen } from "@/ui/GameScreen";
+import { getScenario } from "@/game/scenarios";
 import { TUNING } from "@/game/tuning";
 import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telemetry";
 import { getPersonaRecommendations } from "@/game/personaEngine";
@@ -11,17 +18,24 @@ import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { logCompletedRun } from "@/game/runAnalytics";
 
+const ACTIVE_SCENARIO = getScenario("guided_first_run");
+
 const initialGame = {
   turn: 1,
   state: "STABLE",
   pressure: "RISING",
-  eventTitle: "Load Spike Detected",
-  eventSub: "Signal confidence low",
-  load: 68,
-  integrity: 74,
-  signalClarity: 46,
-  drift: 10,
-  driftVisible: false,
+  scenarioId: ACTIVE_SCENARIO.id,
+  modeLabel: ACTIVE_SCENARIO.label,
+  scenarioOpening: ACTIVE_SCENARIO.opening,
+  scenarioModifiers: ACTIVE_SCENARIO.modifiers,
+  tutorialSteps: ACTIVE_SCENARIO.tutorialSteps,
+  eventTitle: ACTIVE_SCENARIO.initialState.eventTitle,
+  eventSub: ACTIVE_SCENARIO.initialState.eventSub,
+  load: ACTIVE_SCENARIO.initialState.load,
+  integrity: ACTIVE_SCENARIO.initialState.integrity,
+  signalClarity: ACTIVE_SCENARIO.initialState.signalClarity,
+  drift: ACTIVE_SCENARIO.initialState.drift,
+  driftVisible: ACTIVE_SCENARIO.initialState.driftVisible,
   actionHistory: [],
   actionLog: [],
   runInsight: null,
@@ -46,7 +60,7 @@ const initialGame = {
 export default function Page() {
   const [game, setGame] = useState(initialGame);
   const [bestTurn, setBestTurn] = useState(1);
-  const [adaptiveModifiers, setAdaptiveModifiers] = useState(null);
+  const [adaptiveModifiers, setAdaptiveModifiers] = useState<AdaptiveModifiers | null>(null);
 
   function handleAction(action: string) {
     const next = applyDemoAction(
@@ -140,8 +154,8 @@ function applyPassiveDecay(game: any) {
 
   return {
     ...game,
-    load: clamp(game.load + Math.round((TUNING.BASE_LOAD * m * mods.loadPressureMult))),
-    drift: clamp(game.drift + Math.round((TUNING.BASE_DRIFT * m * mods.driftPenaltyMult))),
+    load: clamp(game.load + Math.round((TUNING.BASE_LOAD * m * mods.loadAcceleration * mods.loadPressureMult))),
+    drift: clamp(game.drift + Math.round((TUNING.BASE_DRIFT * m * driftMultiplier * mods.driftPenaltyMult))),
     integrity: clamp(game.integrity - Math.round((TUNING.BASE_INTEGRITY_DECAY * m * mods.signalDecayMult))),
   };
 }
@@ -246,7 +260,11 @@ function applyDemoAction(game: any, action: string) {
   }
 
   if (action === "OBSERVE") {
-    next.signalClarity = clamp(next.signalClarity + 12);
+    const signalRecoveryMultiplier =
+      next.scenarioModifiers?.signalRecoveryMultiplier ?? 1;
+    next.signalClarity = clamp(
+      next.signalClarity + Math.round(12 * signalRecoveryMultiplier)
+    );
     next.load += 6;
     next.drift += 2;
 
