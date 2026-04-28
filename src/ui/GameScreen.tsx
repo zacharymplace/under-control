@@ -19,6 +19,7 @@ import { getAdvisorCommitmentNote } from "@/game/advisorCommitment";
 import { getAdvisorEscalationPhase } from "@/game/advisorEscalationPhase";
 import { getAdvisorDecisionWindowNote } from "@/game/advisorDecisionWindow";
 import { getAdvisorCollapseTone } from "@/game/advisorCollapseTone";
+import { getAdvisorCertaintyTone } from "@/game/advisorCertainty";
 
 export function GameScreen({
   game,
@@ -105,6 +106,7 @@ advisors = applyPersonaBehavior(advisors, game);
             const escalationPhaseNote = getAdvisorEscalationPhase(name, game);
             const decisionWindowNote = getAdvisorDecisionWindowNote(name, game);
             const collapseToneNote = getAdvisorCollapseTone(name, game);
+            const certaintyToneNote = getAdvisorCertaintyTone(name, game);
 
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
