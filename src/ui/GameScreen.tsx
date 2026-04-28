@@ -10,6 +10,7 @@ import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { buildPersonaConflict } from "@/game/personaConflict";
+import { getAdvisorMemoryNote } from "@/game/advisorMemory";
 
 export function GameScreen({
   game,
@@ -86,6 +87,8 @@ advisors = applyPersonaBehavior(advisors, game);
             const name = (p.name || `Advisor ${index + 1}`).toUpperCase();
             const role = p.role || "Advisor";
             const suggestion = p.suggests || p.action || p.suggestion || "UNKNOWN";
+            const memoryNote =
+              p.memoryNote || getAdvisorMemoryNote(name, game.advisorMemory);
 
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
@@ -116,7 +119,13 @@ advisors = applyPersonaBehavior(advisors, game);
         {p.behaviorNote}
       </div>
     )}
-    {p.reactionNote && (
+    {memoryNote && (
+                  <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 8 }}>
+                    {memoryNote}
+                  </div>
+                )}
+
+                {p.reactionNote && (
                   <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 8 }}>
                     {p.reactionNote}
                   </div>

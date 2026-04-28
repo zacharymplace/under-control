@@ -21,6 +21,10 @@ import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
 import { getActionFeedback } from "@/game/actionFeedback";
 import { getActionJudgment } from "@/game/actionJudgment";
 import { getAdvisorReactions } from "@/game/advisorReaction";
+import { createInitialAdvisorMemory } from "@/game/advisorMemory";
+import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
+import { getDefaultPersonas } from "@/game/defaultPersonas";
+import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { getInitialPlayerTendency, updatePlayerTendency } from "@/game/playerTendency";
 import { logCompletedRun } from "@/game/runAnalytics";
 
@@ -90,7 +94,19 @@ export default function Page() {
       const judgment = getActionJudgment(action, game, next);
       const combined = judgment ? `${feedback}. ${judgment}` : feedback;
       const reactions = getAdvisorReactions(action, judgment);
-      setGame({ ...next, feedback: combined, reactions });
+
+      const advisorsForMemory = applyPersonaBehavior(
+        (game as any).personas?.length ? (game as any).personas : getDefaultPersonas(game),
+        game
+      );
+
+      const advisorMemory = updateAdvisorMemory({
+        memory: (game as any).advisorMemory,
+        advisors: advisorsForMemory,
+        action,
+        judgment,
+      });
+      setGame({ ...next, feedback: combined, reactions, advisorMemory });
     }, 100);
   }
 
@@ -126,7 +142,7 @@ export default function Page() {
 
   function handleScenarioChange(nextScenarioId: ScenarioId) {
   setScenarioId(nextScenarioId);
-  setGame(buildInitialGame(nextScenarioId));
+  setGame({ ...buildInitialGame(nextScenarioId), advisorMemory: createInitialAdvisorMemory() } as any);
 }
 
 return (

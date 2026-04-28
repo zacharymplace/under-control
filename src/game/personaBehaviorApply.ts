@@ -12,6 +12,9 @@ export function applyPersonaBehavior(personas: any[], game: any) {
     if (!behavior) return p;
 
     let nextSuggestion = p.suggests;
+    const memory = game.advisorMemory?.[name];
+    const memoryStress = memory?.stressLevel ?? 0;
+    const memoryIgnored = memory?.ignoredCount ?? 0;
 
     if (threat === "HIGH") {
       if (behavior.stressResponse === "OVERSTRUCTURES") {
@@ -26,8 +29,24 @@ export function applyPersonaBehavior(personas: any[], game: any) {
       nextSuggestion = behavior.bias;
     }
 
+    const memoryMood =
+      memoryIgnored >= 5
+        ? "DISENGAGED"
+        : memoryStress >= 3
+        ? "ASSERTIVE"
+        : p.mood;
+
+    const memoryNote =
+      memoryIgnored >= 5
+        ? "Memory pressure: prior guidance has been repeatedly ignored."
+        : memoryStress >= 3
+        ? "Memory pressure: repeated poor outcomes are increasing urgency."
+        : p.memoryNote || null;
+
     return {
       ...p,
+      mood: memoryMood,
+      memoryNote,
       originalSuggests: p.suggests,
       suggests: nextSuggestion,
       behaviorNote: `${behavior.stressResponse} under ${threat} pressure`,
