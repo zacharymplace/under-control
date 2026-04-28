@@ -630,3 +630,11 @@ body {
   font-size: 13px;
   line-height: 1.4;
 }
+
+.uc-action-feedback {
+  border-color: #2a384b;
+}
+
+.uc-action-feedback strong {
+  color: #8ab4ff;
+}
