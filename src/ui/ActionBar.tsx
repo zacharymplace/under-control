@@ -20,6 +20,7 @@ import { getLateCorrectionPenalty, getPointOfNoReturn, getMissedCommitmentWindow
 import { getPhasePenalty } from "@/game/phasePenalty";
 import { getDecisionWindow, getDecisionWindowPenalty } from "@/game/decisionWindow";
 import { getPostCollapseEffectiveness, getPostCollapseNote } from "@/game/postCollapse";
+import { getCollapseLockedActions } from "@/game/collapseLock";
 import { isStabilizationComplete } from "@/game/recoveryCompletion";
 import { getRecoveryProgress, getRecoveryStatus, getCommitmentStatus, getAdvisorTrustTrajectory } from "@/game/runLegibility";
 
@@ -90,6 +91,9 @@ export function ActionBar({
   const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
   const advisors = game.personas || [];
 
+  const collapseLocked = getCollapseLockedActions(game);
+
+
   const suggestions = advisors
     .map((a: any) => a.suggests || a.action || a.suggestion)
     .filter(Boolean);
@@ -115,7 +119,9 @@ export function ActionBar({
         {actions.map((action) => {
           const isConflictLocked = conflictLocked.includes(action);
           const isBehaviorLocked = behaviorLocked.includes(action);
-          const isLocked = locked.includes(action);
+          const isLocked =
+    collapseLocked.includes(action) ||
+    collapseLocked.includes(action) || locked.includes(action);
           const isDisabled = disabled || isLocked;
 
           return (
@@ -151,7 +157,10 @@ export function ActionBar({
       <div className="uc-footer-note">Commitment: {getCommitmentStatus(game)}</div>
       <div className="uc-footer-note">Trust trajectory: {getAdvisorTrustTrajectory(game)}</div>
       <div className="uc-footer-note">Phase: {getSystemPhase(game)}</div>
-      <div className="uc-footer-note">Decision window: {getDecisionWindow(game).label}</div>
+      <div className="uc-footer-note">Decision window:
+      {collapseLocked.length > 0 && (
+        <div className="uc-footer-note" style={{ color: "#ef4444" }}>Action space collapsing under system pressure</div>
+      )} {getDecisionWindow(game).label}</div>
       {getMissedCommitmentWindow(game) && (
         <div className="uc-footer-note">Missed window: {getMissedCommitmentWindow(game)}</div>
       )}
