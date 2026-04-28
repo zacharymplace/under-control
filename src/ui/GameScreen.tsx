@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionBar } from "./ActionBar";
+import { ReferencePanel } from "./ReferencePanel";
 import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
@@ -37,6 +38,8 @@ advisors = applyPersonaBehavior(advisors, game);
           <div className="uc-header-center">Pressure: {game.pressure}</div>
           <div className="uc-header-right">Turn: {game.turn}</div>
         </header>
+
+        <ReferencePanel />
 
         {gameOver && (
           <section

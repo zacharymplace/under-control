@@ -285,3 +285,37 @@ body {
   border-color: #4f6380;
   box-shadow: 0 0 18px rgba(120, 160, 220, 0.12);
 }
+
+.uc-ref { margin-bottom: 14px; }
+
+.uc-ref-toggle {
+  width: 100%;
+  border: 1px solid #2a384b;
+  background: #11161f;
+  color: #cdd6e3;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.uc-ref-body {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 10px;
+  border: 1px solid #223044;
+  border-radius: 12px;
+  padding: 14px;
+  background: #0e131b;
+}
+
+.uc-ref-col { font-size: 12px; color: #9aa6b5; }
+.uc-ref-title { font-weight: 800; margin-bottom: 6px; color: #e6edf3; }
+.uc-ref-item { margin-bottom: 4px; line-height: 1.4; }
+
+@media (min-width: 900px) {
+  .uc-ref-body { grid-template-columns: repeat(4, 1fr); }
+}
