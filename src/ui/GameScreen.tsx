@@ -38,7 +38,17 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
   const failure = terminal ? analyzeFailure(game.actionLog || [], game) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
-  const reflection = terminal
+  const alternative = buildAlternativePath({
+  log: game.log || [],
+  inflectionTurn: game.inflectionTurn,
+});
+
+const critical = buildCriticalDecision({
+  personas: game.personas || [],
+  turn: game.inflectionTurn,
+});
+
+const reflection = terminal
     ? buildPersonaReflection({
         trust: game.trust || {},
         ignoredCounts: game.ignoredCounts || {},
