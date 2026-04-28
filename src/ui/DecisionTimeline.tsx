@@ -1,4 +1,4 @@
-export function DecisionTimeline({ game }: any) {
+export function DecisionTimeline({ game, criticalTurn }: any) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return null;
 
   const log = game.actionLog || [];

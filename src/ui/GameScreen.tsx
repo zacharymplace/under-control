@@ -11,6 +11,7 @@ import { ActionHint } from "./ActionHint";
 import { analyzeFailure } from "@/game/failureAnalysis";
 import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
+import { findCriticalTurn } from "@/game/criticalTurn";
 import { buildPersonaReflection } from "@/game/personaReflection";
 import { getActionHints } from "@/game/decisionHints";
 import { getPersonaRecommendations } from "@/game/personaEngine";
@@ -25,6 +26,7 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
   const personas = getPersonaRecommendations(game);
 
   const point = terminal ? findPointOfNoReturn(game.actionLog || []) : null;
+const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
   const failure = terminal ? analyzeFailure(game.actionLog || []) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
@@ -74,7 +76,7 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
         <ActionBar onAction={onAction} disabled={terminal} hints={hints} personas={personas} />
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
         <RunReport game={game} />
-        <DecisionTimeline game={game} />
+        <DecisionTimeline game={game} criticalTurn={criticalTurn} />
 
         {point && (
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
