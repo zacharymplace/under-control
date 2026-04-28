@@ -3,6 +3,38 @@ import {
   interpretActionScore,
 } from "@/game/actionInterpretation";
 
+
+
+function getToneStyles(tone: string) {
+  if (tone === "URGENT") return "border-red-500 shadow-[0_0_10px_rgba(255,0,0,0.4)] text-red-300"
+  if (tone === "NECESSARY") return "border-amber-500 text-amber-300"
+  if (tone === "RECOMMENDED") return "border-green-500 text-green-300"
+  if (tone === "RISKY") return "opacity-60"
+  if (tone === "TOO LATE") return "opacity-30"
+  return ""
+}
+
+function getActionTone(action: string, pressure: number, drift: number) {
+  const critical = pressure > 85 || drift > 60;
+  const rising = pressure > 65 || drift > 40;
+
+  if (critical) {
+    if (action == "STABILIZE") return "URGENT";
+    if (action == "REROUTE") return "NECESSARY";
+    return "TOO LATE";
+  }
+
+  if (rising) {
+    if (action == "STABILIZE") return "RECOMMENDED";
+    if (action == "REROUTE") return getActionTone("REROUTE", game.pressure, game.drift);
+    return "RISKY";
+  }
+
+  if (action == "OBSERVE") return "RECOMMENDED";
+  if (action == "REROUTE") return "OPTIONAL";
+  return "MAINTAIN";
+}
+
 export function ActionBar({ onAction, disabled, hints, disagreement }: any) {
   const scores = disagreement?.scores || {};
   const maxScore = Math.max(...Object.values(scores).map(Number), 0);
