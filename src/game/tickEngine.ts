@@ -1,3 +1,5 @@
+import { applyRecoveryObligationPenalty } from "./recoveryObligation";
+
 export function tickGame(game: any) {
   const next = { ...game };
 
@@ -12,5 +14,5 @@ export function tickGame(game: any) {
 
   next.turn = (game.turn ?? 1) + 1;
 
-  return next;
+  return applyRecoveryObligationPenalty(next);
 }
