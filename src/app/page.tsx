@@ -7,7 +7,7 @@ import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telem
 import { getPersonaRecommendations } from "@/game/personaEngine";
 import { initialTrust, updateTrust } from "@/game/trust";
 import { initialIgnoredCounts, updateIgnoredCounts } from "@/game/personaMemory";
-import { evaluateOutcome } from "@/game/outcome";
+import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { logCompletedRun } from "@/game/runAnalytics";
 
@@ -282,7 +282,12 @@ function applyDemoAction(game: any, action: string) {
 
   const personasAfter = getPersonaRecommendations(next);
   const outcome = evaluateOutcome(prev, next, action);
-  next.trust = updateTrust(game.trust || initialTrust, personasBeforeAction, action, outcome);
+  next.trust = updateTrust(
+    game.trust || initialTrust,
+    personasBeforeAction,
+    action,
+    (persona) => evaluatePersonaOutcome(prev, next, persona)
+  );
   next.ignoredCounts = updateIgnoredCounts(
     game.ignoredCounts || initialIgnoredCounts,
     personasBeforeAction,

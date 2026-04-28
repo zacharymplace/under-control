@@ -1,27 +1,38 @@
-export function evaluateOutcome(prev: any, next: any, action: string) {
-  const terminalFailure = next.state === "FAILED";
+export function evaluatePersonaOutcome(prev: any, next: any, persona: any) {
+  if (next.state === "FAILED") return "BAD";
 
-  if (terminalFailure) return "BAD";
+  if (persona.name === "ELENA") {
+    return next.signalClarity > prev.signalClarity ? "GOOD" : "BAD";
+  }
+
+  if (persona.name === "MARA") {
+    const integrityProtected = next.integrity >= prev.integrity;
+    const driftContained = next.drift <= prev.drift + 4;
+    return integrityProtected || driftContained ? "GOOD" : "BAD";
+  }
+
+  if (persona.name === "ISHAAN") {
+    const avoidedCriticalDrift = next.drift < 55;
+    const avoidedCriticalLoad = next.load < 100;
+    return avoidedCriticalDrift && avoidedCriticalLoad ? "GOOD" : "BAD";
+  }
+
+  return "NEUTRAL";
+}
+
+export function evaluateOutcome(prev: any, next: any, action: string) {
+  if (next.state === "FAILED") return "BAD";
 
   if (action === "REROUTE") {
-    const loadImproved = next.load < prev.load;
-    const driftNotCritical = next.drift < 55;
-    return loadImproved && driftNotCritical ? "GOOD" : "BAD";
+    return next.load < prev.load && next.drift < 55 ? "GOOD" : "BAD";
   }
 
   if (action === "STABILIZE") {
-    const integrityImproved = next.integrity > prev.integrity;
-    const driftImprovedOrStable = next.drift <= prev.drift + 1;
-    const loadNotCritical = next.load < 100;
-    return integrityImproved && driftImprovedOrStable && loadNotCritical
-      ? "GOOD"
-      : "BAD";
+    return next.integrity > prev.integrity && next.load < 100 ? "GOOD" : "BAD";
   }
 
   if (action === "OBSERVE") {
-    const signalImproved = next.signalClarity > prev.signalClarity;
-    const loadNotCritical = next.load < 100;
-    return signalImproved && loadNotCritical ? "GOOD" : "BAD";
+    return next.signalClarity > prev.signalClarity && next.load < 100 ? "GOOD" : "BAD";
   }
 
   return "NEUTRAL";

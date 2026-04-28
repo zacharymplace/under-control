@@ -14,20 +14,21 @@ export function updateTrust(
   trust: Trust,
   personas: any[],
   chosenAction: string,
-  outcome: "GOOD" | "BAD" | "NEUTRAL"
+  evaluatePersona: (persona: any) => "GOOD" | "BAD" | "NEUTRAL"
 ) {
   const next = { ...trust };
 
-  personas.forEach((p) => {
-    const followed = p.action === chosenAction;
+  personas.forEach((persona) => {
+    if (persona.action !== chosenAction) return;
 
-    if (followed) {
-      if (outcome === "GOOD") next[p.name] = clamp((next[p.name] ?? 0) + 1);
-      if (outcome === "BAD") next[p.name] = clamp((next[p.name] ?? 0) - 1);
+    const outcome = evaluatePersona(persona);
+
+    if (outcome === "GOOD") {
+      next[persona.name] = clamp((next[persona.name] ?? 0) + 1);
     }
 
-    if (!followed && outcome === "BAD" && p.confidence === "HIGH") {
-      next[p.name] = clamp((next[p.name] ?? 0) - 0.5);
+    if (outcome === "BAD") {
+      next[persona.name] = clamp((next[persona.name] ?? 0) - 1);
     }
   });
 
