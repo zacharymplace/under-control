@@ -123,6 +123,12 @@ export function buildFailureExplanation(game: any) {
     reasons.push(pointOfNoReturn);
   }
 
+  if (game.pointOfNoReturn?.turn) {
+    reasons.push(
+      `Point of no return reached on Turn ${game.pointOfNoReturn.turn}.`
+    );
+  }
+
   if (!reasons.length) {
     reasons.push("Multiple small timing errors compounded into failure");
   }

@@ -1,5 +1,6 @@
 import { applyRecoveryObligationPenalty } from "./recoveryObligation";
 import { getTimePressureMultiplier } from "./timePressure";
+import { maybeMarkPointOfNoReturn } from "./pointOfNoReturn";
 
 export function tickGame(game: any) {
   const multiplier = getTimePressureMultiplier(game);
@@ -16,5 +17,10 @@ export function tickGame(game: any) {
 
   next.turn = (game.turn ?? 1) + 1;
 
-  return applyRecoveryObligationPenalty(next);
+  const marked = maybeMarkPointOfNoReturn(next);
+  const withPointOfNoReturn = marked
+    ? { ...next, pointOfNoReturn: marked }
+    : next;
+
+  return applyRecoveryObligationPenalty(withPointOfNoReturn);
 }

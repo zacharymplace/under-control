@@ -25,4 +25,5 @@ export type Game = {
   advisorMemory?: AdvisorMemoryMap;
 
   playerTendency?: any;
+  pointOfNoReturn?: any;
 };

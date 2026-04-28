@@ -1,22 +1,23 @@
-export function findPointOfNoReturn(log: any[]) {
-  if (!log || log.length < 3) return null;
+import { getDecisionWindow } from "./decisionWindow";
 
-  for (let i = 1; i < log.length; i++) {
-    const prev = log[i - 1];
-    const curr = log[i];
+export type PointOfNoReturn = {
+  turn: number;
+  load: number;
+  drift: number;
+  reason: string;
+};
 
-    const highLoad = curr.after.load > 90;
-    const risingDrift = curr.after.drift > prev.after.drift;
-    const noCorrection =
-      curr.action !== "STABILIZE" && curr.action !== "REROUTE";
+export function maybeMarkPointOfNoReturn(game: any): PointOfNoReturn | null {
+  if (game.pointOfNoReturn) return game.pointOfNoReturn;
 
-    if (highLoad && risingDrift && noCorrection) {
-      return {
-        turn: curr.turn,
-        reason: "High load + rising drift without corrective action",
-      };
-    }
-  }
+  const window = getDecisionWindow(game);
 
-  return null;
+  if (window.state !== "COLLAPSED") return null;
+
+  return {
+    turn: game.turn ?? 1,
+    load: game.load ?? 0,
+    drift: game.drift ?? 0,
+    reason: window.note,
+  };
 }
