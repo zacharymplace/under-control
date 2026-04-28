@@ -154,8 +154,8 @@ function applyPassiveDecay(game: any) {
 
   return {
     ...game,
-    load: clamp(game.load + Math.round((TUNING.BASE_LOAD * m * mods.loadAcceleration * mods.loadPressureMult))),
-    drift: clamp(game.drift + Math.round((TUNING.BASE_DRIFT * m * driftMultiplier * mods.driftPenaltyMult))),
+    load: clamp(game.load + Math.round((TUNING.BASE_LOAD * m * loadAcceleration * mods.loadAcceleration * mods.loadPressureMult))),
+    drift: clamp(game.drift + Math.round((TUNING.BASE_DRIFT * m * driftMultiplier * driftMultiplier * mods.driftPenaltyMult))),
     integrity: clamp(game.integrity - Math.round((TUNING.BASE_INTEGRITY_DECAY * m * mods.signalDecayMult))),
   };
 }
