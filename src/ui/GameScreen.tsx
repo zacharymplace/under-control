@@ -22,6 +22,8 @@ import { analyzeFailure } from "@/game/failureAnalysis";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
 import { findCriticalTurn } from "@/game/criticalTurn";
 import { findInflection } from "@/game/inflection";
+import { findInevitabilityPoint } from "@/game/inevitability";
+import { findLastRecoverableMoment } from "@/game/lastRecoverableMoment";
 import { buildAlternativePath } from "@/game/alternative";
 import { buildCriticalDecision } from "@/game/criticalDecision";
 import { getPrimaryFailureDriver } from "@/game/failureDriver";
@@ -49,6 +51,8 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
   const failureDriver = terminal ? getPrimaryFailureDriver(game) : null;
   const counterfactual = terminal ? buildCounterfactualReplay(game, inflection) : null;
+  const inevitability = terminal ? findInevitabilityPoint(game.actionLog || []) : null;
+  const lastRecoverable = terminal ? findLastRecoverableMoment(game.actionLog || []) : null;
   const runArc =
  terminal ? buildRunArc(game, failureDriver) : null;
   const verdict = null;
@@ -194,10 +198,22 @@ const reflection = terminal
               </section>
             )}
 
+            {lastRecoverable && (
+              <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+                <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+                  Last Recoverable Moment
+                </div>
+                <div className="text-lg font-bold">{lastRecoverable.title}</div>
+                <div className="mt-1 text-sm text-[#8A93A3]">
+                  {lastRecoverable.detail}
+                </div>
+              </section>
+            )}
+
             {inflection && (
               <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
                 <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-                  Missed Intervention
+                  Missed Correction
                 </div>
                 <div className="text-lg font-bold">
                   Turn {inflection.turn} — {inflection.type}
@@ -239,6 +255,20 @@ const reflection = terminal
                       Load {counterfactual.projected.load} • Drift {counterfactual.projected.drift} • Integrity {counterfactual.projected.integrity}
                     </div>
                   </div>
+                </div>
+              </section>
+            )}
+
+            {inevitability && (
+              <section className="mt-5 rounded-lg border border-[#5E2D2D] bg-[#130A0C] p-4">
+                <div className="mb-2 text-xs uppercase tracking-widest text-[#C75C5C]">
+                  Inevitability Point
+                </div>
+                <div className="text-lg font-bold text-[#E6EAF0]">
+                  Turn {inevitability.turn} — {inevitability.title}
+                </div>
+                <div className="mt-1 text-sm text-[#8A93A3]">
+                  {inevitability.detail}
                 </div>
               </section>
             )}

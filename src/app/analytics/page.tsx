@@ -1,3 +1,7 @@
+import { buildPlayerProfile } from "@/game/playerProfile";
+import { buildPlayerNarrative } from "@/game/playerNarrative";
+import { PlayerProfilePanel } from "@/ui/PlayerProfilePanel";
+import { PlayerNarrativePanel } from "@/ui/PlayerNarrativePanel";
 import { classifyPlayerArchetype } from "@/game/playerArchetype";
 async function getRuns() {
   const res = await fetch("http://localhost:3000/api/analytics", {
@@ -37,8 +41,16 @@ export default async function AnalyticsPage() {
   const trustAverages = averageTrust(runs);
   const archetype = classifyPlayerArchetype(runs);
 
-  return (
+  const playerProfile = buildPlayerProfile(runs);
+  const playerNarrative = buildPlayerNarrative(playerProfile, runs);
+
+return (
     <main className="min-h-screen bg-[#0B0D10] px-5 py-6 text-[#E6EAF0]">
+      <>
+      <PlayerProfilePanel profile={playerProfile} />
+
+        <PlayerNarrativePanel narrative={playerNarrative} />
+
       <div className="mx-auto max-w-5xl">
         <div className="mb-6">
           <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
@@ -163,7 +175,10 @@ function averageTrust(runs: any[]) {
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
-  return (
+  const playerProfile = buildPlayerProfile(runs);
+  const playerNarrative = buildPlayerNarrative(playerProfile, runs);
+
+return (
     <div className="rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
       <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
         {label}
@@ -174,7 +189,10 @@ function Metric({ label, value }: { label: string; value: number }) {
 }
 
 function Panel({ title, children }: any) {
-  return (
+  const playerProfile = buildPlayerProfile(runs);
+  const playerNarrative = buildPlayerNarrative(playerProfile, runs);
+
+return (
     <div className="rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
       <div className="mb-3 text-xs uppercase tracking-widest text-[#8A93A3]">
         {title}
@@ -187,7 +205,10 @@ function Panel({ title, children }: any) {
 function Bar({ label, value, total }: any) {
   const pct = total ? Math.round((value / total) * 100) : 0;
 
-  return (
+  const playerProfile = buildPlayerProfile(runs);
+  const playerNarrative = buildPlayerNarrative(playerProfile, runs);
+
+return (
     <div>
       <div className="mb-1 flex justify-between text-xs text-[#8A93A3]">
         <span>{label}</span>
@@ -209,7 +230,10 @@ function TrustRow({ label, value }: any) {
   const width = Math.min(100, Math.abs(value) * 20);
   const color = value >= 0 ? "bg-[#4FAF7B]" : "bg-[#C75C5C]";
 
-  return (
+  const playerProfile = buildPlayerProfile(runs);
+  const playerNarrative = buildPlayerNarrative(playerProfile, runs);
+
+return (
     <div>
       <div className="mb-1 flex justify-between text-xs text-[#8A93A3]">
         <span>{label}</span>
@@ -225,7 +249,10 @@ function TrustRow({ label, value }: any) {
 function Trend({ runs }: any) {
   const values = runs.map((r: any) => r.summary?.avgPressure || 0);
 
-  return (
+  const playerProfile = buildPlayerProfile(runs);
+  const playerNarrative = buildPlayerNarrative(playerProfile, runs);
+
+return (
     <div className="flex h-24 items-end gap-1">
       {values.map((v: number, i: number) => (
         <div
@@ -235,5 +262,6 @@ function Trend({ runs }: any) {
         />
       ))}
     </div>
+    </>
   );
 }

@@ -18,7 +18,7 @@ export function buildRunArc(game: any, failureDriver: any) {
   };
 }
 
-function summarizePhase(entries: any[], phase: string) {
+function summarizePhase(entries: any[], phase: "EARLY" | "MID" | "LATE") {
   if (!entries.length) return "No signal";
 
   const avgLoad = avg(entries.map((e) => e.after.load));
@@ -26,18 +26,51 @@ function summarizePhase(entries: any[], phase: string) {
   const avgSignal = avg(entries.map((e) => e.after.signalClarity));
   const avgIntegrity = avg(entries.map((e) => e.after.integrity));
 
-  if (avgSignal < 60 && phase === "EARLY") return "Signal unreliable";
-  if (avgLoad >= 85 && avgDrift < 50) return "Load pressure rising";
-  if (avgDrift >= 50) return "Drift dominant";
-  if (avgIntegrity <= 60) return "Integrity weakening";
-  if (avgSignal >= 70) return "Clarity improving";
+  if (phase === "EARLY") {
+    if (avgSignal >= 70 && avgDrift >= 35) {
+      return "False clarity masked instability";
+    }
 
-  
-if (phase == "EARLY") return "Signal unreliable";
-if (phase == "MID") return "Pressure accumulating";
-if (phase == "LATE") return "System breakdown forming";
-return "Mixed state";
+    if (avgSignal < 60) {
+      return "Signal uncertainty narrowed safe timing";
+    }
 
+    return "Operating picture formed before pressure was contained";
+  }
+
+  if (phase === "MID") {
+    if (avgLoad >= 80 && avgDrift >= 40) {
+      return "Pressure accumulated faster than correction";
+    }
+
+    if (avgDrift >= 45) {
+      return "Instability began outpacing recovery";
+    }
+
+    if (avgIntegrity <= 65) {
+      return "Structure weakened under continued pressure";
+    }
+
+    return "Control window remained open but fragile";
+  }
+
+  if (phase === "LATE") {
+    if (avgDrift >= 55) {
+      return "Drift exceeded recovery capacity";
+    }
+
+    if (avgLoad >= 90) {
+      return "Load pressure outpaced control";
+    }
+
+    if (avgIntegrity <= 55) {
+      return "Structure fell below safe operating range";
+    }
+
+    return "Recovery window narrowed into failure";
+  }
+
+  return "Mixed state";
 }
 
 function classifyDifficulty(game: any) {

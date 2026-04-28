@@ -1,3 +1,4 @@
+import { compressTimeline } from "@/game/timelineCompression";
 import { formatDelta, getTurnRisk, getTurnStory } from "@/game/timelineStory";
 import { getPhase } from "@/game/timelinePhase";
 
@@ -7,10 +8,16 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
   const log = game.actionLog || [];
   if (!log.length) return null;
 
+  const items = compressTimeline(log);
   const finalEntry = log[log.length - 1];
   const criticalEntry = criticalTurn
     ? log.find((entry: any) => entry.turn === criticalTurn)
     : null;
+
+  const firstCriticalIndex = log.findIndex((entry: any) => {
+    const risk = getTurnRisk(entry);
+    return risk === "DRIFT CRITICAL" || risk === "LOAD CRITICAL";
+  });
 
   let lastPhase: string | null = null;
 
@@ -44,19 +51,30 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
       </div>
 
       <div className="relative border-l border-[#2A313A] pl-4">
-        {log.map((entry: any, index: number) => {
-          const story = getTurnStory(entry);
-          const risk = getTurnRisk(entry);
-          const phase = getPhase(entry);
+        {items.map((item: any, index: number) => {
+          const representative =
+            item.type === "group" ? item.entries[item.entries.length - 1] : item.entry;
+
+          const phase = getPhase(representative);
           const showPhaseHeader = phase !== lastPhase;
           lastPhase = phase;
 
+          if (item.type === "group") {
+            return (
+              <div key={`group-${item.startTurn}-${item.endTurn}`} className="mb-3">
+                {showPhaseHeader && <PhaseHeader phase={phase} />}
+                <GroupedTurn item={item} phase={phase} />
+              </div>
+            );
+          }
+
+          const entry = item.entry;
+          const story = getTurnStory(entry);
+          const risk = getTurnRisk(entry);
+          const rawIndex = log.findIndex((e: any) => e.turn === entry.turn);
           const isCriticalTurn = entry.turn === criticalTurn;
-          const isDanger =
-            risk !== "CONTROLLED" ||
-            phase === "CRITICAL" ||
-            isCriticalTurn ||
-            index >= log.length - 2;
+          const isPeakCritical = rawIndex === firstCriticalIndex;
+          const isAfterPeak = firstCriticalIndex >= 0 && rawIndex > firstCriticalIndex;
 
           const loadDelta = entry.after.load - entry.before.load;
           const driftDelta = entry.after.drift - entry.before.drift;
@@ -65,35 +83,47 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
             entry.after.signalClarity - entry.before.signalClarity;
 
           return (
-            <div key={`${entry.turn}-${index}`} className="mb-2">
+            <div key={`${entry.turn}-${index}`} className="mb-3">
               {showPhaseHeader && <PhaseHeader phase={phase} />}
 
               <details
-                open={isDanger}
-                className={`group relative rounded-lg border ${cardStyle(
+                open={
+                  isCriticalTurn ||
+                  isPeakCritical ||
+                  risk !== "CONTROLLED" ||
+                  rawIndex >= log.length - 2
+                }
+                className={`group relative rounded-lg border ${cardStyle({
                   phase,
                   isCriticalTurn,
-                  risk
-                )}`}
+                  isPeakCritical,
+                  isAfterPeak,
+                  risk,
+                })}`}
               >
                 <summary className="cursor-pointer list-none p-3">
-                  <TimelineDot phase={phase} active={isDanger} />
+                  <TimelineDot phase={phase} active={risk !== "CONTROLLED"} />
 
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
                         Turn {entry.turn}
                         {isCriticalTurn ? " — Turning Point" : ""}
-                        {phase === "CRITICAL" && (
+                        {isPeakCritical && (
+                          <span className="ml-2 text-[#F1D08A]">
+                            BREAKING POINT
+                          </span>
+                        )}
+                        {isAfterPeak && phase === "CRITICAL" && (
                           <span className="ml-2 text-[#C75C5C]">
-                            System Under Strain
+                            System Collapse
                           </span>
                         )}
                       </div>
 
                       <div
                         className={`mt-1 font-bold ${
-                          isCriticalTurn
+                          isCriticalTurn || isPeakCritical
                             ? "text-lg text-[#F1D08A]"
                             : "text-[#E6EAF0]"
                         }`}
@@ -130,10 +160,9 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                     <DeltaLine label="Signal" delta={signalDelta} invert />
                   </div>
 
-                  {isCriticalTurn && (
+                  {(isCriticalTurn || isPeakCritical) && (
                     <div className="mt-3 rounded border border-[#4A3918] bg-[#120F08] p-2 text-xs text-[#E6A15A]">
-                      Key inflection point: recovery became materially harder after
-                      this decision.
+                      This is where the run materially changed: recovery became harder than normal corrective action could reliably handle.
                     </div>
                   )}
                 </div>
@@ -146,17 +175,99 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
   );
 }
 
-function cardStyle(phase: string, isCriticalTurn: boolean, risk: string) {
-  if (isCriticalTurn) {
-    return "border-[#D4A84F] bg-gradient-to-r from-[#3A120E] via-[#2A150C] to-[#18140B] shadow-[0_0_24px_rgba(255,80,80,0.18)]";
+function GroupedTurn({ item, phase }: any) {
+  const first = item.entries[0];
+  const last = item.entries[item.entries.length - 1];
+
+  const loadDelta = last.after.load - first.before.load;
+  const driftDelta = last.after.drift - first.before.drift;
+  const integrityDelta = last.after.integrity - first.before.integrity;
+  const signalDelta = last.after.signalClarity - first.before.signalClarity;
+
+  const title =
+    item.action === "STABILIZE"
+      ? "Repeated Stabilization Loop"
+      : item.action === "REROUTE"
+      ? "Repeated Reroute Loop"
+      : "Repeated Observation Loop";
+
+  const detail =
+    item.action === "STABILIZE"
+      ? "Structure improved, but pressure or drift still needed release."
+      : item.action === "REROUTE"
+      ? "Load dropped repeatedly, but instability accumulated underneath."
+      : "Signal improved, but the system continued moving while action was delayed.";
+
+  return (
+    <details
+      className={`group relative rounded-lg border ${cardStyle({
+        phase,
+        isCriticalTurn: false,
+        isPeakCritical: false,
+        isAfterPeak: false,
+        risk: "CONTROLLED",
+      })}`}
+    >
+      <summary className="cursor-pointer list-none p-3">
+        <TimelineDot phase={phase} active={false} />
+
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+              Turns {item.startTurn}–{item.endTurn}
+            </div>
+            <div className="mt-1 font-bold text-[#E6EAF0]">{title}</div>
+            <p className="mt-1 text-xs text-[#8A93A3]">{detail}</p>
+          </div>
+
+          <div className="text-right text-[10px] uppercase tracking-widest text-[#8A93A3]">
+            {item.action}
+          </div>
+        </div>
+      </summary>
+
+      <div className="px-3 pb-3">
+        <div className="rounded border border-[#1F2630] bg-[#080A0D] px-3 py-2 text-[11px] text-[#8A93A3]">
+          <DeltaLine label="Load" delta={loadDelta} />
+          <Divider />
+          <DeltaLine label="Drift" delta={driftDelta} />
+          <Divider />
+          <DeltaLine label="Integrity" delta={integrityDelta} invert />
+          <Divider />
+          <DeltaLine label="Signal" delta={signalDelta} invert />
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function cardStyle({
+  phase,
+  isCriticalTurn,
+  isPeakCritical,
+  isAfterPeak,
+  risk,
+}: {
+  phase: string;
+  isCriticalTurn: boolean;
+  isPeakCritical: boolean;
+  isAfterPeak: boolean;
+  risk: string;
+}) {
+  if (isCriticalTurn || isPeakCritical) {
+    return "border-[#D4A84F] bg-gradient-to-r from-[#2A120E] via-[#21100F] to-[#18140B] shadow-[0_0_20px_rgba(255,80,80,0.12)]";
+  }
+
+  if (isAfterPeak) {
+    return "border-[#4A2528] bg-[#10090B]";
   }
 
   if (risk === "LOAD CRITICAL" || risk === "DRIFT CRITICAL") {
-    return "border-[#5E2D2D] bg-[#150B0D]";
+    return "border-[#5E2D2D] bg-[#130A0C]";
   }
 
   if (phase === "CRITICAL") {
-    return "border-[#3A2426] bg-[#120909]";
+    return "border-[#3A2426] bg-[#10090B]";
   }
 
   if (phase === "ESCALATING") {
