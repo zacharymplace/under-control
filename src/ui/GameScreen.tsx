@@ -7,6 +7,7 @@ import { MessageFeed } from "./MessageFeed";
 import { SystemPanel } from "./SystemPanel";
 import { TrustBar } from "./TrustBar";
 import { RunReport } from "./RunReport";
+import { RunArc } from "./RunArc";
 import { DecisionTimeline } from "./DecisionTimeline";
 import { QuickGuide } from "./QuickGuide";
 import { TutorialPanel } from "./TutorialPanel";
@@ -17,6 +18,7 @@ import { findInflection } from "@/game/inflection";
 import { buildAlternativePath } from "@/game/alternative";
 import { buildCriticalDecision } from "@/game/criticalDecision";
 import { getPrimaryFailureDriver } from "@/game/failureDriver";
+import { buildRunArc } from "@/game/runArc";
 import { buildCounterfactualReplay } from "@/game/counterfactual";
 import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
@@ -43,6 +45,7 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
   const failureDriver = terminal ? getPrimaryFailureDriver(game) : null;
   const counterfactual = terminal ? buildCounterfactualReplay(game, inflection) : null;
+  const runArc = terminal ? buildRunArc(game, failureDriver) : null;
 
   const alternative = buildAlternativePath({
   log: game.actionLog || [],
@@ -124,90 +127,88 @@ const reflection = terminal
         <MessageFeed personas={personas} />
         <ActionBar onAction={onAction} disabled={terminal} hints={hints} personas={personas} disagreement={disagreement} />
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
-        <RunReport game={game} />
-        <DecisionTimeline game={game} criticalTurn={criticalTurn} />
+        {terminal && (
+          <>
+            {failureDriver && (
+              <section className="mt-5 rounded-lg border border-[#4A3918] bg-gradient-to-r from-[#1A140B] to-[#12161C] p-5">
+                <div className="mb-2 text-xs uppercase tracking-widest text-[#D4A84F]">
+                  Primary Failure Driver
+                </div>
+                <div className="text-xl font-bold text-[#F1D08A]">
+                  {failureDriver.title}
+                </div>
+                <div className="mt-2 text-sm text-[#8A93A3]">
+                  {failureDriver.detail}
+                </div>
+              </section>
+            )}
 
-        {point && (
-          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
-            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Point of No Return
-            </div>
-            <div className="text-lg font-bold">Turn {point.turn}</div>
-            <div className="mt-1 text-sm text-[#8A93A3]">{point.reason}</div>
-          </section>
+            <RunArc arc={runArc} />
+
+            {point && (
+              <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+                <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+                  Point of No Return
+                </div>
+                <div className="text-lg font-bold">Turn {point.turn}</div>
+                <div className="mt-1 text-sm text-[#8A93A3]">{point.reason}</div>
+              </section>
+            )}
+
+            {inflection && (
+              <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+                <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+                  Missed Intervention
+                </div>
+                <div className="text-lg font-bold">
+                  Turn {inflection.turn} — {inflection.type}
+                </div>
+                <div className="mt-1 text-sm text-[#8A93A3]">
+                  {inflection.insight}
+                </div>
+                <div className="mt-2 text-sm text-[#E6EAF0]">
+                  Recommendation: {inflection.recommendation}
+                </div>
+              </section>
+            )}
+
+            {counterfactual && (
+              <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+                <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+                  Counterfactual Replay
+                </div>
+                <div className="text-lg font-bold">
+                  Turn {counterfactual.turn}: {counterfactual.actualAction} → {counterfactual.betterAction}
+                </div>
+                <div className="mt-1 text-sm text-[#8A93A3]">
+                  {counterfactual.insight}
+                </div>
+                <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
+                  <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
+                    <div className="mb-1 uppercase tracking-widest text-[#8A93A3]">
+                      Actual
+                    </div>
+                    <div>
+                      Load {counterfactual.actual.load} • Drift {counterfactual.actual.drift} • Integrity {counterfactual.actual.integrity}
+                    </div>
+                  </div>
+                  <div className="rounded border border-[#2B5D45] bg-[#0B0F0C] p-3">
+                    <div className="mb-1 uppercase tracking-widest text-[#4FAF7B]">
+                      Projected Alternative
+                    </div>
+                    <div>
+                      Load {counterfactual.projected.load} • Drift {counterfactual.projected.drift} • Integrity {counterfactual.projected.integrity}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <RunReport game={game} />
+            <DecisionTimeline game={game} criticalTurn={criticalTurn} />
+          </>
         )}
 
-        {failureDriver && (
-          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
-            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Primary Failure Driver
-            </div>
-            <div className="text-lg font-bold">{failureDriver.title}</div>
-            <div className="mt-1 text-sm text-[#8A93A3]">
-              {failureDriver.detail}
-            </div>
-          </section>
-        )}
-
-        {inflection && (
-        <div className="mt-6 p-4 rounded-lg border border-[#1C2330]">
-          <div className="text-sm text-[#8A93A3] mb-2">MISSED INTERVENTION</div>
-          <div className="text-[#C7D0E0] font-medium">
-            Turn {inflection.turn} — {inflection.type}
-          </div>
-          <div className="text-sm text-[#8A93A3]">{inflection.insight}</div>
-          <div className="text-sm mt-2 text-[#8A93A3]">
-            Recommendation: {inflection.recommendation}
-          </div>
-        </div>
-      )}
-
-      {failure && (
-
-
-          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
-            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              System Breakdown
-            </div>
-            <div className="text-lg font-bold">{failure.label}</div>
-            <div className="mt-1 text-sm text-[#8A93A3]">{failure.insight}</div>
-            <div className="mt-2 text-sm text-[#E6EAF0]">
-              Recommendation: {failure.recommendation}
-            </div>
-          </section>
-        )}
-
-        {counterfactual && (
-          <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
-            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Counterfactual Replay
-            </div>
-            <div className="text-lg font-bold">
-              Turn {counterfactual.turn}: {counterfactual.actualAction} → {counterfactual.betterAction}
-            </div>
-            <div className="mt-1 text-sm text-[#8A93A3]">
-              {counterfactual.insight}
-            </div>
-            <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
-              <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
-                <div className="mb-1 uppercase tracking-widest text-[#8A93A3]">
-                  Actual
-                </div>
-                <div>
-                  Load {counterfactual.actual.load} • Drift {counterfactual.actual.drift} • Integrity {counterfactual.actual.integrity}
-                </div>
-              </div>
-              <div className="rounded border border-[#2B5D45] bg-[#0B0F0C] p-3">
-                <div className="mb-1 uppercase tracking-widest text-[#4FAF7B]">
-                  Projected Alternative
-                </div>
-                <div>
-                  Load {counterfactual.projected.load} • Drift {counterfactual.projected.drift} • Integrity {counterfactual.projected.integrity}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         {pattern && (
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">

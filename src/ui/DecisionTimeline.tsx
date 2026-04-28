@@ -133,9 +133,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                       <p className="mt-1 text-xs text-[#8A93A3]">
                         {story.summary}
                       </p>
-                      <p className="mt-1 text-[10px] text-[#5A646F]">
-                        {story.causal}
-                      </p>
+
                     </div>
 
                     <div className="text-right">
@@ -148,6 +146,9 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                 </summary>
 
                 <div className="px-3 pb-3">
+                  <div className="mb-2 text-[10px] text-[#5A646F]">
+                    {story.causal}
+                  </div>
                   <div className="rounded border border-[#1F2630] bg-[#080A0D] px-3 py-2 text-[11px] text-[#8A93A3]">
                     <DeltaLine label="Load" delta={loadDelta} />
                     <span className="mx-2 text-[#2A313A]">•</span>
