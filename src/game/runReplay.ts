@@ -2,6 +2,7 @@ import { getTrajectoryInsight } from "./trajectoryRisk";
 import { getNeedNeglectInsight } from "./needNeglect";
 import { getCommitmentInsight } from "./commitment";
 import { getPointOfNoReturn, getMissedCommitmentWindow } from "./irreversibility";
+import { getWrongCommitmentInsight } from "./wrongCommitment";
 
 export function buildRunReplay(game: any) {
   const log = game.actionLog || [];
