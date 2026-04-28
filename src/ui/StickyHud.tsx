@@ -6,19 +6,23 @@ export function StickyHud({ game }: { game: any }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    function onScroll() {
-      const statusCard = document.querySelector("[data-system-status]");
-      const threshold = statusCard
-        ? statusCard.getBoundingClientRect().bottom + window.scrollY
-        : 360;
+    const target = document.querySelector("[data-system-status]");
+    if (!target) return;
 
-      setVisible(window.scrollY > threshold + 12);
-    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // visible = false when system status is still in view
+        setVisible(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0,
+      }
+    );
 
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    observer.observe(target);
 
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => observer.disconnect();
   }, []);
 
   if (!game) return null;
