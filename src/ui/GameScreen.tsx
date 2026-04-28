@@ -3,6 +3,7 @@
 import { ActionBar } from "./ActionBar";
 import { ReferencePanel } from "./ReferencePanel";
 import { RunReplay } from "./RunReplay";
+import { Counterfactual } from "./Counterfactual";
 import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
@@ -136,6 +137,7 @@ advisors = applyPersonaBehavior(advisors, game);
         )}
 
         <RunReplay game={{ ...game, personas: advisors }} />
+        <Counterfactual game={{ ...game, personas: advisors }} />
 
         <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
 

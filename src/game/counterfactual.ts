@@ -1,64 +1,69 @@
-export function buildCounterfactualReplay(game: any, inflection: any) {
+export function simulateAlternatePath(game: any, turnIndex: number, action: string) {
   const log = game.actionLog || [];
-  if (!log.length) return null;
+  if (!log[turnIndex]) return null;
 
-  const turn = inflection?.turn ?? null;
-  const step =
-    turn != null ? log.find((entry: any) => entry.turn === turn) : log[log.length - 1];
+  const entry = log[turnIndex];
+  const base = { ...entry.before };
 
-  if (!step) return null;
-
-  let betterAction: "STABILIZE" | "REROUTE" | "OBSERVE" | null = null;
-
-  if (step.before.drift >= 45) betterAction = "STABILIZE";
-  else if (step.before.load >= 85) betterAction = "REROUTE";
-  else if (step.before.signalClarity < 60) betterAction = "OBSERVE";
-
-  if (!betterAction || betterAction === step.action) return null;
-
-  const projected = projectOneTurn(step.before, betterAction);
+  const result = applyAction(base, action);
 
   return {
-    turn: step.turn,
-    actualAction: step.action,
-    betterAction,
-    before: step.before,
-    actual: step.after,
-    projected,
-    insight:
-      betterAction === "STABILIZE"
-        ? "Stabilizing would have reduced drift pressure before it compounded."
-        : betterAction === "REROUTE"
-        ? "Rerouting would have created load capacity before saturation."
-        : "Observing would have improved signal before committing to a risky action.",
+    turn: entry.turn,
+    chosen: entry.action,
+    alternate: action,
+    before: base,
+    after: result,
+    deltas: computeDeltas(base, result),
+    outcome: summarizeOutcome(action, base, result),
   };
 }
 
-function clamp(value: number) {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function projectOneTurn(before: any, action: string) {
-  const next = { ...before };
+function applyAction(state: any, action: string) {
+  const next = { ...state };
 
   if (action === "STABILIZE") {
-    next.load = clamp(next.load + 8);
-    next.integrity = clamp(next.integrity + 8);
-    next.drift = clamp(next.drift - 6);
+    next.drift = Math.max(0, state.drift - 10);
+    next.integrity = Math.min(100, state.integrity + 8);
+    next.load += 6;
   }
 
   if (action === "REROUTE") {
-    next.load = clamp(next.load - 12);
-    next.integrity = clamp(next.integrity - 6);
-    next.drift = clamp(next.drift + 12);
+    next.load = Math.max(0, state.load - 12);
+    next.drift += 6;
+    next.integrity -= 2;
   }
 
   if (action === "OBSERVE") {
-    next.load = clamp(next.load + 8);
-    next.integrity = clamp(next.integrity - 1);
-    next.signalClarity = clamp(next.signalClarity + 12);
-    next.drift = clamp(next.drift + 3);
+    next.signalClarity = Math.min(100, (state.signalClarity ?? 0) + 10);
+    next.load += 6;
+    next.drift += 4;
   }
 
   return next;
+}
+
+function computeDeltas(before: any, after: any) {
+  return {
+    load: (after.load ?? 0) - (before.load ?? 0),
+    drift: (after.drift ?? 0) - (before.drift ?? 0),
+    integrity: (after.integrity ?? 0) - (before.integrity ?? 0),
+    signal:
+      (after.signalClarity ?? 0) - (before.signalClarity ?? 0),
+  };
+}
+
+function summarizeOutcome(action: string, before: any, after: any) {
+  if (action === "REROUTE" && after.load < before.load) {
+    return "Load pressure would have been reduced before failure.";
+  }
+
+  if (action === "STABILIZE" && after.drift < before.drift) {
+    return "Drift would have been controlled earlier.";
+  }
+
+  if (action === "OBSERVE") {
+    return "Signal clarity would improve, but pressure continues.";
+  }
+
+  return "Alternate action changes system trajectory.";
 }
