@@ -2,6 +2,7 @@
 
 import { ActionBar } from "./ActionBar";
 import { ReferencePanel } from "./ReferencePanel";
+import { StickyHud } from "./StickyHud";
 import { RunReplay } from "./RunReplay";
 import { Counterfactual } from "./Counterfactual";
 import { getAlignment } from "@/game/alignment";
@@ -40,6 +41,8 @@ advisors = applyPersonaBehavior(advisors, game);
           <div className="uc-header-center">Pressure: {game.pressure}</div>
           <div className="uc-header-right">Turn: {game.turn}</div>
         </header>
+
+        <StickyHud game={game} />
 
         <ReferencePanel />
 
