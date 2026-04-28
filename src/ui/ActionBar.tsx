@@ -18,7 +18,9 @@ import { getCommitmentScore, getCommitmentLabel } from "@/game/commitment";
 import { getSystemPhase } from "@/game/phase";
 import { getLateCorrectionPenalty, getPointOfNoReturn, getMissedCommitmentWindow } from "@/game/irreversibility";
 import { getPhasePenalty } from "@/game/phasePenalty";
+import { getDecisionWindow, getDecisionWindowPenalty } from "@/game/decisionWindow";
 import { isStabilizationComplete } from "@/game/recoveryCompletion";
+import { getRecoveryProgress, getRecoveryStatus, getCommitmentStatus, getAdvisorTrustTrajectory } from "@/game/runLegibility";
 
 function scoreAction(
   action: string,
@@ -40,6 +42,8 @@ function scoreAction(
   const commitmentScore = getCommitmentScore(game);
   const lateCorrectionPenalty = getLateCorrectionPenalty(action, game);
   const phasePenalty = getPhasePenalty(action, game);
+
+  const decisionWindowPenalty = getDecisionWindowPenalty(action, game);
 
   let recoveryPenalty = 1;
   if (action !== "STABILIZE" && !isStabilizationComplete(game) && game.drift > 50) {
@@ -139,9 +143,12 @@ export function ActionBar({
       </div>
 
       <div className="uc-footer-note">Alignment impact: {impact}</div>
+      <div className="uc-footer-note">Recovery: {getRecoveryProgress(game)}% · {getRecoveryStatus(game)}</div>
       <div className="uc-footer-note">Trajectory: {getTrajectoryRiskLabel(game)}</div>
-      <div className="uc-footer-note">Commitment: {getCommitmentLabel(game)}</div>
+      <div className="uc-footer-note">Commitment: {getCommitmentStatus(game)}</div>
+      <div className="uc-footer-note">Trust trajectory: {getAdvisorTrustTrajectory(game)}</div>
       <div className="uc-footer-note">Phase: {getSystemPhase(game)}</div>
+      <div className="uc-footer-note">Decision window: {getDecisionWindow(game).label}</div>
       {getMissedCommitmentWindow(game) && (
         <div className="uc-footer-note">Missed window: {getMissedCommitmentWindow(game)}</div>
       )}

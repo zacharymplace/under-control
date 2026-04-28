@@ -4,6 +4,7 @@ import { ActionBar } from "./ActionBar";
 import { ReferencePanel } from "./ReferencePanel";
 import { StickyHud } from "./StickyHud";
 import { RunReplay } from "./RunReplay";
+import { RunLegibility } from "./RunLegibility";
 import { Counterfactual } from "./Counterfactual";
 import { PlayerTendency } from "./PlayerTendency";
 import { getAlignment } from "@/game/alignment";
@@ -16,6 +17,7 @@ import { getAdvisorTrajectoryNote } from "@/game/advisorTrajectory";
 import { getAdvisorNeedEscalation } from "@/game/advisorNeedEscalation";
 import { getAdvisorCommitmentNote } from "@/game/advisorCommitment";
 import { getAdvisorEscalationPhase } from "@/game/advisorEscalationPhase";
+import { getAdvisorDecisionWindowNote } from "@/game/advisorDecisionWindow";
 
 export function GameScreen({
   game,
@@ -100,6 +102,7 @@ advisors = applyPersonaBehavior(advisors, game);
             const needEscalationNote = getAdvisorNeedEscalation(name, game);
             const commitmentNote = getAdvisorCommitmentNote(name, game);
             const escalationPhaseNote = getAdvisorEscalationPhase(name, game);
+            const decisionWindowNote = getAdvisorDecisionWindowNote(name, game);
 
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
@@ -162,6 +165,7 @@ advisors = applyPersonaBehavior(advisors, game);
           </section>
         )}
 
+        <RunLegibility game={{ ...game, personas: advisors }} />
         <RunReplay game={{ ...game, personas: advisors }} />
         <PlayerTendency tendency={game.playerTendency} />
         <Counterfactual game={{ ...game, personas: advisors }} />

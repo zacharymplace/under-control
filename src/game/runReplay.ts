@@ -4,6 +4,7 @@ import { getCommitmentInsight } from "./commitment";
 import { getPointOfNoReturn, getMissedCommitmentWindow } from "./irreversibility";
 import { getWrongCommitmentInsight } from "./wrongCommitment";
 import { getIncompleteRecoveryInsight } from "./recoveryCompletion";
+import { getDecisionWindow } from "./decisionWindow";
 
 export function buildRunReplay(game: any) {
   const log = game.actionLog || [];
