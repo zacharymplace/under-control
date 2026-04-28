@@ -5,7 +5,11 @@ import {
   buildWeightedSupport,
   getWeightedSupportMultiplier,
 } from "@/game/personaConfidence";
-import { getConflictSeverity, getLockedActions } from "@/game/conflictSystem";
+import {
+  getConflictSeverity,
+  getLockedActions as getConflictLockedActions,
+} from "@/game/conflictSystem";
+import { getLockedActions as getBehaviorLockedActions } from "@/game/lockIn";
 import { getPressureDistortionNote } from "@/game/pressureDistortion";
 
 function scoreAction(
@@ -27,20 +31,15 @@ function scoreAction(
   return (score * disagreementMultiplier * weightedSupport).toFixed(2);
 }
 
-function explainAction(action: string, game: any) {
+function explainAction(action: string, game: any, isBehaviorLocked: boolean, isConflictLocked: boolean) {
+  if (isBehaviorLocked) return "Behavior lock: repeated pattern is constraining this option";
+  if (isConflictLocked) return "Conflict lock";
+
   const signal = game.signalClarity ?? game.signal ?? 0;
 
-  if (game.drift > 50 && action === "STABILIZE") {
-    return "High drift favors stabilization";
-  }
-
-  if (game.load > 80 && action === "REROUTE") {
-    return "High load favors reroute";
-  }
-
-  if (signal < 55 && action === "OBSERVE") {
-    return "Low signal favors observation";
-  }
+  if (game.drift > 50 && action === "STABILIZE") return "High drift favors stabilization";
+  if (game.load > 80 && action === "REROUTE") return "High load favors reroute";
+  if (signal < 55 && action === "OBSERVE") return "Low signal favors observation";
 
   return "No strong signal advantage";
 }
@@ -62,7 +61,10 @@ export function ActionBar({
     .filter(Boolean);
 
   const conflictSeverity = getConflictSeverity(suggestions);
-  const locked = getLockedActions(suggestions, conflictSeverity);
+  const conflictLocked = getConflictLockedActions(suggestions, conflictSeverity);
+  const behaviorLocked = getBehaviorLockedActions(game);
+  const locked = Array.from(new Set([...conflictLocked, ...behaviorLocked]));
+
   const disagreementMultiplier = getDisagreementPenalty(suggestions);
   const weightedSupport = buildWeightedSupport(game);
 
@@ -77,6 +79,8 @@ export function ActionBar({
     <section>
       <div className="uc-action-grid">
         {actions.map((action) => {
+          const isConflictLocked = conflictLocked.includes(action);
+          const isBehaviorLocked = behaviorLocked.includes(action);
           const isLocked = locked.includes(action);
           const isDisabled = disabled || isLocked;
 
@@ -98,10 +102,8 @@ export function ActionBar({
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
               </div>
               <div className="uc-action-reason">
-                {isLocked
-                  ? "Conflict lock"
-                  : getPressureDistortionNote(action, game) ||
-                    explainAction(action, game)}
+                {getPressureDistortionNote(action, game) ||
+                  explainAction(action, game, isBehaviorLocked, isConflictLocked)}
               </div>
             </button>
           );
