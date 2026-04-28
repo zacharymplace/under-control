@@ -2,11 +2,12 @@
 
 import { ActionBar } from "./ActionBar";
 import { getAlignment } from "@/game/alignment";
+import { getDefaultPersonas } from "@/game/defaultPersonas";
 
 export function GameScreen({ game }: { game: any }) {
   if (!game) return null;
 
-  const advisors = game.personas?.length ? game.personas : game.messages || [];
+  const advisors = game.personas?.length ? game.personas : getDefaultPersonas(game);
   const alignment = getAlignment({ ...game, personas: advisors });
 
   return (
