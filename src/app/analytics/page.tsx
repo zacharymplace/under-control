@@ -1,3 +1,4 @@
+import { classifyPlayerArchetype } from "@/game/playerArchetype";
 async function getRuns() {
   const res = await fetch("http://localhost:3000/api/analytics", {
     cache: "no-store",
@@ -34,6 +35,7 @@ export default async function AnalyticsPage() {
 
   const actionCounts = countActions(runs);
   const trustAverages = averageTrust(runs);
+  const archetype = classifyPlayerArchetype(runs);
 
   return (
     <main className="min-h-screen bg-[#0B0D10] px-5 py-6 text-[#E6EAF0]">
@@ -78,6 +80,16 @@ export default async function AnalyticsPage() {
             <TrustRow label="MARA" value={trustAverages.MARA} />
             <TrustRow label="ISHAAN" value={trustAverages.ISHAAN} />
           </Panel>
+        </section>
+
+        <section className="mb-6 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+          <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
+            Player Archetype
+          </div>
+          <div className="mt-2 text-xl font-bold">{archetype}</div>
+          <div className="mt-1 text-sm text-[#8A93A3]">
+            Derived from action distribution across runs
+          </div>
         </section>
 
         <section className="space-y-2">
