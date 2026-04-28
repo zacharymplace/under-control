@@ -12,7 +12,7 @@ export function StickyHud({ game }: { game: any }) {
         ? statusCard.getBoundingClientRect().bottom + window.scrollY
         : 360;
 
-      setVisible(window.scrollY > threshold - 40);
+      setVisible(window.scrollY > threshold + 12);
     }
 
     onScroll();
