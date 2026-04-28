@@ -20,6 +20,7 @@ import { findCriticalTurn } from "@/game/criticalTurn";
 import { buildPersonaReflection } from "@/game/personaReflection";
 import { getActionHints } from "@/game/decisionHints";
 import { getPersonaRecommendations } from "@/game/personaEngine";
+import { analyzeDisagreement } from "@/game/disagreement";
 
 export function GameScreen({ game, onAction, onReset, bestTurn, scenarioId, onScenarioChange }: any) {
   const [showGuide, setShowGuide] = useState(false);
@@ -29,6 +30,7 @@ export function GameScreen({ game, onAction, onReset, bestTurn, scenarioId, onSc
 
   const hints = terminal ? {} : getActionHints(game);
   const personas = getPersonaRecommendations(game);
+  const disagreement = analyzeDisagreement(personas);
 
   const point = terminal ? findPointOfNoReturn(game.actionLog || []) : null;
 const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
@@ -87,8 +89,20 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
           />
         )}
 
+                {!terminal && disagreement && (
+          <section className="mb-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-3">
+            <div className="mb-1 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
+              <span>{disagreement.label}</span>
+              <span>{disagreement.level}</span>
+            </div>
+            <div className="text-sm text-[#8A93A3]">
+              {disagreement.text}
+            </div>
+          </section>
+        )}
+
         <MessageFeed personas={personas} />
-        <ActionBar onAction={onAction} disabled={terminal} hints={hints} personas={personas} />
+        <ActionBar onAction={onAction} disabled={terminal} hints={hints} personas={personas} disagreement={disagreement} />
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
         <RunReport game={game} />
         <DecisionTimeline game={game} criticalTurn={criticalTurn} />
