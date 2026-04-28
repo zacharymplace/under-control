@@ -1,14 +1,15 @@
+"use client";
+
 type AdaptiveModifiers = {
   loadPressureMult: number;
   driftPenaltyMult: number;
   signalDecayMult: number;
 };
 
-"use client";
 
 import { useState, useEffect } from "react";
 import { GameScreen } from "@/ui/GameScreen";
-import { getScenario } from "@/game/scenarios";
+import { getScenario, type ScenarioId } from "@/game/scenarios";
 import { TUNING } from "@/game/tuning";
 import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telemetry";
 import { getPersonaRecommendations } from "@/game/personaEngine";
@@ -18,9 +19,10 @@ import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { logCompletedRun } from "@/game/runAnalytics";
 
-const ACTIVE_SCENARIO = getScenario("guided_first_run");
+function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
+  const ACTIVE_SCENARIO = getScenario(scenarioId);
 
-const initialGame = {
+  return {
   turn: 1,
   state: "STABLE",
   pressure: "RISING",
@@ -56,9 +58,11 @@ const initialGame = {
   ],
   feedback: null,
 };
+}
 
 export default function Page() {
-  const [game, setGame] = useState(initialGame);
+  const [scenarioId, setScenarioId] = useState<ScenarioId>("guided_first_run");
+  const [game, setGame] = useState(() => buildInitialGame("guided_first_run"));
   const [bestTurn, setBestTurn] = useState(1);
   const [adaptiveModifiers, setAdaptiveModifiers] = useState<AdaptiveModifiers | null>(null);
 
@@ -108,12 +112,23 @@ export default function Page() {
     loadProfile();
   }, []);
 
+  function handleScenarioChange(nextScenarioId: ScenarioId) {
+    setScenarioId(nextScenarioId);
+    setGame({
+      ...buildInitialGame(nextScenarioId),
+      trust: game.trust,
+      ignoredCounts: game.ignoredCounts,
+    });
+  }
+
   return (
     <GameScreen
       game={game}
       onAction={handleAction}
       onReset={handleReset}
       bestTurn={bestTurn}
+      scenarioId={scenarioId}
+      onScenarioChange={handleScenarioChange}
     />
   );
 }
@@ -145,19 +160,30 @@ function getPressure(game: any) {
 }
 
 function applyPassiveDecay(game: any) {
-  const mods = game.adaptiveModifiers || {
-    loadPressureMult: 1,
-    driftPenaltyMult: 1,
-    signalDecayMult: 1,
-  };
   const m = phaseMult(game.turn);
 
-  return {
-    ...game,
-    load: clamp(game.load + Math.round((TUNING.BASE_LOAD * m * loadAcceleration * mods.loadAcceleration * mods.loadPressureMult))),
-    drift: clamp(game.drift + Math.round((TUNING.BASE_DRIFT * m * driftMultiplier * driftMultiplier * mods.driftPenaltyMult))),
-    integrity: clamp(game.integrity - Math.round((TUNING.BASE_INTEGRITY_DECAY * m * mods.signalDecayMult))),
-  };
+  const mods = game.scenarioModifiers || {};
+  const loadAcceleration = mods.loadAcceleration ?? 1;
+  const driftMultiplier = mods.driftMultiplier ?? 1;
+
+  const next = { ...game };
+
+  next.load = clamp(
+    next.load +
+      Math.round(TUNING.BASE_LOAD * m * loadAcceleration)
+  );
+
+  next.drift = clamp(
+    next.drift +
+      Math.round(TUNING.BASE_DRIFT * m * driftMultiplier)
+  );
+
+  next.integrity = clamp(
+    next.integrity -
+      Math.round(TUNING.BASE_INTEGRITY_DECAY * m)
+  );
+
+  return next;
 }
 
 function finalizeRun(game: any) {

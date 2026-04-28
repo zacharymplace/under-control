@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { ActionBar } from "./ActionBar";
 import { FeedbackPanel } from "./FeedbackPanel";
@@ -8,6 +10,7 @@ import { RunReport } from "./RunReport";
 import { DecisionTimeline } from "./DecisionTimeline";
 import { QuickGuide } from "./QuickGuide";
 import { TutorialPanel } from "./TutorialPanel";
+import { ModeSelector } from "./ModeSelector";
 import { ActionHint } from "./ActionHint";
 import { analyzeFailure } from "@/game/failureAnalysis";
 import { detectFailurePattern } from "@/game/failurePatterns";
@@ -17,7 +20,7 @@ import { buildPersonaReflection } from "@/game/personaReflection";
 import { getActionHints } from "@/game/decisionHints";
 import { getPersonaRecommendations } from "@/game/personaEngine";
 
-export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
+export function GameScreen({ game, onAction, onReset, bestTurn, scenarioId, onScenarioChange }: any) {
   const [showGuide, setShowGuide] = useState(false);
 
   const terminal = game.state === "FAILED" || game.state === "STABILIZED";
@@ -60,6 +63,12 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
         </div>
 
         {showGuide && <QuickGuide />}
+
+        <ModeSelector
+          scenarioId={scenarioId}
+          onScenarioChange={onScenarioChange}
+          disabled={!terminal && game.turn > 1}
+        />
 
         <TrustBar trust={game.trust || {}} />
 
