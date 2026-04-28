@@ -1,4 +1,5 @@
 import { formatDelta, getTurnRisk, getTurnStory } from "@/game/timelineStory";
+import { getPhase } from "@/game/timelinePhase";
 
 export function DecisionTimeline({ game, criticalTurn }: any) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return null;
@@ -11,6 +12,8 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
     : null;
 
   const finalEntry = log[log.length - 1];
+
+  let lastPhase: string | null = null;
 
   return (
     <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
@@ -45,7 +48,32 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
         {log.map((entry: any, i: number) => {
           const story = getTurnStory(entry);
           const risk = getTurnRisk(entry);
+          const phase = getPhase(entry);
+          const showPhaseHeader = phase !== lastPhase;
+          lastPhase = phase;
+
           const isCritical = entry.turn === criticalTurn;
+
+          const phaseLabel =
+            phase === "STABLE"
+              ? "Stable Phase"
+              : phase === "ESCALATING"
+              ? "Escalation"
+              : "Critical State";
+
+          const phaseColor =
+            phase === "STABLE"
+              ? "text-[#4FAF7B]"
+              : phase === "ESCALATING"
+              ? "text-[#D4A84F]"
+              : "text-[#C75C5C]";
+
+          const phaseBg =
+            phase === "STABLE"
+              ? "bg-[#0B0F0C]"
+              : phase === "ESCALATING"
+              ? "bg-[#0F0D08]"
+              : "bg-[#120909]";
 
           const loadDelta = entry.after.load - entry.before.load;
           const driftDelta = entry.after.drift - entry.before.drift;
@@ -54,73 +82,87 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
             entry.after.signalClarity - entry.before.signalClarity;
 
           return (
-            <details
-              key={i}
-              open={isCritical || i === log.length - 1}
-              className={`group relative rounded-lg border ${
-                isCritical
-                  ? "border-[#D4A84F] bg-[#18140B]"
-                  : "border-[#2A313A] bg-[#0B0D10]"
-              }`}
-            >
-              <summary className="cursor-pointer list-none p-3">
-                <div
-                  className={`absolute -left-[23px] top-4 h-3 w-3 rounded-full border ${
-                    isCritical
-                      ? "border-[#D4A84F] bg-[#D4A84F]"
-                      : "border-[#2A313A] bg-[#12161C]"
-                  }`}
-                />
-
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
-                      Turn {entry.turn}
-                      {isCritical ? " — Turning Point" : ""}
-                    </div>
-                    <div className="mt-1 font-bold text-[#E6EAF0]">
-                      {story.label}
-                    </div>
-                    <p className="mt-1 text-xs text-[#8A93A3]">
-                      {story.summary}
-                    </p>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
-                      {entry.action}
-                    </div>
-                    <RiskBadge risk={risk} />
-                  </div>
+            <div key={i}>
+              {showPhaseHeader && (
+                <div className={`mt-3 text-[10px] uppercase tracking-widest ${phaseColor}`}>
+                  {phaseLabel}
                 </div>
-              </summary>
+              )}
 
-              <div className="px-3 pb-3">
-                <div className="grid grid-cols-4 gap-2 text-xs">
-                  <Delta label="Load" delta={loadDelta} after={entry.after.load} />
-                  <Delta label="Drift" delta={driftDelta} after={entry.after.drift} />
-                  <Delta
-                    label="Integrity"
-                    delta={integrityDelta}
-                    after={entry.after.integrity}
-                    invert
+              <details
+                open={isCritical || i >= log.length - 2}
+                className={`group relative rounded-lg border ${
+                  isCritical
+                    ? "border-[#D4A84F] bg-[#18140B]"
+                    : `border-[#2A313A] ${phaseBg}`
+                }`}
+              >
+                <summary className="cursor-pointer list-none p-3">
+                  <div
+                    className={`absolute -left-[23px] top-4 h-3 w-3 rounded-full border ${
+                      isCritical
+                        ? "border-[#D4A84F] bg-[#D4A84F]"
+                        : "border-[#2A313A] bg-[#12161C]"
+                    }`}
                   />
-                  <Delta
-                    label="Signal"
-                    delta={signalDelta}
-                    after={entry.after.signalClarity}
-                    invert
-                  />
-                </div>
 
-                {isCritical && (
-                  <div className="mt-3 rounded border border-[#4A3918] bg-[#120F08] p-2 text-xs text-[#E6A15A]">
-                    Key inflection point: recovery became materially harder after
-                    this decision.
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+                        Turn {entry.turn}
+                        {isCritical ? " — Turning Point" : ""}
+                        {phase === "CRITICAL" && (
+                          <span className="ml-2 text-[#C75C5C]">
+                            System Under Strain
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-1 font-bold text-[#E6EAF0]">
+                        {story.label}
+                      </div>
+
+                      <p className="mt-1 text-xs text-[#8A93A3]">
+                        {story.summary}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+                        {entry.action}
+                      </div>
+                      <RiskBadge risk={risk} />
+                    </div>
                   </div>
-                )}
-              </div>
-            </details>
+                </summary>
+
+                <div className="px-3 pb-3">
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    <Delta label="Load" delta={loadDelta} after={entry.after.load} />
+                    <Delta label="Drift" delta={driftDelta} after={entry.after.drift} />
+                    <Delta
+                      label="Integrity"
+                      delta={integrityDelta}
+                      after={entry.after.integrity}
+                      invert
+                    />
+                    <Delta
+                      label="Signal"
+                      delta={signalDelta}
+                      after={entry.after.signalClarity}
+                      invert
+                    />
+                  </div>
+
+                  {isCritical && (
+                    <div className="mt-3 rounded border border-[#4A3918] bg-[#120F08] p-2 text-xs text-[#E6A15A]">
+                      Key inflection point: recovery became materially harder after
+                      this decision.
+                    </div>
+                  )}
+                </div>
+              </details>
+            </div>
           );
         })}
       </div>
