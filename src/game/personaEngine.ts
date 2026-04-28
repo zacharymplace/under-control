@@ -1,3 +1,4 @@
+import { applyMoodToText, derivePersonaMood, moodInfluence } from "./personaMood";
 function deriveStrategy(trust: number, ignored: number) {
   if (trust <= -2) return "DEFENSIVE";
   if (ignored >= 4) return "ASSERTIVE";
@@ -62,6 +63,11 @@ export function getPersonaRecommendations(game: any) {
     const t = trust[p.name] ?? 0;
     const i = ignored[p.name] ?? 0;
     const bias = scenarioBias(game, p.name);
+    const mood = derivePersonaMood({
+      trust: t,
+      ignored: i,
+      game,
+    });
 
     const strategy = deriveStrategy(t, i);
     const action = p.decide(game, strategy);
@@ -76,17 +82,11 @@ export function getPersonaRecommendations(game: any) {
       text += " This mode fits my domain.";
     }
 
-    if (strategy === "DEFENSIVE") {
-      text += " I'm adjusting to reduce risk.";
-    }
-
-    if (strategy === "ASSERTIVE") {
-      text += " I'm pushing harder—this is being ignored.";
-    }
-
-    if (t <= -2) {
-      text += " My recent calls have been unreliable.";
-    }
+    text = applyMoodToText({
+      baseText: text,
+      mood,
+      action,
+    });
 
     return {
       name: p.name,

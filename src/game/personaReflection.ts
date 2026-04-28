@@ -12,6 +12,7 @@ export function buildPersonaReflection({
   return personas.map((p) => {
     const t = trust[p.name] ?? 0;
     const ignored = ignoredCounts[p.name] ?? 0;
+    const mood = p.mood || "CALM";
 
     let summary = "";
 
@@ -27,11 +28,24 @@ export function buildPersonaReflection({
       summary += " Frequently ignored.";
     }
 
+    if (mood === "ASSERTIVE") {
+      summary += " Became more forceful due to being deprioritized.";
+    }
+
+    if (mood === "DEFENSIVE") {
+      summary += " Became more cautious after poor trust outcomes.";
+    }
+
+    if (mood === "ERRATIC") {
+      summary += " Became less reliable under high drift.";
+    }
+
     return {
       name: p.name,
       text: `${p.name} ${summary}`,
       trust: t,
       ignored,
+      mood,
     };
   });
 }

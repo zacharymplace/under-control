@@ -10,7 +10,7 @@ export function MessageFeed({ personas }: any) {
             <span>
               {p.name} — {p.role}
             </span>
-            <span>{p.strategy}</span>
+            <span>{p.mood ? `${p.mood} / ${p.strategy}` : p.strategy}</span>
           </div>
 
           <div className="text-sm">{p.text}</div>

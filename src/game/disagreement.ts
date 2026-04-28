@@ -20,7 +20,8 @@ export function analyzeDisagreement(personas: any[]) {
   personas.forEach((p) => {
     const weight =
       confidenceWeight(p.confidence) *
-      trustWeight(p.trust ?? 0);
+      trustWeight(p.trust ?? 0) *
+      (p.influence ?? 1);
 
     scores[p.action] += weight;
   });
