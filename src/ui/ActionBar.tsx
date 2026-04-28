@@ -1,5 +1,6 @@
 "use client";
 
+import { explainScore } from "@/game/explainScore";
 import { getDisagreementPenalty } from "@/game/disagreementScore";
 import {
   buildWeightedSupport,
@@ -70,6 +71,10 @@ export function ActionBar({
             </div>
             <div className="uc-action-score">
               support: {(weightedSupport[action] ?? 0).toFixed(2)}
+            </div>
+          
+            <div className="uc-action-reason text-xs opacity-50 mt-1">
+              {explainScore(action, game)[0]}
             </div>
           </button>
         ))}
