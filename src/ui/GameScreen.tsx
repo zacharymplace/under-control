@@ -4,7 +4,13 @@ import { ActionBar } from "./ActionBar";
 import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 
-export function GameScreen({ game }: { game: any }) {
+export function GameScreen({
+  game,
+  onAction,
+}: {
+  game: any;
+  onAction?: (action: string) => void;
+}) {
   if (!game) return null;
 
   const advisors = game.personas?.length ? game.personas : getDefaultPersonas(game);
@@ -59,7 +65,7 @@ export function GameScreen({ game }: { game: any }) {
           })}
         </section>
 
-        <ActionBar game={{ ...game, personas: advisors }} />
+        <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} />
       </div>
     </main>
   );

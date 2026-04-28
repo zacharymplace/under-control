@@ -113,15 +113,11 @@ export default function Page() {
   }, []);
 
   function handleScenarioChange(nextScenarioId: ScenarioId) {
-    setScenarioId(nextScenarioId);
-    setGame({
-      ...buildInitialGame(nextScenarioId),
-      trust: game.trust,
-      ignoredCounts: game.ignoredCounts,
-    });
-  }
+  setScenarioId(nextScenarioId);
+  setGame(buildInitialGame(nextScenarioId));
+}
 
-  return (
+return (
     <GameScreen
       game={game}
       onAction={handleAction}
