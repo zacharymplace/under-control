@@ -27,6 +27,7 @@ import { buildCriticalDecision } from "@/game/criticalDecision";
 import { getPrimaryFailureDriver } from "@/game/failureDriver";
 import { buildCounterfactualReplay } from "@/game/counterfactual";
 import { buildRunArc } from "@/game/runArc";
+import { buildPlayerTakeaway } from "@/game/playerTakeaway";
 import { buildPersonaReflection } from "@/game/personaReflection";
 import { buildPersonaTerminalComments } from "@/game/personaTerminal";
 import { detectMomentum } from "@/game/momentum";
@@ -48,7 +49,8 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
   const failureDriver = terminal ? getPrimaryFailureDriver(game) : null;
   const counterfactual = terminal ? buildCounterfactualReplay(game, inflection) : null;
-  const runArc = terminal ? buildRunArc(game, failureDriver) : null;
+  const runArc =
+ terminal ? buildRunArc(game, failureDriver) : null;
   const verdict = null;
   const momentum = terminal ? detectMomentum(game.log || []) : null;
 

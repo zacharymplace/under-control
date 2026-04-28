@@ -16,7 +16,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
 
   let lastPhase: string | null = null;
 
-  return (
+return (
     <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
@@ -82,7 +82,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
           const signalDelta =
             entry.after.signalClarity - entry.before.signalClarity;
 
-          return (
+        return (
             <div key={i}>
               {showPhaseHeader && (
                 <div
@@ -93,7 +93,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
               )}
 
               <details
-                open={isCritical || i >= log.length - 2}
+                open={isCritical || risk !== "CONTROLLED" || i === log.length - 1}
                 className={`group relative rounded-lg border ${
                   isCritical
                     ? "border-[#D4A84F] bg-gradient-to-r from-[#3A120E] via-[#2A150C] to-[#18140B] shadow-[0_0_24px_rgba(255,80,80,0.18)]"
@@ -186,7 +186,7 @@ function dominantAction(log: any[]) {
 }
 
 function SummaryCard({ label, value, detail }: any) {
-  return (
+return (
     <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
       <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
         {label}
@@ -205,7 +205,7 @@ function RiskBadge({ risk }: any) {
       ? "border-[#5F4A1F] text-[#D4A84F]"
       : "border-[#6B2E2E] text-[#C75C5C]";
 
-  return (
+return (
     <div className={`mt-1 rounded border px-2 py-1 text-[10px] ${cls}`}>
       {risk}
     </div>
@@ -222,7 +222,7 @@ function DeltaLine({ label, delta, invert = false }: any) {
     ? "text-[#D4A84F]"
     : "text-[#8A93A3]";
 
-  return (
+return (
     <span>
       {label} <span className={cls}>{formatDelta(delta)}</span>
     </span>
