@@ -91,7 +91,7 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
             <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Failure Analysis
+              System Breakdown
             </div>
             <div className="text-lg font-bold">{failure.label}</div>
             <div className="mt-1 text-sm text-[#8A93A3]">{failure.insight}</div>
@@ -104,7 +104,7 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
         {pattern && (
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
             <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Pattern Analysis
+              Decision Pattern
             </div>
             <div className="text-lg font-bold">{pattern.title}</div>
             <div className="mt-1 text-sm text-[#8A93A3]">{pattern.detail}</div>
@@ -114,23 +114,12 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
           </section>
         )}
 
-        {pattern && (
-          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
-            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Pattern Analysis
-            </div>
-            <div className="text-lg font-bold">{pattern.title}</div>
-            <div className="mt-1 text-sm text-[#8A93A3]">{pattern.detail}</div>
-            <div className="mt-2 text-sm text-[#E6EAF0]">
-              Recommendation: {pattern.recommendation}
-            </div>
-          </section>
-        )}
+        
 
         {terminal && reflection.length > 0 && (
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
             <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
-              Run Reflection
+              Team Debrief
             </div>
             <div className="space-y-1">
               {reflection.map((r: any) => (
