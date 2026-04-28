@@ -2,6 +2,7 @@
 
 import { ActionBar } from "./ActionBar";
 import { ReferencePanel } from "./ReferencePanel";
+import { RunReplay } from "./RunReplay";
 import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
@@ -133,6 +134,8 @@ advisors = applyPersonaBehavior(advisors, game);
             ))}
           </section>
         )}
+
+        <RunReplay game={{ ...game, personas: advisors }} />
 
         <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
 
