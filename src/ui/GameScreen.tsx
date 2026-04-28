@@ -9,6 +9,7 @@ import { DecisionTimeline } from "./DecisionTimeline";
 import { QuickGuide } from "./QuickGuide";
 import { ActionHint } from "./ActionHint";
 import { analyzeFailure } from "@/game/failureAnalysis";
+import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
 import { buildPersonaReflection } from "@/game/personaReflection";
 import { getActionHints } from "@/game/decisionHints";
@@ -25,6 +26,7 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
 
   const point = terminal ? findPointOfNoReturn(game.actionLog || []) : null;
   const failure = terminal ? analyzeFailure(game.actionLog || []) : null;
+const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
   const reflection = terminal
     ? buildPersonaReflection({
@@ -85,6 +87,8 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
         )}
 
         {failure && (
+
+
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
             <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
               Failure Analysis
@@ -93,6 +97,32 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
             <div className="mt-1 text-sm text-[#8A93A3]">{failure.insight}</div>
             <div className="mt-2 text-sm text-[#E6EAF0]">
               Recommendation: {failure.recommendation}
+            </div>
+          </section>
+        )}
+
+        {pattern && (
+          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+              Pattern Analysis
+            </div>
+            <div className="text-lg font-bold">{pattern.title}</div>
+            <div className="mt-1 text-sm text-[#8A93A3]">{pattern.detail}</div>
+            <div className="mt-2 text-sm text-[#E6EAF0]">
+              Recommendation: {pattern.recommendation}
+            </div>
+          </section>
+        )}
+
+        {pattern && (
+          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+              Pattern Analysis
+            </div>
+            <div className="text-lg font-bold">{pattern.title}</div>
+            <div className="mt-1 text-sm text-[#8A93A3]">{pattern.detail}</div>
+            <div className="mt-2 text-sm text-[#E6EAF0]">
+              Recommendation: {pattern.recommendation}
             </div>
           </section>
         )}
