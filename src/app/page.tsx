@@ -1,4 +1,5 @@
 "use client";
+import type { Game } from "@/game/types";
 
 type AdaptiveModifiers = {
   loadPressureMult: number;
@@ -47,7 +48,7 @@ function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
   signalClarity: ACTIVE_SCENARIO.initialState.signalClarity,
   drift: ACTIVE_SCENARIO.initialState.drift,
   driftVisible: ACTIVE_SCENARIO.initialState.driftVisible,
-  actionHistory: [],
+  actionHistory: [] as string[],
   actionLog: [],
   runInsight: null,
   telemetry: initTelemetry(),
@@ -71,7 +72,7 @@ function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
 
 export default function Page() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>("guided_first_run");
-  const [game, setGame] = useState(() => buildInitialGame("guided_first_run"));
+  const [game, setGame] = useState<Game>(() => buildInitialGame("guided_first_run"));
   const [bestTurn, setBestTurn] = useState(1);
   const [adaptiveModifiers, setAdaptiveModifiers] = useState<AdaptiveModifiers | null>(null);
 
@@ -96,12 +97,12 @@ export default function Page() {
       const reactions = getAdvisorReactions(action, judgment);
 
       const advisorsForMemory = applyPersonaBehavior(
-        (game as any).personas?.length ? (game as any).personas : getDefaultPersonas(game),
+        game.personas?.length ? game.personas : getDefaultPersonas(game),
         game
       );
 
       const advisorMemory = updateAdvisorMemory({
-        memory: (game as any).advisorMemory,
+        memory: game.advisorMemory,
         advisors: advisorsForMemory,
         action,
         judgment,
@@ -116,7 +117,7 @@ export default function Page() {
       ...buildInitialGame(scenarioId),
       trust: initialTrust,
       ignoredCounts: initialIgnoredCounts,
-      actionHistory: [],
+      actionHistory: [] as string[],
     });
   }
 
@@ -142,7 +143,7 @@ export default function Page() {
 
   function handleScenarioChange(nextScenarioId: ScenarioId) {
   setScenarioId(nextScenarioId);
-  setGame({ ...buildInitialGame(nextScenarioId), advisorMemory: createInitialAdvisorMemory() } as any);
+  setGame({ ...(buildInitialGame(nextScenarioId) as Game), advisorMemory: createInitialAdvisorMemory() });
 }
 
 return (
@@ -298,7 +299,7 @@ function applyDemoAction(game: any, action: string) {
   next = {
     ...next,
     turn: game.turn + 1,
-    actionHistory: [],
+    actionHistory: [] as string[],
   };
 
   if (action === "REROUTE") {
