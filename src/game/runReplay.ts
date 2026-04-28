@@ -1,6 +1,7 @@
 import { getTrajectoryInsight } from "./trajectoryRisk";
 import { getNeedNeglectInsight } from "./needNeglect";
 import { getCommitmentInsight } from "./commitment";
+import { getPointOfNoReturn, getMissedCommitmentWindow } from "./irreversibility";
 
 export function buildRunReplay(game: any) {
   const log = game.actionLog || [];
@@ -107,6 +108,16 @@ export function buildFailureExplanation(game: any) {
   const commitmentInsight = getCommitmentInsight(game);
   if (commitmentInsight) {
     reasons.push(commitmentInsight);
+  }
+
+  const missedWindow = getMissedCommitmentWindow(game);
+  if (missedWindow) {
+    reasons.push(missedWindow);
+  }
+
+  const pointOfNoReturn = getPointOfNoReturn(game);
+  if (pointOfNoReturn) {
+    reasons.push(pointOfNoReturn);
   }
 
   if (!reasons.length) {

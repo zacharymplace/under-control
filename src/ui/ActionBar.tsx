@@ -15,6 +15,7 @@ import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryR
 import { getDominantNeedLabel } from "@/game/dominantNeed";
 import { getNeedNeglectPenalty, getNeedNeglectInsight } from "@/game/needNeglect";
 import { getCommitmentScore, getCommitmentLabel } from "@/game/commitment";
+import { getLateCorrectionPenalty, getPointOfNoReturn, getMissedCommitmentWindow } from "@/game/irreversibility";
 
 function scoreAction(
   action: string,
@@ -34,6 +35,7 @@ function scoreAction(
   const trajectoryPenalty = getTrajectoryPenalty(game);
   const needNeglectPenalty = getNeedNeglectPenalty(game);
   const commitmentScore = getCommitmentScore(game);
+  const lateCorrectionPenalty = getLateCorrectionPenalty(action, game);
 
   return (
     score *
@@ -41,7 +43,8 @@ function scoreAction(
     weightedSupport *
     trajectoryPenalty *
     needNeglectPenalty *
-    commitmentScore
+    commitmentScore *
+    lateCorrectionPenalty
   ).toFixed(2);
 }
 
@@ -127,6 +130,12 @@ export function ActionBar({
       <div className="uc-footer-note">Alignment impact: {impact}</div>
       <div className="uc-footer-note">Trajectory: {getTrajectoryRiskLabel(game)}</div>
       <div className="uc-footer-note">Commitment: {getCommitmentLabel(game)}</div>
+      {getMissedCommitmentWindow(game) && (
+        <div className="uc-footer-note">Missed window: {getMissedCommitmentWindow(game)}</div>
+      )}
+      {getPointOfNoReturn(game) && (
+        <div className="uc-footer-note">Point of no return: {getPointOfNoReturn(game)}</div>
+      )}
       <div className="uc-footer-note">{getDominantNeedLabel(game)}</div>
       {getNeedNeglectInsight(game) && (
         <div className="uc-footer-note">Need neglect: {getNeedNeglectInsight(game)}</div>

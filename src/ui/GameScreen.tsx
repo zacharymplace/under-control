@@ -15,6 +15,7 @@ import { getAdvisorWeight, getAdvisorWeightLabel } from "@/game/advisorWeighting
 import { getAdvisorTrajectoryNote } from "@/game/advisorTrajectory";
 import { getAdvisorNeedEscalation } from "@/game/advisorNeedEscalation";
 import { getAdvisorCommitmentNote } from "@/game/advisorCommitment";
+import { getAdvisorEscalationPhase } from "@/game/advisorEscalationPhase";
 
 export function GameScreen({
   game,
@@ -98,6 +99,7 @@ advisors = applyPersonaBehavior(advisors, game);
             const trajectoryNote = getAdvisorTrajectoryNote(name, game);
             const needEscalationNote = getAdvisorNeedEscalation(name, game);
             const commitmentNote = getAdvisorCommitmentNote(name, game);
+            const escalationPhaseNote = getAdvisorEscalationPhase(name, game);
 
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
