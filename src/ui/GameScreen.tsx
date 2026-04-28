@@ -3,6 +3,7 @@
 import { ActionBar } from "./ActionBar";
 import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
+import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 
 export function GameScreen({
   game,
@@ -21,7 +22,8 @@ export function GameScreen({
 }) {
   if (!game) return null;
 
-  const advisors = game.personas?.length ? game.personas : getDefaultPersonas(game);
+  let advisors = game.personas?.length ? game.personas : getDefaultPersonas(game);
+advisors = applyPersonaBehavior(advisors, game);
   const alignment = getAlignment({ ...game, personas: advisors });
 
   return (
@@ -75,7 +77,12 @@ export function GameScreen({
                   {p.text || p.message || "No recommendation available."}
                 </div>
 
-                {p.reactionNote && (
+                {p.behaviorNote && (
+      <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 6 }}>
+        {p.behaviorNote}
+      </div>
+    )}
+    {p.reactionNote && (
                   <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 8 }}>
                     {p.reactionNote}
                   </div>
