@@ -14,6 +14,8 @@ import { ModeSelector } from "./ModeSelector";
 import { ActionHint } from "./ActionHint";
 import { analyzeFailure } from "@/game/failureAnalysis";
 import { findInflection } from "@/game/inflection";
+import { buildAlternativePath } from "@/game/alternative";
+import { buildCriticalDecision } from "@/game/criticalDecision";
 import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
 import { findCriticalTurn } from "@/game/criticalTurn";
@@ -39,13 +41,13 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
   const alternative = buildAlternativePath({
-  log: game.log || [],
-  inflectionTurn: game.inflectionTurn,
+  log: game.actionLog || [],
+  inflectionTurn: inflection?.turn ?? point?.turn ?? null,
 });
 
 const critical = buildCriticalDecision({
-  personas: game.personas || [],
-  turn: game.inflectionTurn,
+  personas,
+  turn: inflection?.turn ?? point?.turn ?? null,
 });
 
 const reflection = terminal
