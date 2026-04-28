@@ -13,6 +13,7 @@ import { buildPersonaConflict } from "@/game/personaConflict";
 import { getAdvisorMemoryNote } from "@/game/advisorMemory";
 import { getAdvisorWeight, getAdvisorWeightLabel } from "@/game/advisorWeighting";
 import { getAdvisorTrajectoryNote } from "@/game/advisorTrajectory";
+import { getAdvisorNeedEscalation } from "@/game/advisorNeedEscalation";
 
 export function GameScreen({
   game,
@@ -94,6 +95,7 @@ advisors = applyPersonaBehavior(advisors, game);
             const advisorWeight = getAdvisorWeight(name, game.advisorMemory);
             const advisorWeightLabel = getAdvisorWeightLabel(advisorWeight);
             const trajectoryNote = getAdvisorTrajectoryNote(name, game);
+            const needEscalationNote = getAdvisorNeedEscalation(name, game);
 
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
