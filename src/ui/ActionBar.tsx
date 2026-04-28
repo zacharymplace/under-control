@@ -5,6 +5,7 @@ import {
   buildWeightedSupport,
   getWeightedSupportMultiplier,
 } from "@/game/personaConfidence";
+import { getConflictSeverity, getLockedActions } from "@/game/conflictSystem";
 
 function scoreAction(
   action: string,
@@ -53,16 +54,14 @@ export function ActionBar({
   disabled?: boolean;
 }) {
   const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
-
-const suggestions = game.personas?.map((p: any) => p.suggests) || [];
-const conflictSeverity = getConflictSeverity(suggestions);
-const locked = getLockedActions(suggestions, conflictSeverity);
   const advisors = game.personas || [];
 
   const suggestions = advisors
     .map((a: any) => a.suggests || a.action || a.suggestion)
     .filter(Boolean);
 
+  const conflictSeverity = getConflictSeverity(suggestions);
+  const locked = getLockedActions(suggestions, conflictSeverity);
   const disagreementMultiplier = getDisagreementPenalty(suggestions);
   const weightedSupport = buildWeightedSupport(game);
 
@@ -76,31 +75,33 @@ const locked = getLockedActions(suggestions, conflictSeverity);
   return (
     <section>
       <div className="uc-action-grid">
-        {actions.map((action) => (
-          <button
-            key={action}
-            className="uc-action"
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-  if (!locked.includes(action)) onAction?.(action);
-}}
-          >
-            <div className="uc-action-name">{action}</div>
-            <div className="uc-action-score">
-              score: {scoreAction(
-                action,
-                game,
-                suggestions,
-                disagreementMultiplier
-              )}
-            </div>
-            <div className="uc-action-score">
-              support: {(weightedSupport[action] ?? 0).toFixed(2)}
-            </div>
-            <div className="uc-action-reason">{explainAction(action, game)}</div>
-          </button>
-        ))}
+        {actions.map((action) => {
+          const isLocked = locked.includes(action);
+          const isDisabled = disabled || isLocked;
+
+          return (
+            <button
+              key={action}
+              className={`uc-action ${isLocked ? "locked" : ""}`}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => {
+                if (!isDisabled) onAction?.(action);
+              }}
+            >
+              <div className="uc-action-name">{action}</div>
+              <div className="uc-action-score">
+                score: {scoreAction(action, game, suggestions, disagreementMultiplier)}
+              </div>
+              <div className="uc-action-score">
+                support: {(weightedSupport[action] ?? 0).toFixed(2)}
+              </div>
+              <div className="uc-action-reason">
+                {isLocked ? "Conflict lock" : explainAction(action, game)}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="uc-footer-note">Alignment impact: {impact}</div>
@@ -111,3 +112,5 @@ const locked = getLockedActions(suggestions, conflictSeverity);
     </section>
   );
 }
+
+export default ActionBar;
