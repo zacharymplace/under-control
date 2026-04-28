@@ -1,3 +1,4 @@
+import { applyProfileBias, getPersonaProfile, profileConfidenceAdjustment, profileVoicePrefix } from "./personaProfile";
 import { applyMoodToText, derivePersonaMood, moodInfluence } from "./personaMood";
 function deriveStrategy(trust: number, ignored: number) {
   if (trust <= -2) return "DEFENSIVE";
@@ -60,6 +61,7 @@ export function getPersonaRecommendations(game: any) {
   ];
 
   return base.map((p) => {
+    const profile = getPersonaProfile(p.name);
     const t = trust[p.name] ?? 0;
     const i = ignored[p.name] ?? 0;
     const bias = scenarioBias(game, p.name);
@@ -70,20 +72,23 @@ export function getPersonaRecommendations(game: any) {
     });
 
     const strategy = deriveStrategy(t, i);
-    const action = p.decide(game, strategy);
+    const rawAction = p.decide(game, strategy);
+    const action = applyProfileBias({ profile, action: rawAction, game });
 
     let text = p.text(game);
     let confidence = "NEUTRAL";
 
-    if (t + bias >= 3) confidence = "HIGH";
-    if (t <= -2) confidence = "LOW";
+    const confidenceAdjustment = profileConfidenceAdjustment(profile, game);
+
+    if (t + bias + confidenceAdjustment >= 3) confidence = "HIGH";
+    if (t + confidenceAdjustment <= -2) confidence = "LOW";
 
     if (bias > 0) {
       text += " This mode fits my domain.";
     }
 
     text = applyMoodToText({
-      baseText: text,
+      baseText: `${profileVoicePrefix(profile)} ${text}`,
       mood,
       action,
       name: p.name,
@@ -99,6 +104,9 @@ export function getPersonaRecommendations(game: any) {
       ignoredCount: i,
       strategy,
       confidence,
+      temperament: profile?.temperament,
+      riskBias: profile?.riskBias,
+      defaultActionBias: profile?.defaultActionBias,
       scenarioBias: bias,
     };
   });

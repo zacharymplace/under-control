@@ -17,7 +17,7 @@ export function MessageFeed({ personas }: any) {
           >
             <div className="mb-1 flex justify-between text-[10px] uppercase tracking-widest text-[#8A93A3]">
               <span>
-                {p.name} — {p.role}
+                {p.name} — {p.role} · {p.temperament || 'ADVISOR'}
               </span>
               <span className={trustClass}>
                 {p.mood ? `${p.mood} / ${p.strategy}` : p.strategy}

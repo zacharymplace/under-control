@@ -13,6 +13,7 @@ export function buildPersonaReflection({
     const t = trust[p.name] ?? 0;
     const ignored = ignoredCounts[p.name] ?? 0;
     const mood = p.mood || "CALM";
+    const temperament = p.temperament || "ADVISOR";
 
     let summary = "";
 
@@ -42,7 +43,7 @@ export function buildPersonaReflection({
 
     return {
       name: p.name,
-      text: `${p.name} ${summary}`,
+      text: `${p.name} (${temperament}) ${summary}`,
       trust: t,
       ignored,
       mood,
