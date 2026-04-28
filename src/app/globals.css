@@ -571,3 +571,30 @@ body {
   transform: translate(-50%, 0);
   pointer-events: auto;
 }
+
+
+.uc-sticky-hud.critical {
+  border-color: #7f1d1d;
+  box-shadow: 0 0 0 1px rgba(127,29,29,0.4), 0 8px 30px rgba(127,29,29,0.3);
+  animation: hudPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes hudPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.uc-action-card.locked {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+  border-color: #5a1a1a;
+}
+
+.uc-action-card.locked::after {
+  content: "CONFLICT LOCK";
+  font-size: 10px;
+  color: #f87171;
+  display: block;
+  margin-top: 4px;
+}

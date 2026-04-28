@@ -53,6 +53,10 @@ export function ActionBar({
   disabled?: boolean;
 }) {
   const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
+
+const suggestions = game.personas?.map((p: any) => p.suggests) || [];
+const conflictSeverity = getConflictSeverity(suggestions);
+const locked = getLockedActions(suggestions, conflictSeverity);
   const advisors = game.personas || [];
 
   const suggestions = advisors
@@ -78,7 +82,9 @@ export function ActionBar({
             className="uc-action"
             type="button"
             disabled={disabled}
-            onClick={() => onAction?.(action)}
+            onClick={() => {
+  if (!locked.includes(action)) onAction?.(action);
+}}
           >
             <div className="uc-action-name">{action}</div>
             <div className="uc-action-score">
