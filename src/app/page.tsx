@@ -46,7 +46,7 @@ function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
   adaptiveModifiers: null,
   analyticsLogged: false,
   trust: initialTrust,
-  ignoredCounts: initialIgnoredCounts,
+      ignoredCounts: initialIgnoredCounts,
   messages: [
     {
       id: "1",
@@ -86,9 +86,9 @@ export default function Page() {
   function handleReset() {
     setBestTurn((prev) => Math.max(prev, game.turn));
     setGame({
-      ...initialGame,
+      ...buildInitialGame(scenarioId),
       trust: initialTrust,
-  ignoredCounts: initialIgnoredCounts,
+      ignoredCounts: initialIgnoredCounts,
     });
   }
 

@@ -7,9 +7,17 @@ import { getDefaultPersonas } from "@/game/defaultPersonas";
 export function GameScreen({
   game,
   onAction,
+  onReset,
+  bestTurn,
+  scenarioId,
+  onScenarioChange,
 }: {
   game: any;
   onAction?: (action: string) => void;
+  onReset?: () => void;
+  bestTurn?: number;
+  scenarioId?: string;
+  onScenarioChange?: (scenarioId: any) => void;
 }) {
   if (!game) return null;
 
@@ -46,9 +54,17 @@ export function GameScreen({
             return (
               <article key={`${name}-${index}`} className="uc-advisor">
                 <div className="uc-advisor-row">
-                  <div className="uc-advisor-name">
-                    {name} — {role}
+                  <div>
+                    <div className="uc-advisor-name">
+                      {name} — {role}
+                    </div>
+                    {p.mood && (
+                      <div className="uc-suggests">
+                        Mood: {p.mood}
+                      </div>
+                    )}
                   </div>
+
                   <div className="uc-advisor-meta">
                     Trust: {game.trust?.[name] ?? 0} • Ignored:{" "}
                     {game.ignoredCounts?.[name] ?? 0}
@@ -58,6 +74,12 @@ export function GameScreen({
                 <div className="uc-advisor-text">
                   {p.text || p.message || "No recommendation available."}
                 </div>
+
+                {p.reactionNote && (
+                  <div className="uc-footer-note" style={{ textAlign: "left", marginTop: 8 }}>
+                    {p.reactionNote}
+                  </div>
+                )}
 
                 <div className="uc-suggests">Suggests: {suggestion}</div>
               </article>

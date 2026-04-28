@@ -1,31 +1,54 @@
+import { applyReactionTone, getPersonaReaction } from "./personaReaction";
+
 export function getDefaultPersonas(game: any) {
+  const signal = game.signalClarity ?? game.signal ?? 0;
+  const load = game.load ?? 0;
+  const integrity = game.integrity ?? 0;
+  const drift = game.drift ?? 0;
+
+  const elenaReaction = getPersonaReaction("ELENA", game);
+  const maraReaction = getPersonaReaction("MARA", game);
+  const ishaanReaction = getPersonaReaction("ISHAAN", game);
+
+  const elenaText =
+    signal < 55
+      ? "Confidence is low."
+      : "Signal is stable enough to act.";
+
+  const maraText =
+    integrity < 70
+      ? "Integrity is at risk."
+      : "Structure can still be protected.";
+
+  const ishaanText =
+    drift > 35 || load > 80
+      ? "Instability is increasing."
+      : "No immediate threat detected.";
+
   return [
     {
       name: "ELENA",
       role: "Signal",
-      text:
-        (game.signalClarity ?? game.signal ?? 0) < 55
-          ? "Confidence is low."
-          : "Signal is stable enough to act.",
-      suggests: (game.signalClarity ?? game.signal ?? 0) < 55 ? "OBSERVE" : "REROUTE",
+      mood: elenaReaction.mood,
+      reactionNote: elenaReaction.note,
+      text: applyReactionTone("ELENA", elenaText, elenaReaction),
+      suggests: signal < 55 ? "OBSERVE" : "REROUTE",
     },
     {
       name: "MARA",
       role: "Infrastructure",
-      text:
-        game.integrity < 70
-          ? "Integrity is at risk."
-          : "Structure can still be protected.",
-      suggests: game.integrity < 70 ? "STABILIZE" : "REROUTE",
+      mood: maraReaction.mood,
+      reactionNote: maraReaction.note,
+      text: applyReactionTone("MARA", maraText, maraReaction),
+      suggests: integrity < 70 ? "STABILIZE" : "REROUTE",
     },
     {
       name: "ISHAAN",
       role: "Risk",
-      text:
-        game.drift > 35 || game.load > 80
-          ? "Instability is increasing."
-          : "No immediate threat detected.",
-      suggests: game.drift > 35 || game.load > 80 ? "STABILIZE" : "OBSERVE",
+      mood: ishaanReaction.mood,
+      reactionNote: ishaanReaction.note,
+      text: applyReactionTone("ISHAAN", ishaanText, ishaanReaction),
+      suggests: drift > 35 || load > 80 ? "STABILIZE" : "OBSERVE",
     },
   ];
 }
