@@ -17,6 +17,7 @@ import { initialTrust, updateTrust } from "@/game/trust";
 import { initialIgnoredCounts, updateIgnoredCounts } from "@/game/personaMemory";
 import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
+import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
 import { logCompletedRun } from "@/game/runAnalytics";
 
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
