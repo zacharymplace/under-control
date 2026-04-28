@@ -93,7 +93,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                 open={isCritical || i >= log.length - 2}
                 className={`group relative rounded-lg border ${
                   isCritical
-                    ? "border-[#D4A84F] bg-[#18140B]"
+                    ? "border-[#D4A84F] bg-gradient-to-r from-[#2A150C] to-[#18140B] shadow-[0_0_18px_rgba(212,168,79,0.12)]"
                     : `border-[#2A313A] ${phaseBg}`
                 }`}
               >
@@ -118,12 +118,15 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                         )}
                       </div>
 
-                      <div className="mt-1 font-bold text-[#E6EAF0]">
+                      <div className={`mt-1 font-bold ${isCritical ? "text-lg text-[#F1D08A]" : "text-[#E6EAF0]"}`}>
                         {story.label}
                       </div>
 
                       <p className="mt-1 text-xs text-[#8A93A3]">
                         {story.summary}
+                      </p>
+                      <p className="mt-1 text-[10px] text-[#5A646F]">
+                        {story.causal}
                       </p>
                     </div>
 

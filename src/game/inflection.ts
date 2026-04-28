@@ -15,8 +15,9 @@ export function findInflection(log: any[]) {
         turn: curr.turn,
         severity: prev.after.load + driftJump,
         type: "Missed Stabilization",
-        insight: "High load combined with rising drift required stabilization.",
-        recommendation: "Stabilize before continuing the prior action pattern.",
+        insight:
+          "Load and drift crossed into an unstable range, but no stabilizing correction landed in time.",
+        recommendation: "Stabilize before continuing the current action pattern.",
       });
     }
 
@@ -25,7 +26,8 @@ export function findInflection(log: any[]) {
         turn: curr.turn,
         severity: loadJump * 2,
         type: "Premature Action",
-        insight: "The system was still unclear while pressure accelerated.",
+        insight:
+          "The system was still unclear while pressure accelerated.",
         recommendation: "Observe earlier, then act before load reaches capacity.",
       });
     }

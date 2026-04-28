@@ -10,8 +10,8 @@ export function getPrimaryFailureDriver(game: any) {
   if (final.load >= 100) {
     if (actions.filter((a: string) => a === "STABILIZE").length >= 2) {
       return {
-        title: "Load was allowed to saturate",
-        detail: "Repeated stabilization protected integrity but did not release enough capacity.",
+        title: "Load saturated faster than capacity could recover",
+        detail: "Repeated stabilization protected structure but allowed load to reach the failure threshold.",
       };
     }
 
@@ -23,8 +23,8 @@ export function getPrimaryFailureDriver(game: any) {
 
   if (final.drift >= 60) {
     return {
-      title: "Drift became unrecoverable",
-      detail: "Reroutes reduced load but compounded hidden instability.",
+      title: "Drift overwhelmed recovery capacity",
+      detail: "Repeated reroutes reduced load but accumulated instability faster than it could be corrected.",
     };
   }
 

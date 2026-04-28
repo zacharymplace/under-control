@@ -9,8 +9,12 @@ export function getTurnStory(entry: any) {
       label: "Information gained",
       summary:
         signalDelta > 0
-          ? "Signal improved, but pressure continued moving."
+          ? "Observation improved signal, but pressure continued rising."
           : "Observation failed to materially improve clarity.",
+      causal:
+        signalDelta > 0
+          ? "Clarity increased → response options improved, while load continued to climb."
+          : "No clear signal gain → delay created additional pressure.",
     };
   }
 
@@ -21,6 +25,10 @@ export function getTurnStory(entry: any) {
         driftDelta > 10
           ? "Load dropped, but instability sharply increased."
           : "Load dropped with manageable instability cost.",
+      causal:
+        driftDelta > 10
+          ? "Capacity improved → hidden instability spiked."
+          : "Capacity improved → drift stayed within manageable range.",
     };
   }
 
@@ -31,12 +39,17 @@ export function getTurnStory(entry: any) {
         loadDelta > 8
           ? "Integrity improved, but load pressure became more dangerous."
           : "Integrity improved without major load escalation.",
+      causal:
+        loadDelta > 8
+          ? "Structure improved → load pressure accumulated."
+          : "Structure improved → pressure remained contained.",
     };
   }
 
   return {
     label: "System changed",
     summary: "The system state shifted.",
+    causal: "Action taken → system state changed.",
   };
 }
 
