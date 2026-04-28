@@ -1,39 +1,184 @@
+import { formatDelta, getTurnRisk, getTurnStory } from "@/game/timelineStory";
+
 export function DecisionTimeline({ game, criticalTurn }: any) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return null;
 
   const log = game.actionLog || [];
-
   if (!log.length) return null;
+
+  const criticalEntry = criticalTurn
+    ? log.find((entry: any) => entry.turn === criticalTurn)
+    : null;
+
+  const finalEntry = log[log.length - 1];
 
   return (
     <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
-      <div className="mb-3 text-xs uppercase tracking-widest text-[#8A93A3]">
-        Decision Timeline
+      <div className="mb-4 flex items-center justify-between">
+        <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
+          Decision Timeline
+        </div>
+        <div className="text-[10px] uppercase tracking-widest text-[#5A646F]">
+          Incident replay
+        </div>
       </div>
 
-      <div className="space-y-2">
-        {log.map((entry: any, i: number) => (
-          <div
-            key={i}
-            className="rounded border border-[#2A313A] bg-[#0B0D10] p-3"
-          >
-            <div className="mb-1 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
-              <span>Turn {entry.turn}</span>
-              <span>{entry.action}</span>
-            </div>
+      <div className="mb-4 grid gap-2 text-xs md:grid-cols-3">
+        <SummaryCard
+          label="Critical Turn"
+          value={criticalTurn ? `Turn ${criticalTurn}` : "None"}
+          detail={criticalEntry ? criticalEntry.action : "No single inflection"}
+        />
+        <SummaryCard
+          label="Final Risk"
+          value={getTurnRisk(finalEntry)}
+          detail={`Load ${finalEntry.after.load} • Drift ${finalEntry.after.drift}`}
+        />
+        <SummaryCard
+          label="Run Shape"
+          value={dominantAction(log)}
+          detail={`${log.length} decisions logged`}
+        />
+      </div>
 
-            <div className="text-sm text-[#8A93A3]">
-              Load {entry.before.load} → {entry.after.load} • Drift{" "}
-              {entry.before.drift} → {entry.after.drift} • Integrity{" "}
-              {entry.before.integrity} → {entry.after.integrity}
-            </div>
+      <div className="relative space-y-2 border-l border-[#2A313A] pl-4">
+        {log.map((entry: any, i: number) => {
+          const story = getTurnStory(entry);
+          const risk = getTurnRisk(entry);
+          const isCritical = entry.turn === criticalTurn;
 
-            {entry.note && (
-              <div className="mt-1 text-xs text-[#E6EAF0]">{entry.note}</div>
-            )}
-          </div>
-        ))}
+          const loadDelta = entry.after.load - entry.before.load;
+          const driftDelta = entry.after.drift - entry.before.drift;
+          const integrityDelta = entry.after.integrity - entry.before.integrity;
+          const signalDelta =
+            entry.after.signalClarity - entry.before.signalClarity;
+
+          return (
+            <details
+              key={i}
+              open={isCritical || i === log.length - 1}
+              className={`group relative rounded-lg border ${
+                isCritical
+                  ? "border-[#D4A84F] bg-[#18140B]"
+                  : "border-[#2A313A] bg-[#0B0D10]"
+              }`}
+            >
+              <summary className="cursor-pointer list-none p-3">
+                <div
+                  className={`absolute -left-[23px] top-4 h-3 w-3 rounded-full border ${
+                    isCritical
+                      ? "border-[#D4A84F] bg-[#D4A84F]"
+                      : "border-[#2A313A] bg-[#12161C]"
+                  }`}
+                />
+
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+                      Turn {entry.turn}
+                      {isCritical ? " — Turning Point" : ""}
+                    </div>
+                    <div className="mt-1 font-bold text-[#E6EAF0]">
+                      {story.label}
+                    </div>
+                    <p className="mt-1 text-xs text-[#8A93A3]">
+                      {story.summary}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+                      {entry.action}
+                    </div>
+                    <RiskBadge risk={risk} />
+                  </div>
+                </div>
+              </summary>
+
+              <div className="px-3 pb-3">
+                <div className="grid grid-cols-4 gap-2 text-xs">
+                  <Delta label="Load" delta={loadDelta} after={entry.after.load} />
+                  <Delta label="Drift" delta={driftDelta} after={entry.after.drift} />
+                  <Delta
+                    label="Integrity"
+                    delta={integrityDelta}
+                    after={entry.after.integrity}
+                    invert
+                  />
+                  <Delta
+                    label="Signal"
+                    delta={signalDelta}
+                    after={entry.after.signalClarity}
+                    invert
+                  />
+                </div>
+
+                {isCritical && (
+                  <div className="mt-3 rounded border border-[#4A3918] bg-[#120F08] p-2 text-xs text-[#E6A15A]">
+                    Key inflection point: recovery became materially harder after
+                    this decision.
+                  </div>
+                )}
+              </div>
+            </details>
+          );
+        })}
       </div>
     </section>
+  );
+}
+
+function dominantAction(log: any[]) {
+  const counts: Record<string, number> = {};
+  log.forEach((entry) => {
+    counts[entry.action] = (counts[entry.action] || 0) + 1;
+  });
+
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Mixed";
+}
+
+function SummaryCard({ label, value, detail }: any) {
+  return (
+    <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
+      <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+        {label}
+      </div>
+      <div className="mt-1 font-bold text-[#E6EAF0]">{value}</div>
+      <div className="mt-1 text-[10px] text-[#5A646F]">{detail}</div>
+    </div>
+  );
+}
+
+function RiskBadge({ risk }: any) {
+  const cls =
+    risk === "CONTROLLED"
+      ? "border-[#2B5D45] text-[#4FAF7B]"
+      : risk === "WARNING"
+      ? "border-[#5F4A1F] text-[#D4A84F]"
+      : "border-[#6B2E2E] text-[#C75C5C]";
+
+  return (
+    <div className={`mt-1 rounded border px-2 py-1 text-[10px] ${cls}`}>
+      {risk}
+    </div>
+  );
+}
+
+function Delta({ label, delta, after, invert = false }: any) {
+  const isGood = invert ? delta > 0 : delta < 0;
+  const isBad = invert ? delta < 0 : delta > 0;
+
+  const deltaClass = isGood
+    ? "text-[#4FAF7B]"
+    : isBad
+    ? "text-[#D4A84F]"
+    : "text-[#8A93A3]";
+
+  return (
+    <div className="rounded border border-[#1F2630] bg-[#080A0D] px-2 py-2">
+      <div className="text-[10px] text-[#8A93A3]">{label}</div>
+      <div className="mt-1 font-bold text-[#E6EAF0]">{after}</div>
+      <div className={`text-[10px] ${deltaClass}`}>{formatDelta(delta)}</div>
+    </div>
   );
 }
