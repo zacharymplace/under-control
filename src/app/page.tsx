@@ -7,6 +7,7 @@ import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telem
 import { getPersonaRecommendations } from "@/game/personaEngine";
 import { initialTrust, updateTrust } from "@/game/trust";
 import { evaluateOutcome } from "@/game/outcome";
+import { logCompletedRun } from "@/game/runAnalytics";
 
 const initialGame = {
   turn: 1,
@@ -23,6 +24,7 @@ const initialGame = {
   runInsight: null,
   telemetry: initTelemetry(),
   summary: null,
+  analyticsLogged: false,
   trust: initialTrust,
   messages: [
     {
@@ -42,6 +44,15 @@ export default function Page() {
 
   function handleAction(action: string) {
     const next = applyDemoAction(game, action);
+
+    if (
+      (next.state === "FAILED" || next.state === "STABILIZED") &&
+      !next.analyticsLogged
+    ) {
+      next.analyticsLogged = true;
+      logCompletedRun(next);
+    }
+
     setTimeout(() => setGame(next), 100);
   }
 
