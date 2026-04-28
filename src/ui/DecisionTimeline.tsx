@@ -16,7 +16,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
   let lastPhase: string | null = null;
 
   return (
-    <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+    <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
           Decision Timeline
@@ -63,10 +63,10 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
 
           const phaseColor =
             phase === "STABLE"
-              ? "text-[#4FAF7B]"
+              ? "text-[#4FAF7B] border-[#4FAF7B]"
               : phase === "ESCALATING"
-              ? "text-[#D4A84F]"
-              : "text-[#C75C5C]";
+              ? "text-[#D4A84F] border-[#D4A84F]"
+              : "text-[#C75C5C] border-[#C75C5C]";
 
           const phaseBg =
             phase === "STABLE"
@@ -84,7 +84,9 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
           return (
             <div key={i}>
               {showPhaseHeader && (
-                <div className={`mt-3 text-[10px] uppercase tracking-widest ${phaseColor}`}>
+                <div
+                  className={`mt-4 border-l-4 pl-2 text-[10px] uppercase tracking-widest ${phaseColor}`}
+                >
                   {phaseLabel}
                 </div>
               )}
@@ -93,7 +95,7 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                 open={isCritical || i >= log.length - 2}
                 className={`group relative rounded-lg border ${
                   isCritical
-                    ? "border-[#D4A84F] bg-gradient-to-r from-[#2A150C] to-[#18140B] shadow-[0_0_18px_rgba(212,168,79,0.12)]"
+                    ? "border-[#D4A84F] bg-gradient-to-r from-[#3A120E] via-[#2A150C] to-[#18140B] shadow-[0_0_24px_rgba(255,80,80,0.18)]"
                     : `border-[#2A313A] ${phaseBg}`
                 }`}
               >
@@ -118,7 +120,13 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                         )}
                       </div>
 
-                      <div className={`mt-1 font-bold ${isCritical ? "text-lg text-[#F1D08A]" : "text-[#E6EAF0]"}`}>
+                      <div
+                        className={`mt-1 font-bold ${
+                          isCritical
+                            ? "text-lg text-[#F1D08A]"
+                            : "text-[#E6EAF0]"
+                        }`}
+                      >
                         {story.label}
                       </div>
 
@@ -140,21 +148,14 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
                 </summary>
 
                 <div className="px-3 pb-3">
-                  <div className="grid grid-cols-4 gap-2 text-xs">
-                    <Delta label="Load" delta={loadDelta} after={entry.after.load} />
-                    <Delta label="Drift" delta={driftDelta} after={entry.after.drift} />
-                    <Delta
-                      label="Integrity"
-                      delta={integrityDelta}
-                      after={entry.after.integrity}
-                      invert
-                    />
-                    <Delta
-                      label="Signal"
-                      delta={signalDelta}
-                      after={entry.after.signalClarity}
-                      invert
-                    />
+                  <div className="rounded border border-[#1F2630] bg-[#080A0D] px-3 py-2 text-[11px] text-[#8A93A3]">
+                    <DeltaLine label="Load" delta={loadDelta} />
+                    <span className="mx-2 text-[#2A313A]">•</span>
+                    <DeltaLine label="Drift" delta={driftDelta} />
+                    <span className="mx-2 text-[#2A313A]">•</span>
+                    <DeltaLine label="Integrity" delta={integrityDelta} invert />
+                    <span className="mx-2 text-[#2A313A]">•</span>
+                    <DeltaLine label="Signal" delta={signalDelta} invert />
                   </div>
 
                   {isCritical && (
@@ -209,21 +210,19 @@ function RiskBadge({ risk }: any) {
   );
 }
 
-function Delta({ label, delta, after, invert = false }: any) {
+function DeltaLine({ label, delta, invert = false }: any) {
   const isGood = invert ? delta > 0 : delta < 0;
   const isBad = invert ? delta < 0 : delta > 0;
 
-  const deltaClass = isGood
+  const cls = isGood
     ? "text-[#4FAF7B]"
     : isBad
     ? "text-[#D4A84F]"
     : "text-[#8A93A3]";
 
   return (
-    <div className="rounded border border-[#1F2630] bg-[#080A0D] px-2 py-2">
-      <div className="text-[10px] text-[#8A93A3]">{label}</div>
-      <div className="mt-1 font-bold text-[#E6EAF0]">{after}</div>
-      <div className={`text-[10px] ${deltaClass}`}>{formatDelta(delta)}</div>
-    </div>
+    <span>
+      {label} <span className={cls}>{formatDelta(delta)}</span>
+    </span>
   );
 }

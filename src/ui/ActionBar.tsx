@@ -12,7 +12,7 @@ export function ActionBar({ onAction, disabled, hints, disagreement }: any) {
     <section className="mb-4">
       <div className="mb-2 flex items-center justify-between rounded border border-[#2A313A] bg-[#12161C] px-3 py-2">
         <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
-          Team Alignment
+          Team Alignment (decision tension) (decision tension)
         </div>
         <div
           className={`text-[10px] uppercase tracking-widest ${

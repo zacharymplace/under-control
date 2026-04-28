@@ -17,6 +17,7 @@ import { findInflection } from "@/game/inflection";
 import { buildAlternativePath } from "@/game/alternative";
 import { buildCriticalDecision } from "@/game/criticalDecision";
 import { getPrimaryFailureDriver } from "@/game/failureDriver";
+import { buildCounterfactualReplay } from "@/game/counterfactual";
 import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
 import { findCriticalTurn } from "@/game/criticalTurn";
@@ -41,6 +42,7 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
   const failure = terminal ? analyzeFailure(game.actionLog || [], game) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
   const failureDriver = terminal ? getPrimaryFailureDriver(game) : null;
+  const counterfactual = terminal ? buildCounterfactualReplay(game, inflection) : null;
 
   const alternative = buildAlternativePath({
   log: game.actionLog || [],
@@ -171,6 +173,38 @@ const reflection = terminal
             <div className="mt-1 text-sm text-[#8A93A3]">{failure.insight}</div>
             <div className="mt-2 text-sm text-[#E6EAF0]">
               Recommendation: {failure.recommendation}
+            </div>
+          </section>
+        )}
+
+        {counterfactual && (
+          <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+              Counterfactual Replay
+            </div>
+            <div className="text-lg font-bold">
+              Turn {counterfactual.turn}: {counterfactual.actualAction} → {counterfactual.betterAction}
+            </div>
+            <div className="mt-1 text-sm text-[#8A93A3]">
+              {counterfactual.insight}
+            </div>
+            <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
+              <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
+                <div className="mb-1 uppercase tracking-widest text-[#8A93A3]">
+                  Actual
+                </div>
+                <div>
+                  Load {counterfactual.actual.load} • Drift {counterfactual.actual.drift} • Integrity {counterfactual.actual.integrity}
+                </div>
+              </div>
+              <div className="rounded border border-[#2B5D45] bg-[#0B0F0C] p-3">
+                <div className="mb-1 uppercase tracking-widest text-[#4FAF7B]">
+                  Projected Alternative
+                </div>
+                <div>
+                  Load {counterfactual.projected.load} • Drift {counterfactual.projected.drift} • Integrity {counterfactual.projected.integrity}
+                </div>
+              </div>
             </div>
           </section>
         )}

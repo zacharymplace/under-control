@@ -1,13 +1,13 @@
 export function interpretActionScore(score: number, maxScore: number) {
-  if (maxScore <= 0 || score <= 0) return "Rejected";
+  if (maxScore <= 0 || score <= 0) return "Avoid";
 
   const ratio = score / maxScore;
 
-  if (ratio >= 0.85) return "Strongly favored";
-  if (ratio >= 0.5) return "Viable";
-  if (ratio >= 0.2) return "Weak signal";
+  if (ratio >= 0.85) return "Act";
+  if (ratio >= 0.5) return "Consider";
+  if (ratio >= 0.2) return "Risky";
 
-  return "Low confidence";
+  return "Avoid";
 }
 
 export function getTeamAlignment(scores: Record<string, number>) {
