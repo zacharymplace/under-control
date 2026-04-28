@@ -3,6 +3,7 @@ import { FeedbackPanel } from "./FeedbackPanel";
 import { MessageFeed } from "./MessageFeed";
 import { SystemPanel } from "./SystemPanel";
 import { TrustBar } from "./TrustBar";
+import { RunReport } from "./RunReport";
 import { getActionHints } from "@/game/decisionHints";
 import { getPersonaRecommendations } from "@/game/personaEngine";
 
@@ -32,6 +33,7 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
         <MessageFeed personas={personas} />
         <ActionBar onAction={onAction} disabled={terminal} hints={hints} personas={personas} />
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
+        <RunReport game={game} />
 
         {game.runInsight && (
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
