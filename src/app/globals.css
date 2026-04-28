@@ -1,26 +1,156 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: #0b0f14;
+  color: #e6edf3;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.uc-root {
+  min-height: 100vh;
+  background: #0b0f14;
+  color: #e6edf3;
+  padding: 20px;
+}
+
+.uc-shell {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.uc-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: #8a93a3;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.uc-header-center {
+  text-align: center;
+}
+
+.uc-header-right {
+  text-align: right;
+}
+
+.uc-card {
+  border: 1px solid #243041;
+  background: #12161c;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.uc-title {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.uc-subtle {
+  color: #8a93a3;
+  font-size: 14px;
+}
+
+.uc-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.uc-label {
+  color: #8a93a3;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.uc-value {
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.uc-advisor {
+  border: 1px solid #243041;
+  background: #12161c;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.uc-advisor-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.uc-advisor-name {
+  color: #8a93a3;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.uc-advisor-meta {
+  color: #8a93a3;
+  font-size: 12px;
+}
+
+.uc-advisor-text {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.uc-suggests {
+  margin-top: 8px;
+  color: #657080;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.uc-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.uc-action {
+  border: 1px solid #243041;
+  background: #12161c;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  color: #e6edf3;
+}
+
+.uc-action-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.uc-action-score {
+  margin-top: 6px;
+  color: #8a93a3;
+  font-size: 13px;
+}
+
+.uc-footer-note {
+  margin-top: 8px;
+  text-align: center;
+  color: #657080;
+  font-size: 12px;
 }
