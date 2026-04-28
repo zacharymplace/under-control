@@ -20,6 +20,7 @@ import { classifyRun } from "@/game/runArchetype";
 import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
 import { getActionFeedback } from "@/game/actionFeedback";
 import { getActionJudgment } from "@/game/actionJudgment";
+import { getAdvisorReactions } from "@/game/advisorReaction";
 import { getInitialPlayerTendency, updatePlayerTendency } from "@/game/playerTendency";
 import { logCompletedRun } from "@/game/runAnalytics";
 
@@ -88,7 +89,8 @@ export default function Page() {
       const feedback = getActionFeedback(action, game, next);
       const judgment = getActionJudgment(action, game, next);
       const combined = judgment ? `${feedback}. ${judgment}` : feedback;
-      setGame({ ...next, feedback: combined });
+      const reactions = getAdvisorReactions(action, judgment);
+      setGame({ ...next, feedback: combined, reactions });
     }, 100);
   }
 

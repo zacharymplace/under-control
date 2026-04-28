@@ -638,3 +638,18 @@ body {
 .uc-action-feedback strong {
   color: #8ab4ff;
 }
+
+.uc-reactions {
+  margin: 6px 0 16px;
+  padding-left: 6px;
+}
+
+.uc-reaction-line {
+  font-size: 12px;
+  color: #9fb3c8;
+  margin-top: 4px;
+}
+
+.uc-reaction-line strong {
+  color: #e6edf3;
+}

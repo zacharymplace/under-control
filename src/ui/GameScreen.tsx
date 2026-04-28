@@ -150,6 +150,16 @@ advisors = applyPersonaBehavior(advisors, game);
   </div>
 )}
 
+{game.reactions && (
+  <div className="uc-reactions">
+    {Object.entries(game.reactions).map(([k, v]) => (
+      <div key={k} className="uc-reaction-line">
+        <strong>{k}:</strong> {v as string}
+      </div>
+    ))}
+  </div>
+)}
+
 <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
 
         {gameOver && onReset && (
