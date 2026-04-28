@@ -51,7 +51,30 @@ export function buildWeightedSupport(game: any) {
     support[suggestion] += getPersonaConfidence(persona, game);
   });
 
-  return support;
+  // DOMINANCE MODEL
+  const entries = Object.entries(support);
+
+  let dominantAction = null;
+  let maxScore = -Infinity;
+
+  for (const [action, value] of entries) {
+    if (value > maxScore) {
+      maxScore = value;
+      dominantAction = action;
+    }
+  }
+
+  // boost dominant, dampen others
+  const result: Record<string, number> = {};
+  for (const [action, value] of entries) {
+    if (action === dominantAction) {
+      result[action] = value * 1.2;
+    } else {
+      result[action] = value * 0.85;
+    }
+  }
+
+  return result;
 }
 
 export function getWeightedSupportMultiplier(action: string, game: any) {
