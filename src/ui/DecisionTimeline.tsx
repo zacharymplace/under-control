@@ -1,4 +1,6 @@
+import { buildFlowNarrative } from "@/game/timelineFlow";
 import { formatDelta, getTurnRisk, getTurnStory } from "@/game/timelineStory";
+import { buildFlowNarrative } from "@/game/timelineFlow";
 import { getPhase } from "@/game/timelinePhase";
 
 export function DecisionTimeline({ game, criticalTurn }: any) {

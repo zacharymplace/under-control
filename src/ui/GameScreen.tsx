@@ -1,31 +1,62 @@
 "use client";
 
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { useState } from "react";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { ActionBar } from "./ActionBar";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { FeedbackPanel } from "./FeedbackPanel";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { MessageFeed } from "./MessageFeed";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { SystemPanel } from "./SystemPanel";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { TrustBar } from "./TrustBar";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { RunReport } from "./RunReport";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { RunArc } from "./RunArc";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { DecisionTimeline } from "./DecisionTimeline";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { QuickGuide } from "./QuickGuide";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { TutorialPanel } from "./TutorialPanel";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { ModeSelector } from "./ModeSelector";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { ActionHint } from "./ActionHint";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { analyzeFailure } from "@/game/failureAnalysis";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { findInflection } from "@/game/inflection";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { buildAlternativePath } from "@/game/alternative";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { buildCriticalDecision } from "@/game/criticalDecision";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { getPrimaryFailureDriver } from "@/game/failureDriver";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { buildRunArc } from "@/game/runArc";
+import { detectDisagreement } from "@/game/disagreementSignal";
+import { detectMomentum } from "@/game/momentum";
+import { detectDisagreement } from "@/game/disagreementSignal";
+import { // removed } from "@/game/runVerdict";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { buildCounterfactualReplay } from "@/game/counterfactual";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { detectFailurePattern } from "@/game/failurePatterns";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { findCriticalTurn } from "@/game/criticalTurn";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { buildPersonaReflection } from "@/game/personaReflection";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { getActionHints } from "@/game/decisionHints";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { getPersonaRecommendations } from "@/game/personaEngine";
+import { detectDisagreement } from "@/game/disagreementSignal";
 import { analyzeDisagreement } from "@/game/disagreement";
 
 export function GameScreen({ game, onAction, onReset, bestTurn, scenarioId, onScenarioChange }: any) {
@@ -46,6 +77,8 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
   const failureDriver = terminal ? getPrimaryFailureDriver(game) : null;
   const counterfactual = terminal ? buildCounterfactualReplay(game, inflection) : null;
   const runArc = terminal ? buildRunArc(game, failureDriver) : null;
+  const verdict = terminal ? // removed({ failureDriver, inflection, arc: runArc }) : null;
+  const momentum = terminal ? detectMomentum(game.log || []) : null;
 
   const alternative = buildAlternativePath({
   log: game.actionLog || [],
@@ -130,9 +163,9 @@ const reflection = terminal
         {terminal && (
           <>
             {failureDriver && (
-              <section className="mt-5 rounded-lg border border-[#4A3918] bg-gradient-to-r from-[#1A140B] to-[#12161C] p-5">
+              <section className="mt-6 rounded-lg border-l-4 border-[#D4A84F] border border-[#4A3918] bg-gradient-to-r from-[#1A140B] to-[#12161C] p-6 shadow-[0_0_20px_rgba(212,168,79,0.08)]">
                 <div className="mb-2 text-xs uppercase tracking-widest text-[#D4A84F]">
-                  Primary Failure Driver
+                  PRIMARY FAILURE DRIVER
                 </div>
                 <div className="text-xl font-bold text-[#F1D08A]">
                   {failureDriver.title}
@@ -143,7 +176,29 @@ const reflection = terminal
               </section>
             )}
 
-            <RunArc arc={runArc} />
+            {verdict && (
+          <section className="mt-4 rounded border border-[#2A313A] bg-[#0B0D10] p-4">
+            <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+              Run Verdict
+            </div>
+            <div className="mt-1 text-lg font-semibold text-[#E6EAF0]">
+              {verdict}
+            </div>
+          </section>
+        )}
+
+        <RunArc arc={runArc} />
+
+        {momentum && (
+          <section className="mt-3 rounded border border-[#2A313A] bg-[#0B0D10] p-3">
+            <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
+              Run Momentum
+            </div>
+            <div className="mt-1 font-semibold text-[#E6EAF0]">
+              {momentum}
+            </div>
+          </section>
+        )}
 
             {point && (
               <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">

@@ -2,7 +2,7 @@ export function RunArc({ arc }: any) {
   if (!arc) return null;
 
   return (
-    <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-5">
+    <section className="mt-6 rounded-lg border border-[#2A313A] bg-[#12161C] p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-xs uppercase tracking-widest text-[#8A93A3]">
           Run Arc

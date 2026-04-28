@@ -26,13 +26,18 @@ function summarizePhase(entries: any[], phase: string) {
   const avgSignal = avg(entries.map((e) => e.after.signalClarity));
   const avgIntegrity = avg(entries.map((e) => e.after.integrity));
 
-  if (avgSignal < 60 && phase === "EARLY") return "Signal building";
-  if (avgLoad >= 85) return "Load pressure rising";
-  if (avgDrift >= 50) return "Drift dominance";
+  if (avgSignal < 60 && phase === "EARLY") return "Signal unreliable";
+  if (avgLoad >= 85 && avgDrift < 50) return "Load pressure rising";
+  if (avgDrift >= 50) return "Drift dominant";
   if (avgIntegrity <= 60) return "Integrity weakening";
-  if (avgSignal >= 70) return "Clearer operating picture";
+  if (avgSignal >= 70) return "Clarity improving";
 
-  return "Mixed control state";
+  
+if (phase == "EARLY") return "Signal unreliable";
+if (phase == "MID") return "Pressure accumulating";
+if (phase == "LATE") return "System breakdown forming";
+return "Mixed state";
+
 }
 
 function classifyDifficulty(game: any) {
