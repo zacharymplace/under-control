@@ -76,6 +76,16 @@ export default function Page() {
   const [game, setGame] = useState<Game>(() => buildInitialGame("guided_first_run"));
   const [bestTurn, setBestTurn] = useState(1);
   const [adaptiveModifiers, setAdaptiveModifiers] = useState<AdaptiveModifiers | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  
+  function applyBurstTicks(game: any, steps = 3) {
+    let next = game;
+    for (let i = 0; i < steps; i++) {
+      next = tickGame(next);
+    }
+    return next;
+  }
 
   function handleAction(action: string) {
     const next = applyDemoAction(
@@ -108,7 +118,15 @@ export default function Page() {
         action,
         judgment,
       });
-      setGame({ ...next, feedback: combined, reactions, advisorMemory });
+      setIsPaused(true);
+
+      setTimeout(() => {
+        setIsPaused(false);
+      }, 1200);
+
+      const afterBurst = applyBurstTicks(next, 3);
+
+      setGame({ ...afterBurst, ...next, feedback: combined, reactions, advisorMemory });
     }, 100);
   }
 
