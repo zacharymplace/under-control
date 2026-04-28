@@ -28,6 +28,7 @@ import { getPrimaryFailureDriver } from "@/game/failureDriver";
 import { buildCounterfactualReplay } from "@/game/counterfactual";
 import { buildRunArc } from "@/game/runArc";
 import { buildPersonaReflection } from "@/game/personaReflection";
+import { buildPersonaTerminalComments } from "@/game/personaTerminal";
 import { detectMomentum } from "@/game/momentum";
 
 export function GameScreen({ game, onAction, onReset, bestTurn, scenarioId, onScenarioChange }: any) {
@@ -61,10 +62,19 @@ const critical = buildCriticalDecision({
   turn: inflection?.turn ?? point?.turn ?? null,
 });
 
+const terminalComments = buildPersonaTerminalComments({
+  personas: game.personas || [],
+  trust: game.trust || {},
+  ignoredCounts: game.ignoredCounts || {},
+  moodMap: game.moodMap || {},
+  game,
+});
+
 const reflection = terminal
     ? buildPersonaReflection({
         trust: game.trust || {},
         ignoredCounts: game.ignoredCounts || {},
+  log: game.log || [],
         personas,
       })
     : [];
