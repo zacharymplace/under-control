@@ -19,6 +19,7 @@ import { getSystemPhase } from "@/game/phase";
 import { getLateCorrectionPenalty, getPointOfNoReturn, getMissedCommitmentWindow } from "@/game/irreversibility";
 import { getPhasePenalty } from "@/game/phasePenalty";
 import { getDecisionWindow, getDecisionWindowPenalty } from "@/game/decisionWindow";
+import { getPostCollapseEffectiveness, getPostCollapseNote } from "@/game/postCollapse";
 import { isStabilizationComplete } from "@/game/recoveryCompletion";
 import { getRecoveryProgress, getRecoveryStatus, getCommitmentStatus, getAdvisorTrustTrajectory } from "@/game/runLegibility";
 
@@ -44,6 +45,7 @@ function scoreAction(
   const phasePenalty = getPhasePenalty(action, game);
 
   const decisionWindowPenalty = getDecisionWindowPenalty(action, game);
+  const postCollapseEffectiveness = getPostCollapseEffectiveness(action, game);
 
   let recoveryPenalty = 1;
   if (action !== "STABILIZE" && !isStabilizationComplete(game) && game.drift > 50) {
@@ -134,7 +136,8 @@ export function ActionBar({
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
               </div>
               <div className="uc-action-reason">
-                {getPressureDistortionNote(action, game) ||
+                {getPostCollapseNote(action, game) ||
+                  getPressureDistortionNote(action, game) ||
                   explainAction(action, game, isBehaviorLocked, isConflictLocked)}
               </div>
             </button>

@@ -127,6 +127,7 @@ export function buildFailureExplanation(game: any) {
     reasons.push(
       `Point of no return reached on Turn ${game.pointOfNoReturn.turn}.`
     );
+    reasons.push("Post-collapse actions were only partially effective.");
   }
 
   if (!reasons.length) {
