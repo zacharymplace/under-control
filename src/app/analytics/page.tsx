@@ -8,6 +8,8 @@ async function getRuns() {
   return data.runs ?? [];
 }
 
+import { analyzePatterns } from "@/game/patterns";
+
 export default async function AnalyticsPage() {
   const runs = await getRuns();
 
@@ -32,6 +34,8 @@ export default async function AnalyticsPage() {
 
   const maxTurn = runs.reduce((max: number, r: any) => Math.max(max, r.turn), 0);
 
+  const insights = analyzePatterns(runs);((max: number, r: any) => Math.max(max, r.turn), 0);
+
   return (
     <main className="min-h-screen bg-[#0B0D10] px-5 py-6 text-[#E6EAF0]">
       <div className="mx-auto max-w-4xl">
@@ -55,7 +59,10 @@ export default async function AnalyticsPage() {
             Pressure
           </div>
           <div className="text-3xl font-bold">{avgPressure}</div>
-          <div className="mt-1 text-sm text-[#8A93A3]">Average pressure across completed runs</div>
+          <div className="mt-1 text-sm text-[#8A93A3]">Average pressure across completed runs
+          <div className="mt-4">
+            <Trend runs={runs.slice(-20)} />
+          </div></div>
         </section>
 
         <section className="space-y-2">
@@ -77,9 +84,22 @@ export default async function AnalyticsPage() {
                 </div>
               </div>
             ))}
-        </section>
+        
+        {insights && insights.length > 0 && (
+          <section className="mt-6 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+              System Insights
+            </div>
+            {insights.map((i: string, idx: number) => (
+              <div key={idx} className="text-sm text-[#8A93A3]">
+                • {i}
+              </div>
+            ))}
+          </section>
+        )}
       </div>
     </main>
+
   );
 }
 
@@ -90,6 +110,22 @@ function Metric({ label, value }: { label: string; value: number }) {
         {label}
       </div>
       <div className="mt-2 text-2xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function Trend({ runs }: any) {
+  const values = runs.map((r: any) => r.summary?.avgPressure || 0);
+
+  return (
+    <div className="flex items-end gap-1 h-24">
+      {values.map((v: number, i: number) => (
+        <div
+          key={i}
+          style={{ height: `${v}%` }}
+          className="w-2 bg-[#3A82F7]"
+        />
+      ))}
     </div>
   );
 }
