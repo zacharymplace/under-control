@@ -1,68 +1,81 @@
+function deriveStrategy(trust: number, ignored: number) {
+  if (trust <= -2) return "DEFENSIVE";
+  if (ignored >= 4) return "ASSERTIVE";
+  return "ADAPTIVE";
+}
+
 export function getPersonaRecommendations(game: any) {
   const trust = game.trust || {};
   const ignored = game.ignoredCounts || {};
 
-  const recs: any[] = [
+  const base = [
     {
       name: "ELENA",
       role: "SIGNAL",
-      action: game.signalClarity < 60 ? "OBSERVE" : "REROUTE",
-      baseText:
-        game.signalClarity < 60
+      decide: (g: any, strategy: string) => {
+        if (strategy === "DEFENSIVE") return "OBSERVE";
+        return g.signalClarity < 60 ? "OBSERVE" : "REROUTE";
+      },
+      text: (g: any) =>
+        g.signalClarity < 60
           ? "We need better signal clarity."
           : "Signal is stable enough to act.",
     },
     {
       name: "MARA",
       role: "INFRASTRUCTURE",
-      action: game.integrity < 55 || game.drift > 35 ? "STABILIZE" : "REROUTE",
-      baseText:
-        game.integrity < 55 || game.drift > 35
+      decide: (g: any, strategy: string) => {
+        if (strategy === "ASSERTIVE") return "STABILIZE";
+        return g.integrity < 55 || g.drift > 35 ? "STABILIZE" : "REROUTE";
+      },
+      text: (g: any) =>
+        g.integrity < 55 || g.drift > 35
           ? "Integrity is at risk."
           : "We can redirect load safely.",
     },
     {
       name: "ISHAAN",
       role: "RISK",
-      action: game.drift > 30 ? "STABILIZE" : "OBSERVE",
-      baseText:
-        game.drift > 30
+      decide: (g: any, strategy: string) => {
+        if (strategy === "ASSERTIVE") return "STABILIZE";
+        return g.drift > 30 ? "STABILIZE" : "OBSERVE";
+      },
+      text: (g: any) =>
+        g.drift > 30
           ? "Instability is increasing."
           : "No immediate threat detected.",
     },
   ];
 
-  return recs.map((rec) => {
-    const trustScore = trust[rec.name] ?? 0;
-    const ignoredCount = ignored[rec.name] ?? 0;
+  return base.map((p) => {
+    const t = trust[p.name] ?? 0;
+    const i = ignored[p.name] ?? 0;
 
-    let confidence = "NEUTRAL";
-    let text = rec.baseText;
+    const strategy = deriveStrategy(t, i);
+    const action = p.decide(game, strategy);
 
-    if (trustScore >= 2) {
-      confidence = "HIGH";
-      text = `${rec.baseText} I stand by this.`;
+    let text = p.text(game);
+
+    if (strategy === "DEFENSIVE") {
+      text += " I'm adjusting to reduce risk.";
     }
 
-    if (trustScore <= -2) {
-      confidence = "LOW";
-      text = `${rec.baseText} But my recent calls have been unreliable.`;
+    if (strategy === "ASSERTIVE") {
+      text += " I'm pushing harder—this is being ignored.";
     }
 
-    if (ignoredCount >= 3 && trustScore >= 0) {
-      text = `${rec.baseText} You've been overriding my calls.`;
-    }
-
-    if (ignoredCount >= 5) {
-      text = `${rec.baseText} Pattern noted: my recommendations are being deprioritized.`;
+    if (t <= -2) {
+      text += " My recent calls have been unreliable.";
     }
 
     return {
-      ...rec,
+      name: p.name,
+      role: p.role,
+      action,
       text,
-      confidence,
-      trust: trustScore,
-      ignoredCount,
+      trust: t,
+      ignoredCount: i,
+      strategy,
     };
   });
 }
