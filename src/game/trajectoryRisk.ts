@@ -1,3 +1,4 @@
+import { getDominantNeed } from "./dominantNeed";
 export function getTrajectoryPenalty(game: any) {
   const history = game.actionHistory || [];
   if (history.length < 3) return 1;
@@ -43,6 +44,19 @@ export function getTrajectoryInsight(game: any) {
   const rerouteCount = last3.filter((a: string) => a === "REROUTE").length;
   const observeCount = last3.filter((a: string) => a === "OBSERVE").length;
   const stabilizeCount = last3.filter((a: string) => a === "STABILIZE").length;
+
+  const dominantNeed = getDominantNeed(game);
+  const alignedCount = dominantNeed
+    ? last3.filter((a: string) => a === dominantNeed).length
+    : 0;
+
+  if (dominantNeed && alignedCount === 0) {
+    return `You are not addressing the system's primary need: ${dominantNeed}.`;
+  }
+
+  if (dominantNeed && alignedCount === 1) {
+    return `Your strategy is only partially aligned with the system's primary need: ${dominantNeed}.`;
+  }
 
   if (uniqueCount >= 3) {
     return "Strategy oscillation is increasing recovery risk.";

@@ -12,6 +12,7 @@ import {
 import { getLockedActions as getBehaviorLockedActions } from "@/game/lockIn";
 import { getPressureDistortionNote } from "@/game/pressureDistortion";
 import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
+import { getDominantNeedLabel } from "@/game/dominantNeed";
 
 function scoreAction(
   action: string,
@@ -114,6 +115,7 @@ export function ActionBar({
 
       <div className="uc-footer-note">Alignment impact: {impact}</div>
       <div className="uc-footer-note">Trajectory: {getTrajectoryRiskLabel(game)}</div>
+      <div className="uc-footer-note">{getDominantNeedLabel(game)}</div>
       <div className="uc-footer-note">
         Scores reflect state pressure, disagreement, trust, ignored penalties,
         and confidence-weighted support.

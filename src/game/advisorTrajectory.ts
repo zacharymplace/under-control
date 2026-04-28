@@ -6,6 +6,12 @@ export function getAdvisorTrajectoryNote(name: string, game: any) {
 
   const key = name.toUpperCase();
 
+  if (insight.includes("primary need")) {
+    if (key === "ELENA") return "You are reading the system, but not acting on the primary signal.";
+    if (key === "MARA") return "Your actions are misaligned with the correction path the system needs.";
+    if (key === "ISHAAN") return "You are optimizing the wrong risk dimension.";
+  }
+
   if (insight.includes("oscillation")) {
     if (key === "ELENA") return "Your strategy is oscillating. The read is getting less reliable.";
     if (key === "MARA") return "You are switching correction paths too quickly to stabilize structure.";
