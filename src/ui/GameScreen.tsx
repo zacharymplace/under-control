@@ -2,6 +2,7 @@ import { ActionBar } from "./ActionBar";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { MessageFeed } from "./MessageFeed";
 import { SystemPanel } from "./SystemPanel";
+import { TrustBar } from "./TrustBar";
 import { getActionHints } from "@/game/decisionHints";
 import { getPersonaRecommendations } from "@/game/personaEngine";
 
@@ -15,7 +16,6 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
   return (
     <main className="min-h-screen px-5 py-6 text-[#E6EAF0] bg-[#0B0D10]">
       <div className="mx-auto max-w-3xl">
-
         <div className="mb-3 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
           <div>State: {game.state}</div>
           <div>Pressure: {game.pressure}</div>
@@ -26,12 +26,11 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
           Best Run: {displayBest}
         </div>
 
+        <TrustBar trust={game.trust || {}} />
+
         <SystemPanel game={game} />
-
         <MessageFeed personas={personas} />
-
         <ActionBar onAction={onAction} disabled={terminal} hints={hints} />
-
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
 
         {game.runInsight && (

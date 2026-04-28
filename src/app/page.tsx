@@ -4,6 +4,9 @@ import { useState } from "react";
 import { GameScreen } from "@/ui/GameScreen";
 import { TUNING } from "@/game/tuning";
 import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telemetry";
+import { getPersonaRecommendations } from "@/game/personaEngine";
+import { initialTrust, updateTrust } from "@/game/trust";
+import { evaluateOutcome } from "@/game/outcome";
 
 const initialGame = {
   turn: 1,
@@ -20,6 +23,7 @@ const initialGame = {
   runInsight: null,
   telemetry: initTelemetry(),
   summary: null,
+  trust: initialTrust,
   messages: [
     {
       id: "1",
@@ -43,7 +47,10 @@ export default function Page() {
 
   function handleReset() {
     setBestTurn((prev) => Math.max(prev, game.turn));
-    setGame(initialGame);
+    setGame({
+      ...initialGame,
+      trust: game.trust,
+    });
   }
 
   return (
@@ -55,8 +62,6 @@ export default function Page() {
     />
   );
 }
-
-/* helpers */
 
 function msg(name: string, role: string, text: string, priority = "medium") {
   return { id: crypto.randomUUID(), name, role, text, priority };
@@ -86,6 +91,7 @@ function getPressure(game: any) {
 
 function applyPassiveDecay(game: any) {
   const m = phaseMult(game.turn);
+
   return {
     ...game,
     load: clamp(game.load + Math.round(TUNING.BASE_LOAD * m)),
@@ -135,6 +141,7 @@ function checkTerminal(game: any) {
         msg("Ishaan", "Risk", "The path is defensible."),
       ],
     };
+
     return finalizeRun(next);
   }
 
@@ -158,16 +165,18 @@ function checkTerminal(game: any) {
         msg("Ishaan", "Risk", "The failure path is traceable.", "high"),
       ],
     };
+
     return finalizeRun(next);
   }
 
   return game;
 }
 
-/* core loop */
-
 function applyDemoAction(game: any, action: string) {
   if (game.state === "FAILED" || game.state === "STABILIZED") return game;
+
+  const prev = game;
+  const personasBeforeAction = getPersonaRecommendations(prev);
 
   let next = applyPassiveDecay(game);
 
@@ -219,14 +228,15 @@ function applyDemoAction(game: any, action: string) {
       ? "DEGRADED"
       : "STABLE";
 
-  // telemetry update
   next.telemetry = updateTelemetry(next.telemetry, next);
 
-  // events
   if (next.pressure === "CRITICAL") {
     next.eventTitle = "Critical Instability";
     next.eventSub = "System approaching failure";
   }
+
+  const outcome = evaluateOutcome(prev, next);
+  next.trust = updateTrust(game.trust || initialTrust, personasBeforeAction, action, outcome);
 
   return checkTerminal(next);
 }
