@@ -18,6 +18,7 @@ import { initialIgnoredCounts, updateIgnoredCounts } from "@/game/personaMemory"
 import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
+import { getInitialPlayerTendency, updatePlayerTendency } from "@/game/playerTendency";
 import { logCompletedRun } from "@/game/runAnalytics";
 
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
@@ -87,10 +88,10 @@ export default function Page() {
   function handleReset() {
     setBestTurn((prev) => Math.max(prev, game.turn));
     setGame({
-        actionHistory: [...(game.actionHistory || []), action],
       ...buildInitialGame(scenarioId),
       trust: initialTrust,
       ignoredCounts: initialIgnoredCounts,
+      actionHistory: [...(game.actionHistory || []), action],
     });
   }
 
