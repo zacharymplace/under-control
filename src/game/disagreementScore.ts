@@ -1,9 +1,8 @@
 export function getDisagreementPenalty(suggestions: string[]) {
-  const unique = new Set(suggestions).size;
+  const clean = suggestions.filter(Boolean);
+  const unique = new Set(clean);
 
-  if (unique === 1) return 1.2;     // strong alignment
-  if (unique === 2) return 1.0;     // partial disagreement
-  if (unique === 3) return 0.85;    // full disagreement
-
-  return 1;
+  if (unique.size <= 1) return 1;
+  if (unique.size === 2) return 0.9;
+  return 0.8;
 }
