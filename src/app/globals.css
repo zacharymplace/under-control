@@ -531,3 +531,15 @@ body {
     grid-column: 1 / -1;
   }
 }
+
+.uc-sticky-hud {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.uc-sticky-hud.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}

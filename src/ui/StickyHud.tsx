@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export function StickyHud({ game }: { game: any }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setVisible(window.scrollY > 360);
+    }
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   if (!game) return null;
 
   return (
-    <section className="uc-sticky-hud">
+    <section className={`uc-sticky-hud ${visible ? "visible" : ""}`}>
       <div className="uc-hud-item">
         <span>Load</span>
         <strong>{game.load}</strong>
