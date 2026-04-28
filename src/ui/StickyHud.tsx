@@ -25,7 +25,7 @@ export function StickyHud({ game }: { game: any }) {
     return () => observer.disconnect();
   }, []);
 
-  if (!game) return null;
+  if (!game || game.state === 'FAILED') return null;
 
   return (
     <section className={`uc-sticky-hud ${visible ? "visible" : ""}`}>
