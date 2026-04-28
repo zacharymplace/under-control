@@ -33,8 +33,9 @@ return (
           <div>Turn: {game.turn}</div>
         </div>
 
-        <div className="mb-3 text-xs uppercase tracking-widest text-[#8A93A3]">
-          Best Run: {displayBest}
+        <div className="mb-3 flex justify-between text-xs uppercase tracking-widest text-[#8A93A3]">
+          <div>Best Run: {displayBest}</div>
+          <a href="/guide" className="hover:text-[#E6EAF0]">Guide</a>
         </div>
 
         <TrustBar trust={game.trust || {}} />
