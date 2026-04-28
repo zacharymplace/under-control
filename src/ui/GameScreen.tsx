@@ -30,7 +30,7 @@ export function GameScreen({ game, onAction, onReset, bestTurn }: any) {
 
         <SystemPanel game={game} />
         <MessageFeed personas={personas} />
-        <ActionBar onAction={onAction} disabled={terminal} hints={hints} />
+        <ActionBar onAction={onAction} disabled={terminal} hints={hints} personas={personas} />
         <FeedbackPanel feedback={game.feedback} summary={game.summary} />
 
         {game.runInsight && (

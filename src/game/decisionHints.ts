@@ -1,26 +1,27 @@
+import { getPersonaRecommendations } from "./personaEngine";
+
 export function getActionHints(game: any) {
+  const personas = getPersonaRecommendations(game);
+
+  const scores: Record<string, number> = {
+    STABILIZE: 0,
+    REROUTE: 0,
+    OBSERVE: 0,
+  };
+
+  personas.forEach((p) => {
+    const trustWeight = 1 + (p.trust ?? 0) * 0.5;
+
+    scores[p.action] += trustWeight;
+  });
+
   const hints: Record<string, string> = {};
 
-  // REROUTE risk
-  if (game.drift > 30) {
-    hints["REROUTE"] = "High instability risk";
-  } else if (game.load > 70) {
-    hints["REROUTE"] = "Effective short-term";
-  }
-
-  // OBSERVE risk
-  if (game.load > 75) {
-    hints["OBSERVE"] = "Load may spike";
-  } else {
-    hints["OBSERVE"] = "Improves clarity";
-  }
-
-  // STABILIZE risk
-  if (game.load > 80) {
-    hints["STABILIZE"] = "May push load over limit";
-  } else if (game.integrity < 50) {
-    hints["STABILIZE"] = "Critical recovery";
-  }
+  Object.entries(scores).forEach(([action, score]) => {
+    if (score >= 2) hints[action] = "Recommended";
+    if (score >= 3) hints[action] = "Strongly recommended";
+    if (score <= 0) hints[action] = "Low confidence";
+  });
 
   return hints;
 }

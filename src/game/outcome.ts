@@ -1,14 +1,24 @@
-export function evaluateOutcome(prev: any, next: any) {
+export function evaluateOutcome(prev: any, next: any, personas: any[]) {
   const loadImproved = next.load < prev.load;
   const integrityImproved = next.integrity > prev.integrity;
   const driftImproved = next.drift < prev.drift;
 
-  const score =
+  let baseScore =
     (loadImproved ? 1 : -1) +
     (integrityImproved ? 1 : -1) +
     (driftImproved ? 1 : -1);
 
-  if (score >= 2) return "GOOD";
-  if (score <= -2) return "BAD";
+  // trust-weighted adjustment
+  let trustInfluence = 0;
+
+  personas.forEach((p) => {
+    if (p.trust > 1) trustInfluence += 0.5;
+    if (p.trust < -1) trustInfluence -= 0.5;
+  });
+
+  const finalScore = baseScore + trustInfluence;
+
+  if (finalScore >= 2) return "GOOD";
+  if (finalScore <= -2) return "BAD";
   return "NEUTRAL";
 }

@@ -277,7 +277,8 @@ function applyDemoAction(game: any, action: string) {
     next.eventSub = "System approaching failure";
   }
 
-  const outcome = evaluateOutcome(prev, next);
+  const personasAfter = getPersonaRecommendations(next);
+  const outcome = evaluateOutcome(prev, next, personasAfter);
   next.trust = updateTrust(game.trust || initialTrust, personasBeforeAction, action, outcome);
 
   return checkTerminal(next);
