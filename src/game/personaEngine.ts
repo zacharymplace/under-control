@@ -4,6 +4,17 @@ function deriveStrategy(trust: number, ignored: number) {
   return "ADAPTIVE";
 }
 
+function scenarioBias(game: any, name: string) {
+  const id = game.scenarioId;
+
+  if (id === "signal_chaos" && name === "ELENA") return 1;
+  if (id === "load_crisis" && name === "ISHAAN") return 1;
+  if (id === "drift_collapse" && name === "MARA") return 1;
+  if (id === "drift_collapse" && name === "ISHAAN") return 1;
+
+  return 0;
+}
+
 export function getPersonaRecommendations(game: any) {
   const trust = game.trust || {};
   const ignored = game.ignoredCounts || {};
@@ -38,10 +49,10 @@ export function getPersonaRecommendations(game: any) {
       role: "RISK",
       decide: (g: any, strategy: string) => {
         if (strategy === "ASSERTIVE") return "STABILIZE";
-        return g.drift > 30 ? "STABILIZE" : "OBSERVE";
+        return g.drift > 30 || g.load > 85 ? "STABILIZE" : "OBSERVE";
       },
       text: (g: any) =>
-        g.drift > 30
+        g.drift > 30 || g.load > 85
           ? "Instability is increasing."
           : "No immediate threat detected.",
     },
@@ -50,11 +61,20 @@ export function getPersonaRecommendations(game: any) {
   return base.map((p) => {
     const t = trust[p.name] ?? 0;
     const i = ignored[p.name] ?? 0;
+    const bias = scenarioBias(game, p.name);
 
     const strategy = deriveStrategy(t, i);
     const action = p.decide(game, strategy);
 
     let text = p.text(game);
+    let confidence = "NEUTRAL";
+
+    if (t + bias >= 3) confidence = "HIGH";
+    if (t <= -2) confidence = "LOW";
+
+    if (bias > 0) {
+      text += " This mode fits my domain.";
+    }
 
     if (strategy === "DEFENSIVE") {
       text += " I'm adjusting to reduce risk.";
@@ -76,6 +96,8 @@ export function getPersonaRecommendations(game: any) {
       trust: t,
       ignoredCount: i,
       strategy,
+      confidence,
+      scenarioBias: bias,
     };
   });
 }

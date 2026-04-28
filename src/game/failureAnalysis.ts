@@ -1,5 +1,33 @@
-export function analyzeFailure(log: any[]) {
+export function analyzeFailure(log: any[], game?: any) {
   if (!log || log.length < 3) return null;
+
+  const scenarioId = game?.scenarioId;
+  const peakLoad = Math.max(...log.map((x) => x.after?.load ?? 0));
+  const peakDrift = Math.max(...log.map((x) => x.after?.drift ?? 0));
+
+  if (scenarioId === "signal_chaos" && game?.signalClarity < 65) {
+    return {
+      label: "Signal Misread",
+      insight: "The run stayed noisy long enough for pressure to compound.",
+      recommendation: "Observe earlier, then act before load crosses the danger zone.",
+    };
+  }
+
+  if (scenarioId === "load_crisis" && peakLoad >= 100) {
+    return {
+      label: "Capacity Saturation",
+      insight: "The system entered the run too close to load capacity.",
+      recommendation: "Reroute earlier, then stabilize after pressure is released.",
+    };
+  }
+
+  if (scenarioId === "drift_collapse" && peakDrift >= 55) {
+    return {
+      label: "Drift Collapse",
+      insight: "Hidden instability crossed the recovery threshold.",
+      recommendation: "Stabilize before drift compounds past the mid-40s.",
+    };
+  }
 
   let pressureSpikes = 0;
   let lateStabilizes = 0;
@@ -9,24 +37,13 @@ export function analyzeFailure(log: any[]) {
     const prev = log[i - 1];
     const curr = log[i];
 
-    // pressure spike (load increasing repeatedly)
-    if (curr.after.load > prev.after.load) {
-      pressureSpikes++;
-    }
+    if (curr.after.load > prev.after.load) pressureSpikes++;
 
-    // drift rising but not addressed
-    if (
-      prev.after.drift > 40 &&
-      curr.action !== "STABILIZE"
-    ) {
+    if (prev.after.drift > 40 && curr.action !== "STABILIZE") {
       driftIgnored++;
     }
 
-    // stabilizing too late (high load)
-    if (
-      curr.action === "STABILIZE" &&
-      curr.before.load > 85
-    ) {
+    if (curr.action === "STABILIZE" && curr.before.load > 85) {
       lateStabilizes++;
     }
   }

@@ -162,25 +162,30 @@ function getPressure(game: any) {
 function applyPassiveDecay(game: any) {
   const m = phaseMult(game.turn);
 
-  const mods = game.scenarioModifiers || {};
-  const loadAcceleration = mods.loadAcceleration ?? 1;
-  const driftMultiplier = mods.driftMultiplier ?? 1;
+  const adaptive = game.adaptiveModifiers || {};
+  const scenario = game.scenarioModifiers || {};
+
+  const loadAcceleration =
+    (adaptive.loadPressureMult ?? 1) * (scenario.loadAcceleration ?? 1);
+
+  const driftMultiplier =
+    (adaptive.driftPenaltyMult ?? 1) * (scenario.driftMultiplier ?? 1);
+
+  const integrityDecay =
+    adaptive.signalDecayMult ?? 1;
 
   const next = { ...game };
 
   next.load = clamp(
-    next.load +
-      Math.round(TUNING.BASE_LOAD * m * loadAcceleration)
+    next.load + Math.round(TUNING.BASE_LOAD * m * loadAcceleration)
   );
 
   next.drift = clamp(
-    next.drift +
-      Math.round(TUNING.BASE_DRIFT * m * driftMultiplier)
+    next.drift + Math.round(TUNING.BASE_DRIFT * m * driftMultiplier)
   );
 
   next.integrity = clamp(
-    next.integrity -
-      Math.round(TUNING.BASE_INTEGRITY_DECAY * m)
+    next.integrity - Math.round(TUNING.BASE_INTEGRITY_DECAY * m * integrityDecay)
   );
 
   return next;

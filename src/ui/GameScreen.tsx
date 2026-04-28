@@ -13,6 +13,7 @@ import { TutorialPanel } from "./TutorialPanel";
 import { ModeSelector } from "./ModeSelector";
 import { ActionHint } from "./ActionHint";
 import { analyzeFailure } from "@/game/failureAnalysis";
+import { findInflection } from "@/game/inflection";
 import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
 import { findCriticalTurn } from "@/game/criticalTurn";
@@ -31,7 +32,8 @@ export function GameScreen({ game, onAction, onReset, bestTurn, scenarioId, onSc
 
   const point = terminal ? findPointOfNoReturn(game.actionLog || []) : null;
 const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
-  const failure = terminal ? analyzeFailure(game.actionLog || []) : null;
+  const inflection = terminal ? findInflection(game.actionLog || []) : null;
+  const failure = terminal ? analyzeFailure(game.actionLog || [], game) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
   const reflection = terminal
@@ -76,7 +78,7 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
 
         <SystemPanel game={game} />
 
-        {!terminal && (
+        {!terminal && game.scenarioId === "guided_first_run" && (
           <ActionHint
             load={game.load}
             drift={game.drift}
@@ -101,7 +103,20 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
           </section>
         )}
 
-        {failure && (
+        {inflection && (
+        <div className="mt-6 p-4 rounded-lg border border-[#1C2330]">
+          <div className="text-sm text-[#8A93A3] mb-2">MISSED INTERVENTION</div>
+          <div className="text-[#C7D0E0] font-medium">
+            Turn {inflection.turn} — {inflection.type}
+          </div>
+          <div className="text-sm text-[#8A93A3]">{inflection.insight}</div>
+          <div className="text-sm mt-2 text-[#8A93A3]">
+            Recommendation: {inflection.recommendation}
+          </div>
+        </div>
+      )}
+
+      {failure && (
 
 
           <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
