@@ -23,6 +23,7 @@ const initialGame = {
   drift: 10,
   driftVisible: false,
   actionHistory: [],
+  actionLog: [],
   runInsight: null,
   telemetry: initTelemetry(),
   summary: null,
@@ -272,6 +273,32 @@ function applyDemoAction(game: any, action: string) {
     next.drift > 25 || next.integrity < 60 || next.load > 80
       ? "DEGRADED"
       : "STABLE";
+
+  next.actionLog = [
+    ...(game.actionLog || []),
+    {
+      turn: next.turn,
+      action,
+      before: {
+        load: prev.load,
+        drift: prev.drift,
+        integrity: prev.integrity,
+        signalClarity: prev.signalClarity,
+      },
+      after: {
+        load: next.load,
+        drift: next.drift,
+        integrity: next.integrity,
+        signalClarity: next.signalClarity,
+      },
+      note:
+        action === "REROUTE"
+          ? "Reduced load, increased instability."
+          : action === "STABILIZE"
+          ? "Improved integrity, increased load pressure."
+          : "Improved signal, allowed pressure to rise.",
+    },
+  ];
 
   next.telemetry = updateTelemetry(next.telemetry, next);
 
