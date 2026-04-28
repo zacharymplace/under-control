@@ -39,6 +39,9 @@ export function ActionBar({ onAction, disabled, hints, personas, disagreement }:
           </div>
         );
       })}
+          <div className="col-span-3 text-center text-[10px] text-[#5A646F]">
+        Scores reflect weighted trust × confidence × mood influence.
+      </div>
     </section>
   );
 }

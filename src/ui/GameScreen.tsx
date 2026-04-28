@@ -16,6 +16,7 @@ import { analyzeFailure } from "@/game/failureAnalysis";
 import { findInflection } from "@/game/inflection";
 import { buildAlternativePath } from "@/game/alternative";
 import { buildCriticalDecision } from "@/game/criticalDecision";
+import { getPrimaryFailureDriver } from "@/game/failureDriver";
 import { detectFailurePattern } from "@/game/failurePatterns";
 import { findPointOfNoReturn } from "@/game/pointOfNoReturn";
 import { findCriticalTurn } from "@/game/criticalTurn";
@@ -39,6 +40,7 @@ const criticalTurn = terminal ? findCriticalTurn(game.actionLog || []) : null;
   const inflection = terminal ? findInflection(game.actionLog || []) : null;
   const failure = terminal ? analyzeFailure(game.actionLog || [], game) : null;
 const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
+  const failureDriver = terminal ? getPrimaryFailureDriver(game) : null;
 
   const alternative = buildAlternativePath({
   log: game.actionLog || [],
@@ -130,6 +132,18 @@ const reflection = terminal
             </div>
             <div className="text-lg font-bold">Turn {point.turn}</div>
             <div className="mt-1 text-sm text-[#8A93A3]">{point.reason}</div>
+          </section>
+        )}
+
+        {failureDriver && (
+          <section className="mt-3 rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
+            <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
+              Primary Failure Driver
+            </div>
+            <div className="text-lg font-bold">{failureDriver.title}</div>
+            <div className="mt-1 text-sm text-[#8A93A3]">
+              {failureDriver.detail}
+            </div>
           </section>
         )}
 

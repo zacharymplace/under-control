@@ -86,6 +86,8 @@ export function getPersonaRecommendations(game: any) {
       baseText: text,
       mood,
       action,
+      name: p.name,
+      turn: game.turn,
     });
 
     return {
