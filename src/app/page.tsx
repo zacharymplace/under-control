@@ -28,6 +28,7 @@ import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { logCompletedRun } from "@/game/runAnalytics";
+import { tickGame } from "@/game/tickEngine";
 
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
   const ACTIVE_SCENARIO = getScenario(scenarioId);
