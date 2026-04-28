@@ -154,3 +154,134 @@ body {
   color: #657080;
   font-size: 12px;
 }
+
+.uc-conflict {
+  border: 1px solid #4a2f2f;
+  background: #130d10;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.uc-conflict-title {
+  color: #e6edf3;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.uc-conflict-level {
+  color: #d08a6c;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.uc-conflict-line {
+  color: #aab3c2;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
+.uc-status-banner {
+  border: 1px solid #4a2f2f;
+  background: linear-gradient(135deg, #160d10, #10141b);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 0 24px rgba(180, 68, 68, 0.12);
+}
+
+.uc-status-banner.success {
+  border-color: #2b5d45;
+  background: linear-gradient(135deg, #0d1712, #10141b);
+  box-shadow: 0 0 24px rgba(79, 175, 123, 0.12);
+}
+
+.uc-status-kicker {
+  color: #d08a6c;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.uc-status-banner.success .uc-status-kicker {
+  color: #4faf7b;
+}
+
+.uc-status-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.uc-status-copy {
+  color: #aab3c2;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.uc-card,
+.uc-advisor,
+.uc-action,
+.uc-conflict,
+.uc-status-banner {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.uc-card:hover,
+.uc-advisor:hover {
+  border-color: #33435a;
+  box-shadow: 0 0 22px rgba(80, 120, 180, 0.08);
+}
+
+.uc-action {
+  cursor: pointer;
+}
+
+.uc-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #415574;
+  box-shadow: 0 0 20px rgba(120, 160, 220, 0.12);
+}
+
+.uc-action:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.uc-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.uc-reset {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid #2a384b;
+  background: #151b24;
+  color: #e6edf3;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.uc-reset:hover {
+  transform: translateY(-1px);
+  border-color: #4f6380;
+  box-shadow: 0 0 18px rgba(120, 160, 220, 0.12);
+}

@@ -1,6 +1,5 @@
 "use client";
 
-import { explainScore } from "@/game/explainScore";
 import { getDisagreementPenalty } from "@/game/disagreementScore";
 import {
   buildWeightedSupport,
@@ -26,12 +25,32 @@ function scoreAction(
   return (score * disagreementMultiplier * weightedSupport).toFixed(2);
 }
 
+function explainAction(action: string, game: any) {
+  const signal = game.signalClarity ?? game.signal ?? 0;
+
+  if (game.drift > 50 && action === "STABILIZE") {
+    return "High drift favors stabilization";
+  }
+
+  if (game.load > 80 && action === "REROUTE") {
+    return "High load favors reroute";
+  }
+
+  if (signal < 55 && action === "OBSERVE") {
+    return "Low signal favors observation";
+  }
+
+  return "No strong signal advantage";
+}
+
 export function ActionBar({
   game,
   onAction,
+  disabled = false,
 }: {
   game: any;
   onAction?: (action: string) => void;
+  disabled?: boolean;
 }) {
   const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
   const advisors = game.personas || [];
@@ -58,6 +77,7 @@ export function ActionBar({
             key={action}
             className="uc-action"
             type="button"
+            disabled={disabled}
             onClick={() => onAction?.(action)}
           >
             <div className="uc-action-name">{action}</div>
@@ -72,10 +92,7 @@ export function ActionBar({
             <div className="uc-action-score">
               support: {(weightedSupport[action] ?? 0).toFixed(2)}
             </div>
-          
-            <div className="uc-action-reason text-xs opacity-50 mt-1">
-              {explainScore(action, game)[0]}
-            </div>
+            <div className="uc-action-reason">{explainAction(action, game)}</div>
           </button>
         ))}
       </div>

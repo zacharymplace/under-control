@@ -4,6 +4,7 @@ import { ActionBar } from "./ActionBar";
 import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
+import { buildPersonaConflict } from "@/game/personaConflict";
 
 export function GameScreen({
   game,
@@ -25,6 +26,8 @@ export function GameScreen({
   let advisors = game.personas?.length ? game.personas : getDefaultPersonas(game);
 advisors = applyPersonaBehavior(advisors, game);
   const alignment = getAlignment({ ...game, personas: advisors });
+  const gameOver = game.state === "FAILED" || game.state === "STABILIZED";
+  const conflict = buildPersonaConflict(advisors, game);
 
   return (
     <main className="uc-root">
@@ -34,6 +37,28 @@ advisors = applyPersonaBehavior(advisors, game);
           <div className="uc-header-center">Pressure: {game.pressure}</div>
           <div className="uc-header-right">Turn: {game.turn}</div>
         </header>
+
+        {gameOver && (
+          <section
+            className={`uc-status-banner ${
+              game.state === "STABILIZED" ? "success" : ""
+            }`}
+          >
+            <div className="uc-status-kicker">
+              {game.state === "STABILIZED" ? "Run stabilized" : "Run failed"}
+            </div>
+            <div className="uc-status-title">
+              {game.state === "STABILIZED"
+                ? "Control restored"
+                : "Control was lost"}
+            </div>
+            <div className="uc-status-copy">
+              {game.state === "STABILIZED"
+                ? "The system reached a recoverable state. Review which advisors helped preserve control."
+                : "The system crossed a failure threshold. Review advisor conflict, ignored signals, and final action timing."}
+            </div>
+          </section>
+        )}
 
         <section className="uc-card">
           <h1 className="uc-title">System Status</h1>
@@ -94,7 +119,25 @@ advisors = applyPersonaBehavior(advisors, game);
           })}
         </section>
 
-        <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} />
+        {conflict && (
+          <section className="uc-conflict">
+            <div className="uc-conflict-level">{conflict.level}</div>
+            <div className="uc-conflict-title">{conflict.title}</div>
+            {conflict.lines.map((line, index) => (
+              <div key={index} className="uc-conflict-line">
+                {line}
+              </div>
+            ))}
+          </section>
+        )}
+
+        <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
+
+        {gameOver && onReset && (
+          <button className="uc-reset" type="button" onClick={onReset}>
+            Try Again
+          </button>
+        )}
       </div>
     </main>
   );

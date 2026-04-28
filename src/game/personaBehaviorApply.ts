@@ -30,10 +30,7 @@ export function applyPersonaBehavior(personas: any[], game: any) {
       ...p,
       originalSuggests: p.suggests,
       suggests: nextSuggestion,
-      behaviorNote:
-        threat !== "NORMAL"
-          ? `${behavior.stressResponse} under ${threat} pressure`
-          : null,
+      behaviorNote: `${behavior.stressResponse} under ${threat} pressure`,
     };
   });
 }
