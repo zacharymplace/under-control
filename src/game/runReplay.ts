@@ -1,5 +1,6 @@
 import { getTrajectoryInsight } from "./trajectoryRisk";
 import { getNeedNeglectInsight } from "./needNeglect";
+import { getCommitmentInsight } from "./commitment";
 
 export function buildRunReplay(game: any) {
   const log = game.actionLog || [];
@@ -101,6 +102,11 @@ export function buildFailureExplanation(game: any) {
   const needNeglectInsight = getNeedNeglectInsight(game);
   if (needNeglectInsight) {
     reasons.push(needNeglectInsight);
+  }
+
+  const commitmentInsight = getCommitmentInsight(game);
+  if (commitmentInsight) {
+    reasons.push(commitmentInsight);
   }
 
   if (!reasons.length) {

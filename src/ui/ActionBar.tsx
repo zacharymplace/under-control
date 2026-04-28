@@ -14,6 +14,7 @@ import { getPressureDistortionNote } from "@/game/pressureDistortion";
 import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
 import { getDominantNeedLabel } from "@/game/dominantNeed";
 import { getNeedNeglectPenalty, getNeedNeglectInsight } from "@/game/needNeglect";
+import { getCommitmentScore, getCommitmentLabel } from "@/game/commitment";
 
 function scoreAction(
   action: string,
@@ -32,13 +33,15 @@ function scoreAction(
   const weightedSupport = getWeightedSupportMultiplier(action, game);
   const trajectoryPenalty = getTrajectoryPenalty(game);
   const needNeglectPenalty = getNeedNeglectPenalty(game);
+  const commitmentScore = getCommitmentScore(game);
 
   return (
     score *
     disagreementMultiplier *
     weightedSupport *
     trajectoryPenalty *
-    needNeglectPenalty
+    needNeglectPenalty *
+    commitmentScore
   ).toFixed(2);
 }
 
@@ -123,6 +126,7 @@ export function ActionBar({
 
       <div className="uc-footer-note">Alignment impact: {impact}</div>
       <div className="uc-footer-note">Trajectory: {getTrajectoryRiskLabel(game)}</div>
+      <div className="uc-footer-note">Commitment: {getCommitmentLabel(game)}</div>
       <div className="uc-footer-note">{getDominantNeedLabel(game)}</div>
       {getNeedNeglectInsight(game) && (
         <div className="uc-footer-note">Need neglect: {getNeedNeglectInsight(game)}</div>
