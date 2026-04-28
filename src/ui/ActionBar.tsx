@@ -18,6 +18,7 @@ import { getCommitmentScore, getCommitmentLabel } from "@/game/commitment";
 import { getSystemPhase } from "@/game/phase";
 import { getLateCorrectionPenalty, getPointOfNoReturn, getMissedCommitmentWindow } from "@/game/irreversibility";
 import { getPhasePenalty } from "@/game/phasePenalty";
+import { isStabilizationComplete } from "@/game/recoveryCompletion";
 
 function scoreAction(
   action: string,
@@ -40,6 +41,11 @@ function scoreAction(
   const lateCorrectionPenalty = getLateCorrectionPenalty(action, game);
   const phasePenalty = getPhasePenalty(action, game);
 
+  let recoveryPenalty = 1;
+  if (action !== "STABILIZE" && !isStabilizationComplete(game) && game.drift > 50) {
+    recoveryPenalty = 0.7;
+  }
+
   return (
     score *
     disagreementMultiplier *
@@ -48,7 +54,8 @@ function scoreAction(
     needNeglectPenalty *
     commitmentScore *
     lateCorrectionPenalty *
-    phasePenalty
+    phasePenalty *
+    recoveryPenalty
   ).toFixed(2);
 }
 
