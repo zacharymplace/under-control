@@ -18,6 +18,7 @@ import { initialIgnoredCounts, updateIgnoredCounts } from "@/game/personaMemory"
 import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
+import { getActionFeedback } from "@/game/actionFeedback";
 import { getInitialPlayerTendency, updatePlayerTendency } from "@/game/playerTendency";
 import { logCompletedRun } from "@/game/runAnalytics";
 
@@ -82,7 +83,10 @@ export default function Page() {
       logCompletedRun(next);
     }
 
-    setTimeout(() => setGame(next), 100);
+    setTimeout(() => {
+      const feedback = getActionFeedback(action, game, next);
+      setGame({ ...next, feedback });
+    }, 100);
   }
 
   function handleReset() {
@@ -91,7 +95,7 @@ export default function Page() {
       ...buildInitialGame(scenarioId),
       trust: initialTrust,
       ignoredCounts: initialIgnoredCounts,
-      actionHistory: [...(game.actionHistory || []), action],
+      actionHistory: [],
     });
   }
 
@@ -273,7 +277,7 @@ function applyDemoAction(game: any, action: string) {
   next = {
     ...next,
     turn: game.turn + 1,
-    actionHistory: [...(game.actionHistory || []), action],
+    actionHistory: [],
   };
 
   if (action === "REROUTE") {

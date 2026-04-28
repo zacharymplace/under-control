@@ -144,7 +144,13 @@ advisors = applyPersonaBehavior(advisors, game);
         <PlayerTendency profile={game.playerTendency} />
         <Counterfactual game={{ ...game, personas: advisors }} />
 
-        <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
+        {game.feedback && (
+  <div className="uc-action-feedback">
+    {game.feedback}
+  </div>
+)}
+
+<ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
 
         {gameOver && onReset && (
           <button className="uc-reset" type="button" onClick={onReset}>
