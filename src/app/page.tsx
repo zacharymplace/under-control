@@ -27,6 +27,7 @@ import { createInitialAdvisorMemory } from "@/game/advisorMemory";
 import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
+import { maybeInterruptAction } from "@/game/advisorInterruption";
 import { logCompletedRun } from "@/game/runAnalytics";
 import { tickGame } from "@/game/tickEngine";
 
@@ -102,20 +103,23 @@ export default function Page() {
     }
 
     setTimeout(() => {
-      const feedback = getActionFeedback(action, game, next);
-      const judgment = getActionJudgment(action, game, next);
-      const combined = judgment ? `${feedback}. ${judgment}` : feedback;
-      const reactions = getAdvisorReactions(action, judgment);
-
       const advisorsForMemory = applyPersonaBehavior(
         game.personas?.length ? game.personas : getDefaultPersonas(game),
         game
       );
 
+      const interruption = maybeInterruptAction(action, game, advisorsForMemory);
+      const finalAction = interruption.action;
+
+      const feedback = getActionFeedback(finalAction, game, next);
+      const judgment = getActionJudgment(finalAction, game, next);
+      const combined = judgment ? `${feedback}. ${judgment}` : feedback;
+      const reactions = getAdvisorReactions(finalAction, judgment);
+
       const advisorMemory = updateAdvisorMemory({
         memory: game.advisorMemory,
         advisors: advisorsForMemory,
-        action,
+        action: finalAction,
         judgment,
       });
       setIsPaused(true);
@@ -126,7 +130,7 @@ export default function Page() {
 
       const afterBurst = applyBurstTicks(next, 3);
 
-      setGame({ ...afterBurst, ...next, feedback: combined, reactions, advisorMemory });
+      setGame({ interrupted: interruption.interrupted, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory });
     }, 100);
   }
 
@@ -134,6 +138,7 @@ export default function Page() {
     setBestTurn((prev) => Math.max(prev, game.turn));
     setGame({
       ...buildInitialGame(scenarioId),
+      interrupted: false,
       trust: initialTrust,
       ignoredCounts: initialIgnoredCounts,
       actionHistory: [] as string[],
@@ -162,7 +167,7 @@ export default function Page() {
 
   function handleScenarioChange(nextScenarioId: ScenarioId) {
   setScenarioId(nextScenarioId);
-  setGame({ ...(buildInitialGame(nextScenarioId) as Game), advisorMemory: createInitialAdvisorMemory() });
+  setGame({ ...(buildInitialGame(nextScenarioId) as Game), advisorMemory: createInitialAdvisorMemory(), interrupted: false });
 }
 
 return (

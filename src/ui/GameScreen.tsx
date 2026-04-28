@@ -170,6 +170,12 @@ advisors = applyPersonaBehavior(advisors, game);
         <PlayerTendency tendency={game.playerTendency} />
         <Counterfactual game={{ ...game, personas: advisors }} />
 
+        {game.interrupted && (
+          <div style={{ color: "#ef4444", fontWeight: 800, marginBottom: 8 }}>
+            Advisor override: your decision was replaced under collapse pressure
+          </div>
+        )}
+
         {game.feedback && (
   <div className="uc-action-feedback">
     {game.feedback}
