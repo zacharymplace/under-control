@@ -1,4 +1,5 @@
 import { PERSONA_BEHAVIORS, getThreatLevel } from "./personaBehavior";
+import { getAdvisorAnticipation } from "./advisorAnticipation";
 
 export function applyPersonaBehavior(personas: any[], game: any) {
   const threat = getThreatLevel(game);
@@ -15,6 +16,11 @@ export function applyPersonaBehavior(personas: any[], game: any) {
     const memory = game.advisorMemory?.[name];
     const memoryStress = memory?.stressLevel ?? 0;
     const memoryIgnored = memory?.ignoredCount ?? 0;
+    const anticipation = getAdvisorAnticipation(name, game);
+
+    if (anticipation?.forceSuggestion && threat !== "CRITICAL") {
+      nextSuggestion = anticipation.forceSuggestion;
+    }
 
     if (threat === "HIGH") {
       if (behavior.stressResponse === "OVERSTRUCTURES") {
@@ -47,6 +53,7 @@ export function applyPersonaBehavior(personas: any[], game: any) {
       ...p,
       mood: memoryMood,
       memoryNote,
+      anticipationNote: anticipation?.note || null,
       originalSuggests: p.suggests,
       suggests: nextSuggestion,
       behaviorNote: `${behavior.stressResponse} under ${threat} pressure`,
