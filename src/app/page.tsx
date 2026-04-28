@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GameScreen } from "@/ui/GameScreen";
 import { TUNING } from "@/game/tuning";
 import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telemetry";
@@ -24,6 +24,7 @@ const initialGame = {
   runInsight: null,
   telemetry: initTelemetry(),
   summary: null,
+  adaptiveModifiers: null,
   analyticsLogged: false,
   trust: initialTrust,
   messages: [
@@ -41,9 +42,13 @@ const initialGame = {
 export default function Page() {
   const [game, setGame] = useState(initialGame);
   const [bestTurn, setBestTurn] = useState(1);
+  const [adaptiveModifiers, setAdaptiveModifiers] = useState(null);
 
   function handleAction(action: string) {
-    const next = applyDemoAction(game, action);
+    const next = applyDemoAction(
+      { ...game, adaptiveModifiers },
+      action
+    );
 
     if (
       (next.state === "FAILED" || next.state === "STABILIZED") &&
@@ -63,6 +68,26 @@ export default function Page() {
       trust: game.trust,
     });
   }
+
+  
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await fetch("/api/analytics");
+        const data = await res.json();
+
+        const { derivePlayerProfile, deriveAdaptiveModifiers } =
+          await import("@/game/adaptive");
+
+        const profile = derivePlayerProfile(data.runs || []);
+        const mods = deriveAdaptiveModifiers(profile);
+
+        setAdaptiveModifiers(mods);
+      } catch {}
+    }
+
+    loadProfile();
+  }, []);
 
   return (
     <GameScreen
@@ -101,13 +126,18 @@ function getPressure(game: any) {
 }
 
 function applyPassiveDecay(game: any) {
+  const mods = game.adaptiveModifiers || {
+    loadPressureMult: 1,
+    driftPenaltyMult: 1,
+    signalDecayMult: 1,
+  };
   const m = phaseMult(game.turn);
 
   return {
     ...game,
-    load: clamp(game.load + Math.round(TUNING.BASE_LOAD * m)),
-    drift: clamp(game.drift + Math.round(TUNING.BASE_DRIFT * m)),
-    integrity: clamp(game.integrity - Math.round(TUNING.BASE_INTEGRITY_DECAY * m)),
+    load: clamp(game.load + Math.round((TUNING.BASE_LOAD * m * mods.loadPressureMult))),
+    drift: clamp(game.drift + Math.round((TUNING.BASE_DRIFT * m * mods.driftPenaltyMult))),
+    integrity: clamp(game.integrity - Math.round((TUNING.BASE_INTEGRITY_DECAY * m * mods.signalDecayMult))),
   };
 }
 
