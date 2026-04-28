@@ -7,6 +7,7 @@ import { initTelemetry, updateTelemetry, summarizeTelemetry } from "@/game/telem
 import { getPersonaRecommendations } from "@/game/personaEngine";
 import { initialTrust, updateTrust } from "@/game/trust";
 import { evaluateOutcome } from "@/game/outcome";
+import { classifyRun } from "@/game/runArchetype";
 import { logCompletedRun } from "@/game/runAnalytics";
 
 const initialGame = {
@@ -174,7 +175,7 @@ function checkTerminal(game: any) {
       eventTitle: "System Stabilized",
       eventSub: "You maintained control through the window",
       runInsight: {
-        title: "Assignment Complete",
+        title: `Run Type: ${classifyRun(game)}`,
         text: "Control was maintained under increasing pressure.",
       },
       messages: [
@@ -198,7 +199,7 @@ function checkTerminal(game: any) {
       eventTitle: "System Failure",
       eventSub: "Control was lost",
       runInsight: {
-        title: "Pattern",
+        title: `Run Type: ${classifyRun(game)}`,
         text: "Review pressure vs. action timing.",
       },
       messages: [
