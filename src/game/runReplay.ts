@@ -124,10 +124,14 @@ export function buildFailureExplanation(game: any) {
   }
 
   if (game.pointOfNoReturn?.turn) {
+    const turnsSince = (game.turn ?? 1) - game.pointOfNoReturn.turn;
     reasons.push(
       `Point of no return reached on Turn ${game.pointOfNoReturn.turn}.`
     );
     reasons.push("Post-collapse actions were only partially effective.");
+    if (turnsSince >= 3) {
+      reasons.push("Recovery capacity degraded over time after collapse.");
+    }
   }
 
   if (!reasons.length) {
