@@ -7,7 +7,12 @@ export function StickyHud({ game }: { game: any }) {
 
   useEffect(() => {
     function onScroll() {
-      setVisible(window.scrollY > 360);
+      const statusCard = document.querySelector("[data-system-status]");
+      const threshold = statusCard
+        ? statusCard.getBoundingClientRect().bottom + window.scrollY
+        : 360;
+
+      setVisible(window.scrollY > threshold - 40);
     }
 
     onScroll();

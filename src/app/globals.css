@@ -543,3 +543,31 @@ body {
   transform: translateY(0);
   pointer-events: auto;
 }
+
+.uc-sticky-hud {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  width: min(980px, calc(100vw - 32px));
+  z-index: 100;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #2a384b;
+  border-radius: 12px;
+  background: rgba(11, 15, 20, 0.94);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translate(-50%, -14px);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.uc-sticky-hud.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}

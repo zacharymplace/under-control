@@ -68,7 +68,7 @@ advisors = applyPersonaBehavior(advisors, game);
           </section>
         )}
 
-        <section className="uc-card">
+        <section className="uc-card" data-system-status>
           <h1 className="uc-title">System Status</h1>
           <div className="uc-subtle">Team Alignment: {alignment}</div>
 
