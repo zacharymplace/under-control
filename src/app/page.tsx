@@ -66,7 +66,7 @@ export default function Page() {
     setBestTurn((prev) => Math.max(prev, game.turn));
     setGame({
       ...initialGame,
-      trust: game.trust,
+      trust: initialTrust,
     });
   }
 
@@ -278,7 +278,7 @@ function applyDemoAction(game: any, action: string) {
   }
 
   const personasAfter = getPersonaRecommendations(next);
-  const outcome = evaluateOutcome(prev, next, personasAfter);
+  const outcome = evaluateOutcome(prev, next, action);
   next.trust = updateTrust(game.trust || initialTrust, personasBeforeAction, action, outcome);
 
   return checkTerminal(next);

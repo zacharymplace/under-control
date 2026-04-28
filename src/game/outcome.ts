@@ -1,24 +1,28 @@
-export function evaluateOutcome(prev: any, next: any, personas: any[]) {
-  const loadImproved = next.load < prev.load;
-  const integrityImproved = next.integrity > prev.integrity;
-  const driftImproved = next.drift < prev.drift;
+export function evaluateOutcome(prev: any, next: any, action: string) {
+  const terminalFailure = next.state === "FAILED";
 
-  let baseScore =
-    (loadImproved ? 1 : -1) +
-    (integrityImproved ? 1 : -1) +
-    (driftImproved ? 1 : -1);
+  if (terminalFailure) return "BAD";
 
-  // trust-weighted adjustment
-  let trustInfluence = 0;
+  if (action === "REROUTE") {
+    const loadImproved = next.load < prev.load;
+    const driftNotCritical = next.drift < 55;
+    return loadImproved && driftNotCritical ? "GOOD" : "BAD";
+  }
 
-  personas.forEach((p) => {
-    if (p.trust > 1) trustInfluence += 0.5;
-    if (p.trust < -1) trustInfluence -= 0.5;
-  });
+  if (action === "STABILIZE") {
+    const integrityImproved = next.integrity > prev.integrity;
+    const driftImprovedOrStable = next.drift <= prev.drift + 1;
+    const loadNotCritical = next.load < 100;
+    return integrityImproved && driftImprovedOrStable && loadNotCritical
+      ? "GOOD"
+      : "BAD";
+  }
 
-  const finalScore = baseScore + trustInfluence;
+  if (action === "OBSERVE") {
+    const signalImproved = next.signalClarity > prev.signalClarity;
+    const loadNotCritical = next.load < 100;
+    return signalImproved && loadNotCritical ? "GOOD" : "BAD";
+  }
 
-  if (finalScore >= 2) return "GOOD";
-  if (finalScore <= -2) return "BAD";
   return "NEUTRAL";
 }

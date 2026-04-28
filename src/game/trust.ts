@@ -6,6 +6,10 @@ export const initialTrust: Trust = {
   ISHAAN: 0,
 };
 
+function clampTrust(value: number) {
+  return Math.max(-5, Math.min(5, value));
+}
+
 export function updateTrust(
   trust: Trust,
   personas: any[],
@@ -17,8 +21,13 @@ export function updateTrust(
   personas.forEach((persona) => {
     if (persona.action !== chosenAction) return;
 
-    if (outcome === "GOOD") next[persona.name] += 1;
-    if (outcome === "BAD") next[persona.name] -= 1;
+    if (outcome === "GOOD") {
+      next[persona.name] = clampTrust((next[persona.name] ?? 0) + 1);
+    }
+
+    if (outcome === "BAD") {
+      next[persona.name] = clampTrust((next[persona.name] ?? 0) - 1);
+    }
   });
 
   return next;
