@@ -1,15 +1,12 @@
-"use client";
-
-import { getPlayerTendency } from "@/game/playerTendency";
-
-export function PlayerTendency({ profile }: { profile: any }) {
-  const tendency = getPlayerTendency(profile);
+export function PlayerTendency({ tendency }: { tendency: any }) {
+  if (!tendency) {
+    return <div>Unformed</div>;
+  }
 
   return (
-    <section className="uc-player-tendency">
-      <div className="uc-replay-kicker">Player tendency</div>
-      <div className="uc-player-tendency-title">{tendency.label}</div>
-      <div className="uc-player-tendency-copy">{tendency.description}</div>
-    </section>
+    <div>
+      <div>Style: {tendency.dominantStyle}</div>
+      <div>Risk: {tendency.riskProfile}</div>
+    </div>
   );
 }

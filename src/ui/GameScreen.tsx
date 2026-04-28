@@ -155,7 +155,7 @@ advisors = applyPersonaBehavior(advisors, game);
         )}
 
         <RunReplay game={{ ...game, personas: advisors }} />
-        <PlayerTendency profile={game.playerTendency} />
+        <PlayerTendency tendency={game.playerTendency} />
         <Counterfactual game={{ ...game, personas: advisors }} />
 
         {game.feedback && (

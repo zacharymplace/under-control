@@ -21,12 +21,12 @@ import { classifyRun } from "@/game/runArchetype";
 import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
 import { getActionFeedback } from "@/game/actionFeedback";
 import { getActionJudgment } from "@/game/actionJudgment";
+import { analyzePlayerTendency } from "@/game/playerTendency";
 import { getAdvisorReactions } from "@/game/advisorReaction";
 import { createInitialAdvisorMemory } from "@/game/advisorMemory";
 import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
-import { getInitialPlayerTendency, updatePlayerTendency } from "@/game/playerTendency";
 import { logCompletedRun } from "@/game/runAnalytics";
 
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
