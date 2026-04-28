@@ -1,43 +1,59 @@
+function confidenceWeight(level: string) {
+  if (level === "HIGH") return 2;
+  if (level === "LOW") return 0.5;
+  return 1;
+}
+
+function trustWeight(value: number) {
+  return 1 + value * 0.25; // trust amplifies influence
+}
+
 export function analyzeDisagreement(personas: any[]) {
   if (!personas || personas.length < 2) return null;
 
-  const actionCounts: Record<string, number> = {
+  const scores: Record<string, number> = {
     STABILIZE: 0,
     REROUTE: 0,
     OBSERVE: 0,
   };
 
   personas.forEach((p) => {
-    if (actionCounts[p.action] !== undefined) {
-      actionCounts[p.action]++;
-    }
+    const weight =
+      confidenceWeight(p.confidence) *
+      trustWeight(p.trust ?? 0);
+
+    scores[p.action] += weight;
   });
 
-  const uniqueActions = Object.values(actionCounts).filter((count) => count > 0).length;
-  const consensusAction = Object.entries(actionCounts).sort((a, b) => b[1] - a[1])[0];
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
-  if (uniqueActions >= 3) {
-    return {
-      level: "HIGH",
-      label: "High Disagreement",
-      text: "The team is split. No action has clear consensus.",
-      consensusAction: null,
-    };
-  }
+  const top = sorted[0];
+  const second = sorted[1];
 
-  if (uniqueActions === 2) {
-    return {
-      level: "MEDIUM",
-      label: "Partial Disagreement",
-      text: `${consensusAction[0]} has the strongest support, but not full consensus.`,
-      consensusAction: consensusAction[0],
-    };
-  }
+  const spread = top[1] - second[1];
+
+  let level = "LOW";
+  if (spread < 0.75) level = "HIGH";
+  else if (spread < 1.5) level = "MEDIUM";
 
   return {
-    level: "LOW",
-    label: "Consensus",
-    text: `${consensusAction[0]} has full team alignment.`,
-    consensusAction: consensusAction[0],
+    level,
+    label:
+      level === "HIGH"
+        ? "High Disagreement"
+        : level === "MEDIUM"
+        ? "Partial Disagreement"
+        : "Consensus",
+
+    text:
+      level === "HIGH"
+        ? "Signals conflict — timing and judgment matter most."
+        : level === "MEDIUM"
+        ? `${top[0]} is favored, but alternatives remain viable.`
+        : `${top[0]} is strongly supported by the team.`,
+
+    consensusAction: top[0],
+    scores,
+    spread,
   };
 }

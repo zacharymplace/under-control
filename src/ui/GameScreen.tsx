@@ -97,6 +97,10 @@ const pattern = terminal ? detectFailurePattern(game.actionLog || []) : null;
             </div>
             <div className="text-sm text-[#8A93A3]">
               {disagreement.text}
+
+            <div className="text-xs text-[#5A646F] mt-1">
+              Weighted by trust and confidence — not all voices carry equal influence.
+            </div>
             </div>
           </section>
         )}
