@@ -1,3 +1,5 @@
+import { getIgnoredPenalty, getTrustModifier } from "./personaPenalty";
+
 export function getPersonaConfidence(persona: any, game: any) {
   const name = (persona.name || "").toUpperCase();
   const signal = game.signalClarity ?? game.signal ?? 0;
@@ -5,25 +7,26 @@ export function getPersonaConfidence(persona: any, game: any) {
   const drift = game.drift ?? 0;
   const load = game.load ?? 0;
 
+  let base = 1;
+
   if (name === "ELENA") {
-    if (signal >= 70) return 1.4;
-    if (signal >= 55) return 1.1;
-    return 0.75;
+    if (signal >= 70) base = 1.4;
+    else if (signal >= 55) base = 1.1;
+    else base = 0.75;
+  } else if (name === "MARA") {
+    if (integrity <= 65) base = 1.4;
+    else if (integrity <= 80) base = 1.15;
+    else base = 0.9;
+  } else if (name === "ISHAAN") {
+    if (drift >= 45 || load >= 85) base = 1.4;
+    else if (drift >= 25 || load >= 75) base = 1.15;
+    else base = 0.85;
   }
 
-  if (name === "MARA") {
-    if (integrity <= 65) return 1.4;
-    if (integrity <= 80) return 1.15;
-    return 0.9;
-  }
+  const trustModifier = getTrustModifier(name, game);
+  const ignoredPenalty = getIgnoredPenalty(name, game);
 
-  if (name === "ISHAAN") {
-    if (drift >= 45 || load >= 85) return 1.4;
-    if (drift >= 25 || load >= 75) return 1.15;
-    return 0.85;
-  }
-
-  return 1;
+  return Number((base * trustModifier * ignoredPenalty).toFixed(2));
 }
 
 export function buildWeightedSupport(game: any) {

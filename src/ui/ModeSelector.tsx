@@ -15,7 +15,6 @@ export function ModeSelector({
       <div className="mb-2 text-xs uppercase tracking-widest text-[#8A93A3]">
         Mode
       </div>
-
       <select
         value={scenarioId}
         disabled={disabled}

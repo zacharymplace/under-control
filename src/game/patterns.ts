@@ -1,37 +1,61 @@
-export function analyzePatterns(runs: any[]) {
-  if (!runs.length) return null;
+export type PatternType =
+  | "STABILITY_ILLUSION"
+  | "TIMING_FAILURE"
+  | "PRESSURE_FAILURE"
+  | "CONTROL_FAILURE"
+  | "SIGNAL_FAILURE";
 
-  let stabilizeOveruse = 0;
-  let rerouteOveruse = 0;
-  let observeDelay = 0;
+export type Pattern = {
+  type: PatternType;
+  label: string;
+  description: string;
+  turns: number[];
+};
 
-  runs.forEach((run) => {
-    const actions = run.actionHistory || [];
+export function buildPatterns(log: any[]): Pattern[] {
+  if (!log || log.length < 2) return [];
 
-    const stabilizeCount = actions.filter((a: string) => a === "STABILIZE").length;
-    const rerouteCount = actions.filter((a: string) => a === "REROUTE").length;
+  const patterns: Pattern[] = [];
 
-    if (stabilizeCount > rerouteCount + 2) stabilizeOveruse++;
-    if (rerouteCount > stabilizeCount + 2) rerouteOveruse++;
+  let stabilityLoop = 0;
+  let observationLoop = 0;
 
-    if (actions.slice(0, 3).every((a: string) => a !== "OBSERVE")) {
-      observeDelay++;
+  for (let i = 1; i < log.length; i++) {
+    const prev = log[i - 1];
+    const curr = log[i];
+
+    const driftUp = curr.drift > prev.drift;
+    const integrityUp = curr.integrity > prev.integrity;
+    const action = curr.action;
+
+    if (action === "STABILIZE" && integrityUp && driftUp) {
+      stabilityLoop++;
     }
-  });
 
-  const insights = [];
-
-  if (stabilizeOveruse > runs.length * 0.5) {
-    insights.push("Over-reliance on STABILIZE may be allowing load to accumulate.");
+    if (action === "OBSERVE" && driftUp) {
+      observationLoop++;
+    }
   }
 
-  if (rerouteOveruse > runs.length * 0.5) {
-    insights.push("Excessive REROUTE is increasing instability (drift).");
+  if (stabilityLoop >= 2) {
+    patterns.push({
+      type: "STABILITY_ILLUSION",
+      label: "False Stability Loop",
+      description:
+        "Stabilization improved integrity while drift continued accelerating.",
+      turns: [],
+    });
   }
 
-  if (observeDelay > runs.length * 0.5) {
-    insights.push("Early OBSERVE actions are underused; signal clarity may be too low.");
+  if (observationLoop >= 2) {
+    patterns.push({
+      type: "TIMING_FAILURE",
+      label: "Repeated Observation Loop",
+      description:
+        "Observation improved signal while pressure continued rising without action.",
+      turns: [],
+    });
   }
 
-  return insights;
+  return patterns;
 }
