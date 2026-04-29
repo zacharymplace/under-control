@@ -420,15 +420,17 @@ function applyDemoAction(game: any, action: string) {
     const driftLevel = next.drift ?? 0;
 
     let correction = 6;
-    if (driftLevel > 40) correction = 10;
-    if (driftLevel > 60) correction = 14;
+    if (driftLevel > 40) correction = 12;
+    if (driftLevel > 60) correction = 16;
 
     next.drift -= correction;
     next.integrity += 8;
 
     if (next.pressure === "CRITICAL") {
       next.load -= 6;
-    } else if (next.pressure !== "HIGH") {
+    } else if (next.pressure === "HIGH") {
+      next.load -= 3;
+    } else {
       next.load += 4;
     }
 
