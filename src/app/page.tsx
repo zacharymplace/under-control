@@ -384,8 +384,11 @@ function applyDemoAction(game: any, action: string) {
   };
 
   if (action === "REROUTE") {
+    const turn = game.turn ?? 1;
+    const spike = 14 + Math.floor(turn * 0.6);
+
     next.load -= 14;
-    next.drift += 14;
+    next.drift += Math.min(spike, 18);
     next.integrity -= 5;
     next.driftVisible = true;
 
