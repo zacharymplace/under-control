@@ -77,7 +77,7 @@ function explainAction(action: string, game: any, isBehaviorLocked: boolean, isC
   if (game.load > 80 && action === "REROUTE") return "High load favors reroute";
   if (signal < 55 && action === "OBSERVE") return "Low signal favors observation";
 
-  return "No strong signal advantage";
+  return "{getActionReason(action as any, game)}";
 }
 
 export function ActionBar({
@@ -164,7 +164,7 @@ const decisiveScores = spreadActionScores({
             >
               <div className="uc-action-name">{action}</div>
               <div className="uc-action-score">
-                score: {scoreAction(action, game, suggestions, disagreementMultiplier)}
+                score: {(decisiveScores[action as keyof typeof decisiveScores] ?? scoreAction(action, game, suggestions, disagreementMultiplier)).toFixed(2)}
               </div>
               <div className="uc-action-score">
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
