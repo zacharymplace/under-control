@@ -155,6 +155,8 @@ const decisiveScores = spreadActionScores({
     collapseLocked.includes(action) || locked.includes(action);
           const isDisabled = disabled || isLocked;
 
+          const isInvalid = invalidActions.includes(action as any);
+
           return (
             <button
               key={action}
@@ -172,7 +174,7 @@ const decisiveScores = spreadActionScores({
               <div className="uc-action-score">
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
               </div>
-              <div className="uc-action-reason">{getActionReason(action as any, game)}</div>
+              <div className="uc-action-reason">{isInvalid ? "System cannot tolerate this action under current conditions" : getActionReason(action as any, game)}</div>
             </button>
           );
         })}
