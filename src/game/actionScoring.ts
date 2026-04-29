@@ -16,23 +16,19 @@ function advisorAlignment(action: ActionName, advisors: any[]) {
   }).length;
 }
 
+function signalWeightedSupport(support: number, game: any) {
+  const signal = Math.max(0, Math.min(100, game.signalClarity ?? 0));
+  return support * (signal / 100);
+}
+
 function needMultiplier(action: ActionName, game: any) {
   const need = getDominantNeed(game);
 
-  if (need === "STABILIZE") {
-    return action === "STABILIZE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
-  }
+  if (need === "STABILIZE") return action === "STABILIZE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
+  if (need === "REROUTE") return action === "REROUTE" ? 1.35 : action === "STABILIZE" ? 0.9 : 0.85;
+  if (need === "OBSERVE") return action === "OBSERVE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
 
-  if (need === "REROUTE") {
-    return action === "REROUTE" ? 1.35 : action === "STABILIZE" ? 0.9 : 0.85;
-  }
-
-  if (need === "OBSERVE") {
-    return action === "OBSERVE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
-  }
-
-  // Balanced control should still slightly favor pressure relief.
-  return action === "REROUTE" ? 1.12 : 1;
+  return action === "REROUTE" ? 1.05 : action === "OBSERVE" ? 1.12 : 1;
 }
 
 function hardStateAdjustment(action: ActionName, game: any) {
@@ -44,11 +40,11 @@ function hardStateAdjustment(action: ActionName, game: any) {
   let adjustment = 0;
 
   if (drift > 50 && action === "REROUTE") adjustment -= 0.6;
-  if (signal < 50 && action !== "OBSERVE") adjustment -= 0.5;
+  if (signal < 65 && action !== "OBSERVE") adjustment -= 0.45;
   if (integrity < 60 && action !== "STABILIZE") adjustment -= 0.7;
   if (load > 85 && action !== "REROUTE") adjustment -= 0.45;
 
-  if (signal < 55 && action === "OBSERVE") adjustment += 0.45;
+  if (signal < 70 && action === "OBSERVE") adjustment += 0.65;
   if (integrity < 70 && action === "STABILIZE") adjustment += 0.45;
   if (load > 75 && action === "REROUTE") adjustment += 0.35;
 
@@ -86,9 +82,14 @@ export function scoreActionDecisively({
   const alignment = advisorAlignment(action, advisors);
   const fragmentedPenalty = alignment === 1 && advisors.length >= 3 ? -0.2 : 0;
   const alignmentBonus = alignment * 0.25;
+  const adjustedSupport = signalWeightedSupport(support, game);
 
   const raw =
-    (baseScore + support * 0.12 + alignmentBonus + fragmentedPenalty + hardStateAdjustment(action, game)) *
+    (baseScore +
+      adjustedSupport * 0.12 +
+      alignmentBonus +
+      fragmentedPenalty +
+      hardStateAdjustment(action, game)) *
     needMultiplier(action, game) *
     phaseMultiplier(game) *
     decisionWindowMultiplier(game);
@@ -106,11 +107,9 @@ export function spreadActionScores<T extends Record<ActionName, number>>(scores:
   const spread = max - min;
   if (spread >= 0.25) return scores;
 
-  const exaggerated = Object.fromEntries(
+  return Object.fromEntries(
     Object.entries(scores).map(([k, v]) => [k, clampScore(Math.pow(v / max, 1.65) * max)])
   ) as T;
-
-  return exaggerated;
 }
 
 export function getActionReason(action: ActionName, game: any) {
@@ -127,9 +126,10 @@ export function getActionReason(action: ActionName, game: any) {
   const signal = game.signalClarity ?? 100;
   const load = game.load ?? 0;
 
+  if (signal < 70 && action === "OBSERVE") return "Signal clarity still favors observation";
   if (drift > 50 && action === "REROUTE") return "Reroute is risky while instability is elevated";
   if (integrity < 60 && action !== "STABILIZE") return "Structure risk argues against this action";
-  if (signal < 50 && action !== "OBSERVE") return "Signal is too weak for confident action";
+  if (signal < 65 && action !== "OBSERVE") return "Signal is too weak for confident action";
   if (load > 85 && action !== "REROUTE") return "Load pressure needs relief";
 
   return "No decisive state advantage";
