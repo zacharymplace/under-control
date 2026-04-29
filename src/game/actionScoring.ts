@@ -40,11 +40,11 @@ function hardStateAdjustment(action: ActionName, game: any) {
   let adjustment = 0;
 
   if (drift > 50 && action === "REROUTE") adjustment -= 0.6;
-  if (signal < 65 && action !== "OBSERVE") adjustment -= 0.45;
+  if (signal < 65 && action !== "OBSERVE") adjustment -= 1.25;
   if (integrity < 60 && action !== "STABILIZE") adjustment -= 0.7;
   if (load > 85 && action !== "REROUTE") adjustment -= 0.45;
 
-  if (signal < 70 && action === "OBSERVE") adjustment += 0.65;
+  if (signal < 70 && action === "OBSERVE") adjustment += 0.95;
   if (integrity < 70 && action === "STABILIZE") adjustment += 0.45;
   if (load > 75 && action === "REROUTE") adjustment += 0.35;
 
