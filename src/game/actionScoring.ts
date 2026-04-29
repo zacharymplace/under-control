@@ -1,8 +1,118 @@
+
+// --- Advisor-driven execution risk ---
+export function computeDisagreementRisk(game: any) {
+  const personas = game.personas || [];
+  if (!personas.length) return { risk: 0, consensus: 1 };
+
+  // assume each persona has `suggestion` (ActionName)
+  const counts: Record<string, number> = {};
+  for (const p of personas) {
+    const a = (p.suggestion || p.suggests || "").toString();
+    if (!a) continue;
+    counts[a] = (counts[a] || 0) + 1;
+  }
+
+  const total = Object.values(counts).reduce((a,b)=>a+b, 0) || 1;
+  const max = Math.max(...Object.values(counts), 0);
+  const consensus = max / total;           // 1 = full agreement
+  const disagreement = 1 - consensus;      // 0..1
+
+  // amplify in later phases
+  const phase = (game.turn ?? 1) > 6 ? 1.25 : (game.turn ?? 1) > 3 ? 1.1 : 1.0;
+
+  return {
+    risk: Math.min(1, disagreement * phase),
+    consensus
+  };
+}
+
+export function maybeOverrideAction(selected: ActionName, game: any) {
+  const { risk, consensus } = computeDisagreementRisk(game);
+
+  // do not override when consensus is strong
+  if (consensus >= 0.7) return { action: selected, overridden: false, reason: "" };
+
+  // cap override probability
+  const p = Math.min(0.55, risk);
+
+  if (Math.random() < p) {
+    const personas = game.personas || [];
+    const counts: Record<string, number> = {};
+    for (const p of personas) {
+      const a = (p.suggestion || p.suggests || "").toString();
+      if (!a) continue;
+      counts[a] = (counts[a] || 0) + 1;
+    }
+    // pick majority suggestion
+    const majority = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] as ActionName | undefined;
+    if (majority && majority !== selected) {
+      return { action: majority, overridden: true, reason: "High advisor disagreement caused an override" };
+    }
+  }
+
+  return { action: selected, overridden: false, reason: "" };
+}
+
+export function applyOutcomeVariance(next: any, action: ActionName, game: any) {
+  const { risk } = computeDisagreementRisk(game);
+  if (risk <= 0.2) return next;
+
+  // scale variance by risk
+  const jitter = (base: number) => Math.round(base * (0.5 * risk) * (Math.random() - 0.5) * 2);
+
+  const n = { ...next };
+
+  // small bounded noise on key axes
+  if (typeof n.load === "number") n.load = clampValue(n.load + jitter(6));
+  if (typeof n.drift === "number") n.drift = clampValue(n.drift + jitter(6));
+  if (typeof n.integrity === "number") n.integrity = clampValue(n.integrity + jitter(4));
+  if (typeof n.signalClarity === "number") n.signalClarity = clampValue(n.signalClarity + jitter(6));
+
+  return n;
+}
+
+
+export function getInvalidActions(game: any): ActionName[] {
+  const invalid: ActionName[] = [];
+
+  const load = game.load ?? 0;
+  const drift = game.drift ?? 0;
+  const integrity = game.integrity ?? 100;
+  const signal = game.signalClarity ?? 100;
+
+  // High load → OBSERVE becomes invalid (too passive)
+  if (load > 85) {
+    invalid.push("OBSERVE");
+  }
+
+  // High drift → REROUTE becomes dangerous
+  if (drift > 40) {
+    invalid.push("REROUTE");
+  }
+
+  // Low integrity → anything except STABILIZE is invalid
+  if (integrity < 60) {
+    invalid.push("REROUTE", "OBSERVE");
+  }
+
+  // Low signal → acting is invalid
+  if (signal < 55) {
+    invalid.push("STABILIZE", "REROUTE");
+  }
+
+  return [...new Set(invalid)];
+}
+
 import { getDominantNeed } from "./dominantNeed";
 import { getSystemPhase } from "./phase";
 import { getDecisionWindow } from "./decisionWindow";
 
 type ActionName = "STABILIZE" | "REROUTE" | "OBSERVE";
+
+function clampValue(n: number, min = 0, max = 100) {
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
 
 function clampScore(n: number) {
   if (!Number.isFinite(n)) return 0;
@@ -38,6 +148,11 @@ function hardStateAdjustment(action: ActionName, game: any) {
   const signal = game.signalClarity ?? 100;
 
   let adjustment = 0;
+
+  const invalid = getInvalidActions(game);
+  if (invalid.includes(action)) {
+    return 0.05; // effectively unselectable
+  }
 
   if (drift > 50 && action === "REROUTE") adjustment -= 0.6;
   if (signal < 65 && action !== "OBSERVE") adjustment -= 1.25;

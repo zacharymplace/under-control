@@ -37,6 +37,7 @@ import { logCompletedRun } from "@/game/runAnalytics";
 import { applyLearningFeedback } from "@/game/learningFeedback";
 import { isCorrectDecision } from "@/game/decisionTruth";
 import { tickGame } from "@/game/tickEngine";
+import { maybeOverrideAction, applyOutcomeVariance } from "@/game/actionScoring";
 
 
 function safe(n: number, fallback: number) {
@@ -131,32 +132,37 @@ export default function Page() {
 
       const finalAction = forced.forced ? forced.action : interruption.action;
 
-      // Source of truth for state, feedback, replay, and logging.
-      next = applyDemoAction({ ...game, adaptiveModifiers }, finalAction);
+      // Advisor-driven override
+      const override = maybeOverrideAction(finalAction as any, game);
+      const executedAction = override.action;
 
-      const simpleFeedback = getSimpleFeedback(finalAction, game, next);
-      const feedback = getActionFeedback(finalAction, game, next);
-      const judgment = getActionJudgment(finalAction, game, next);
+      // Source of truth for state, feedback, replay, and logging.
+      next = applyDemoAction({ ...game, adaptiveModifiers }, executedAction);
+      next = applyOutcomeVariance(next, executedAction as any, game);
+
+      const simpleFeedback = getSimpleFeedback(executedAction, game, next);
+      const feedback = getActionFeedback(executedAction, game, next);
+      const judgment = getActionJudgment(executedAction, game, next);
       const combined = judgment ? `${feedback}. ${judgment}` : feedback;
-      const reactions = getAdvisorReactions(finalAction, judgment);
+      const reactions = getAdvisorReactions(executedAction, judgment);
 
       const updatedCredibility = updateAdvisorCredibility({
         previous: game.credibility || {},
         advisors: advisorsForMemory,
-        finalAction,
+        finalAction: executedAction,
         judgment,
       });
 
       const learningAdjustedCredibility = applyLearningFeedback({
         credibility: updatedCredibility,
         advisors: advisorsForMemory,
-        correct: isCorrectDecision(finalAction, game),
+        correct: isCorrectDecision(executedAction, game),
       });
 
       const advisorMemory = updateAdvisorMemory({
         memory: game.advisorMemory,
         advisors: advisorsForMemory,
-        action: finalAction,
+        action: executedAction,
         judgment,
       });
       setIsPaused(true);
