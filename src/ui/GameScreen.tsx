@@ -1,4 +1,6 @@
 "use client";
+import { getRunGrade } from "@/game/runGrade";
+import { getDecisionWindow } from "@/game/decisionWindow";
 
 import { ActionBar } from "./ActionBar";
 import { ReferencePanel } from "./ReferencePanel";
@@ -44,6 +46,8 @@ advisors = applyPersonaBehavior(advisors, game);
   const alignment = getAlignment({ ...game, personas: advisors });
   const gameOver = game.state === "FAILED" || game.state === "STABILIZED";
   const conflict = buildPersonaConflict(advisors, game);
+  const decisionWindow = getDecisionWindow(game);
+  const runGrade = getRunGrade(game);
 
 return (
     <main className="uc-root">
@@ -53,6 +57,27 @@ return (
           <div className="uc-header-center">Pressure: {game.pressure}</div>
           <div className="uc-header-right">Turn: {game.turn}</div>
         </header>
+
+        <section className="uc-panel" style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <div className="uc-label">Run Goal</div>
+              <div style={{ fontWeight: 800 }}>Objective: Stabilize before collapse</div>
+              <div className="uc-footer-note">Survive the control window. Keep load, drift, and integrity within recoverable range.</div>
+            </div>
+
+            <div style={{ textAlign: "right" }}>
+              <div className="uc-label">Decision Window</div>
+              <div style={{ fontWeight: 900 }}>{decisionWindow.label}</div>
+              <div className="uc-footer-note">{decisionWindow.note}</div>
+            </div>
+
+            <div style={{ textAlign: "right" }}>
+              <div className="uc-label">Run Grade</div>
+              <div style={{ fontWeight: 900 }}>{runGrade}</div>
+            </div>
+          </div>
+        </section>
 
         <StickyHud game={game} />
 
@@ -190,6 +215,14 @@ return (
           <div style={{ color: "#ef4444", fontWeight: 800, marginBottom: 8 }}>
             Advisor override: your decision was replaced under collapse pressure
           </div>
+        )}
+
+        {game.simpleFeedback && (
+          <section className="uc-panel" style={{ marginBottom: 12 }}>
+            <div className="uc-label">Immediate Result</div>
+            <div style={{ fontWeight: 800 }}>{game.simpleFeedback.result}</div>
+            <div className="uc-footer-note">{game.simpleFeedback.meaning}</div>
+          </section>
         )}
 
         {game.feedback && (

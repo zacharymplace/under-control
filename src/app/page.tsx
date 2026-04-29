@@ -21,6 +21,7 @@ import { evaluateOutcome, evaluatePersonaOutcome } from "@/game/outcome";
 import { classifyRun } from "@/game/runArchetype";
 import { applyIgnoredSystemPenalty } from "@/game/systemDegradation";
 import { getActionFeedback } from "@/game/actionFeedback";
+import { getSimpleFeedback } from "@/game/simpleFeedback";
 import { getActionJudgment } from "@/game/actionJudgment";
 import { analyzePlayerTendency } from "@/game/playerTendency";
 import { getAdvisorReactions } from "@/game/advisorReaction";
@@ -124,6 +125,7 @@ export default function Page() {
 
       const finalAction = forced.forced ? forced.action : interruption.action;
 
+      const simpleFeedback = getSimpleFeedback(finalAction, game, next);
       const feedback = getActionFeedback(finalAction, game, next);
       const judgment = getActionJudgment(finalAction, game, next);
       const combined = judgment ? `${feedback}. ${judgment}` : feedback;
@@ -156,7 +158,8 @@ export default function Page() {
 
       const afterBurst = applyBurstTicks(next, 3);
 
-      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory,
+      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined,
+        simpleFeedback, reactions, advisorMemory,
         credibility: learningAdjustedCredibility });
     }, 100);
   }
