@@ -28,7 +28,9 @@ export function RunReplay({ game }: { game: any }) {
       </div>
 
       <div className="uc-correct-action">
-        <div className="uc-replay-kicker">Likely Correct Action</div>
+        <div className="uc-replay-kicker">
+          {game.state === "STABILIZED" ? "Effective Strategy" : "Likely Correct Action"}
+        </div>
         <div className="uc-correct-action-main">
           {explanation.likelyCorrectAction.action}
         </div>

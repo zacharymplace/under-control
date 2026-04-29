@@ -71,15 +71,20 @@ function summarizeTurn(
 export function buildFailureExplanation(game: any) {
   const log = game.actionLog || [];
   const final = log.length ? log[log.length - 1].after : game;
+  const isSuccess = game.state === "STABILIZED";
 
   const reasons: string[] = [];
 
+  if (isSuccess) {
+    reasons.push("Control was restored through adaptive execution.");
+  }
+
   if ((final.load ?? game.load ?? 0) >= 95) {
-    reasons.push("Load saturated the system");
+    reasons.push(isSuccess ? "Load approached system limits but was managed" : "Load saturated the system");
   }
 
   if ((final.drift ?? game.drift ?? 0) >= 55) {
-    reasons.push("Drift exceeded recovery capacity");
+    reasons.push(isSuccess ? "Drift approached recovery limits but remained controllable" : "Drift exceeded recovery capacity");
   }
 
   const ignoredTotal = Object.values(game.ignoredCounts || {}).reduce(
@@ -88,7 +93,7 @@ export function buildFailureExplanation(game: any) {
   );
 
   if (ignoredTotal >= 6) {
-    reasons.push("Critical advisor signals were repeatedly ignored");
+    reasons.push(isSuccess ? "Critical advisor signals created pressure but were managed" : "Critical advisor signals were repeatedly ignored");
   }
 
   const actions = log.map((entry: any) => entry.action);
@@ -141,11 +146,29 @@ export function buildFailureExplanation(game: any) {
   return {
     title: game.state === "STABILIZED" ? "Success explanation" : "Failure explanation",
     reasons,
-    likelyCorrectAction: getLikelyCorrectAction(final),
+    likelyCorrectAction: getLikelyCorrectAction(final, game),
   };
 }
 
-function getLikelyCorrectAction(final: any) {
+function getLikelyCorrectAction(final: any, game?: any) {
+  if (game?.state === "STABILIZED") {
+    const actions = (game.actionLog || []).map((entry: any) => entry.action);
+    const usedReroute = actions.includes("REROUTE");
+    const usedStabilize = actions.includes("STABILIZE");
+
+    if (usedReroute && usedStabilize) {
+      return {
+        action: "ADAPTIVE CONTROL",
+        reason: "REROUTE relieved load while STABILIZE restored structure and contained instability.",
+      };
+    }
+
+    return {
+      action: "SUSTAINED CONTROL",
+      reason: "The run survived pressure through sufficient corrective action.",
+    };
+  }
+
   if ((final.drift ?? 0) >= 55) {
     return {
       action: "STABILIZE",
