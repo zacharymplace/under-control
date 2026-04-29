@@ -107,24 +107,6 @@ export default function Page() {
       action
     );
 
-    console.log("ACTION DEBUG", {
-      action,
-      before: {
-        turn: game.turn,
-        load: game.load,
-        integrity: game.integrity,
-        signalClarity: game.signalClarity,
-        drift: game.drift,
-      },
-      after: {
-        turn: next.turn,
-        load: next.load,
-        integrity: next.integrity,
-        signalClarity: next.signalClarity,
-        drift: next.drift,
-      },
-    });
-
     if (
       (next.state === "FAILED" || next.state === "STABILIZED") &&
       !next.analyticsLogged
