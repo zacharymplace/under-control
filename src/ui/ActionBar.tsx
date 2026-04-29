@@ -113,6 +113,7 @@ function getControlDoctrine(game: any) {
 function getRecommendedControlGuidance(game: any) {
   const instability = game.drift ?? game.instability ?? 0;
   const pressure = game.pressure ?? "";
+  const phase = game.phase ?? (game.turn >= 12 ? "late" : game.turn >= 6 ? "mid" : "early");
   const history = game.actionHistory || [];
   const lastAction = history[history.length - 1];
 
@@ -120,6 +121,32 @@ function getRecommendedControlGuidance(game: any) {
     (sum: number, value: any) => sum + Number(value || 0),
     0
   );
+
+  const suggestions = (game.personas || [])
+    .map((p: any) => p.suggestion || p.suggests || p.recommendation)
+    .filter(Boolean);
+
+  const uniqueSuggestions = new Set(suggestions);
+  const disagreement = suggestions.length
+    ? Math.min(1, uniqueSuggestions.size / Math.max(1, suggestions.length))
+    : 0;
+
+  const degradeConfidence = (confidence: "LOW" | "MEDIUM" | "HIGH") => {
+    if (ignoredTotal >= 6) return "LOW";
+    if (disagreement > 0.6 && confidence === "HIGH") return "MEDIUM";
+    if (phase === "late" && confidence === "HIGH") return "MEDIUM";
+    return confidence;
+  };
+
+  // Low-confidence misread: guidance is advisory, not an oracle.
+  const noise = Math.random();
+  if ((pressure === "HIGH" || pressure === "CRITICAL") && noise < 0.08) {
+    return {
+      bias: "UNCERTAIN",
+      confidence: "LOW",
+      note: "Signal interpretation is unstable under pressure. Validate against the system state.",
+    };
+  }
 
   if (ignoredTotal >= 6) {
     return {
@@ -129,11 +156,27 @@ function getRecommendedControlGuidance(game: any) {
     };
   }
 
+  if (disagreement > 0.6) {
+    return {
+      bias: "BALANCED",
+      confidence: "LOW",
+      note: "Advisors are not aligned. No clear control path is reliable.",
+    };
+  }
+
   if (lastAction === "REROUTE") {
     return {
       bias: "STABILIZE",
-      confidence: "HIGH",
+      confidence: degradeConfidence("HIGH"),
       note: "Recent reroute may have introduced hidden instability. Stabilization is favored.",
+    };
+  }
+
+  if (phase === "late" && instability >= 35) {
+    return {
+      bias: "STABILIZE",
+      confidence: degradeConfidence("MEDIUM"),
+      note: "Late phase. Stability is harder to recover if instability is allowed to compound.",
     };
   }
 
@@ -148,7 +191,7 @@ function getRecommendedControlGuidance(game: any) {
   if (instability >= 50) {
     return {
       bias: "STABILIZE",
-      confidence: "HIGH",
+      confidence: degradeConfidence("HIGH"),
       note: "Instability is elevated. Further stabilization is likely required before pressure relief.",
     };
   }
@@ -157,21 +200,21 @@ function getRecommendedControlGuidance(game: any) {
     if (lastAction === "STABILIZE") {
       return {
         bias: "REROUTE",
-        confidence: "MEDIUM",
+        confidence: degradeConfidence("MEDIUM"),
         note: "Instability is partially contained. Load relief may be viable, but risk remains.",
       };
     }
 
     return {
       bias: "STABILIZE",
-      confidence: "MEDIUM",
+      confidence: degradeConfidence("MEDIUM"),
       note: "Instability remains active. Stabilization is favored, but not guaranteed.",
     };
   }
 
   return {
     bias: "REROUTE",
-    confidence: "MEDIUM",
+    confidence: degradeConfidence("MEDIUM"),
     note: "Instability appears controlled. Pressure relief may be the stronger option.",
   };
 }
