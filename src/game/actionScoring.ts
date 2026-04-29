@@ -66,6 +66,31 @@ function decisionWindowMultiplier(game: any) {
   return 1;
 }
 
+
+function getPhasePressureMultiplier(game: any, action: ActionName) {
+  const phase = getSystemPhase(game);
+  const signal = game.signalClarity ?? 100;
+  const integrity = game.integrity ?? 100;
+
+  if (phase === "early") {
+    if (signal < 70 && action !== "OBSERVE") return 0.55;
+    return 1;
+  }
+
+  if (phase === "mid") {
+    if (action === "OBSERVE") return 0.75;
+    return 1.1;
+  }
+
+  if (phase === "late") {
+    if (integrity < 65 && action !== "STABILIZE") return 0.35;
+    if (signal < 70 && action !== "OBSERVE") return 0.5;
+    return 1.25;
+  }
+
+  return 1;
+}
+
 export function scoreActionDecisively({
   action,
   baseScore,
@@ -92,6 +117,7 @@ export function scoreActionDecisively({
       hardStateAdjustment(action, game)) *
     needMultiplier(action, game) *
     phaseMultiplier(game) *
+    getPhasePressureMultiplier(game, action) *
     decisionWindowMultiplier(game);
 
   return clampScore(raw);
