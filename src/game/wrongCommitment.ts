@@ -10,6 +10,10 @@ export function getWrongCommitmentInsight(game: any) {
   const committed = last3[0];
 
   if (last3.every((a: string) => a === committed) && committed !== need) {
+    if (game.state === "STABILIZED") {
+      return `You initially committed to ${committed}, but adapted toward ${need} as pressure increased.`;
+    }
+
     return `You committed to ${committed}, but the system required ${need}.`;
   }
 
