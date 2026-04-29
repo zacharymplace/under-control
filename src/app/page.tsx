@@ -34,6 +34,7 @@ import { maybeInterruptAction } from "@/game/advisorInterruption";
 import { maybeForceAction } from "@/game/forcedExecution";
 import { logCompletedRun } from "@/game/runAnalytics";
 import { applyLearningFeedback } from "@/game/learningFeedback";
+import { isCorrectDecision } from "@/game/decisionTruth";
 import { tickGame } from "@/game/tickEngine";
 
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
@@ -138,7 +139,7 @@ export default function Page() {
       const learningAdjustedCredibility = applyLearningFeedback({
         credibility: updatedCredibility,
         advisors: advisorsForMemory,
-        correct: !String(judgment || "").toLowerCase().includes("bad"),
+        correct: isCorrectDecision(finalAction, game),
       });
 
       const advisorMemory = updateAdvisorMemory({
@@ -182,10 +183,10 @@ export default function Page() {
         const { derivePlayerProfile, deriveAdaptiveModifiers } =
           await import("@/game/adaptive");
 
-        const profile = derivePlayerProfile(data.runs || []);
-        const mods = deriveAdaptiveModifiers(profile);
+        
+        const mods = deriveAdaptiveModifiers(data.runs || []);
+        if (mods) setAdaptiveModifiers(mods);
 
-        setAdaptiveModifiers(mods);
       } catch {}
     }
 

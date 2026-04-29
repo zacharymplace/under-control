@@ -1,3 +1,5 @@
+import { getConflictPenalty } from "./conflictPenalty";
+import { getAdvisorConsensus } from "./advisorConsensus";
 import { smoothConfidence } from "./confidenceMemory";
 export function normalizeConfidence(value: any) {
   if (typeof value === "number") return Math.max(0, Math.min(1, value));
