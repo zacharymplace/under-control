@@ -1,6 +1,7 @@
 "use client";
 
 import { scoreActionDecisively, spreadActionScores, getActionReason } from "@/game/actionScoring";
+import { getInvalidActions } from "@/game/actionScoring";
 import { getDisagreementPenalty } from "@/game/disagreementScore";
 import {
   buildWeightedSupport,
@@ -54,7 +55,7 @@ function scoreAction(
     recoveryPenalty = 0.7;
   }
 
-  return (
+      return (
     score *
     disagreementMultiplier *
     getWeightedSupportMultiplier(action, game) *
@@ -77,7 +78,7 @@ function explainAction(action: string, game: any, isBehaviorLocked: boolean, isC
   if (game.load > 80 && action === "REROUTE") return "High load favors reroute";
   if (signal < 55 && action === "OBSERVE") return "Low signal favors observation";
 
-  return "{getActionReason(action as any, game)}";
+  return "No strong signal advantage";
 }
 
 export function ActionBar({
@@ -92,6 +93,8 @@ export function ActionBar({
   
   const advisors = game.personas || [];
   
+
+  const invalidActions = getInvalidActions(game);
 
   const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
 
