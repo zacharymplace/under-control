@@ -102,7 +102,7 @@ export default function Page() {
   }
 
   function handleAction(action: string) {
-    const next = applyDemoAction(
+    let next = applyDemoAction(
       { ...game, adaptiveModifiers },
       action
     );
@@ -130,6 +130,9 @@ export default function Page() {
         : maybeInterruptAction(action, game, advisorsForMemory);
 
       const finalAction = forced.forced ? forced.action : interruption.action;
+
+      // Source of truth for state, feedback, replay, and logging.
+      next = applyDemoAction({ ...game, adaptiveModifiers }, finalAction);
 
       const simpleFeedback = getSimpleFeedback(finalAction, game, next);
       const feedback = getActionFeedback(finalAction, game, next);
