@@ -1,4 +1,5 @@
 "use client";
+import { classifyOutcome } from "@/game/decisionLearning";
 import type { Game } from "@/game/types";
 
 type AdaptiveModifiers = {
@@ -440,4 +441,31 @@ function applyDemoAction(game: any, action: string) {
   );
 
   return checkTerminal(next);
+}
+
+
+// --- decision learning hook ---
+function logDecisionLearning({
+  correct,
+  confidence,
+  weight,
+}: {
+  correct: boolean;
+  confidence: number;
+  weight: number;
+}) {
+  const outcome = classifyOutcome({ correct, confidence, weight });
+
+  fetch("/api/analytics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "decision_learning",
+      ts: new Date().toISOString(),
+      correct,
+      confidence,
+      weight,
+      outcome,
+    }),
+  }).catch(() => {});
 }
