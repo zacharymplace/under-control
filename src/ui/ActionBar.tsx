@@ -109,6 +109,46 @@ function getControlDoctrine(game: any) {
 }
 
 
+
+function getRecommendedControlAction(game: any) {
+  const instability = game.drift ?? game.instability ?? 0;
+  const history = game.actionHistory || [];
+  const lastAction = history[history.length - 1];
+
+  if (lastAction === "REROUTE") {
+    return {
+      action: "STABILIZE",
+      reason: "REROUTE creates hidden instability. Stabilize next to pay it back.",
+    };
+  }
+
+  if (instability >= 50) {
+    return {
+      action: "STABILIZE",
+      reason: "Instability is high. Stabilize before releasing more load.",
+    };
+  }
+
+  if (instability >= 35) {
+    if (lastAction === "STABILIZE") {
+      return {
+        action: "REROUTE",
+        reason: "Instability is partially contained. Reroute once, then stabilize.",
+      };
+    }
+
+    return {
+      action: "STABILIZE",
+      reason: "Instability is still elevated. Continue stabilizing.",
+    };
+  }
+
+  return {
+    action: "REROUTE",
+    reason: "Instability is controlled. Release load pressure now.",
+  };
+}
+
 export function ActionBar({
   game,
   onAction,
