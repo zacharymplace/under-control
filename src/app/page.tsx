@@ -38,6 +38,12 @@ import { applyLearningFeedback } from "@/game/learningFeedback";
 import { isCorrectDecision } from "@/game/decisionTruth";
 import { tickGame } from "@/game/tickEngine";
 
+
+function safe(n: number, fallback = 0) {
+  if (typeof n !== "number" || isNaN(n)) return fallback;
+  return n;
+}
+
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
   const ACTIVE_SCENARIO = getScenario(scenarioId);
 
@@ -156,7 +162,7 @@ export default function Page() {
         setIsPaused(false);
       }, 1200);
 
-      const afterBurst = applyBurstTicks(next, 3);
+      const afterBurst = next;
 
       setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...next, ...afterBurst, feedback: combined,
         simpleFeedback, reactions, advisorMemory,
@@ -398,7 +404,12 @@ function applyDemoAction(game: any, action: string) {
 next.integrity = clamp(next.integrity ?? 0);
 next.drift = clamp(next.drift ?? 0);
 
-  next.pressure = getPressure(next);
+  next.load = safe(next.load);
+next.integrity = safe(next.integrity);
+next.drift = safe(next.drift);
+next.signalClarity = safe(next.signalClarity);
+
+next.pressure = getPressure(next);
   next.state =
     next.drift > 25 || next.integrity < 60 || next.load > 80
       ? "DEGRADED"
