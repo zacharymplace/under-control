@@ -1,23 +1,11 @@
-import { normalizeConfidence, computeEffectiveWeight } from "./effectiveWeight";
-
-export function getWeightBreakdown(advisor: any, credibilityMap: Record<string, number> = {}) {
-  const key = String(advisor.id || advisor.name || advisor.label || "").toUpperCase();
-
-  const confidence = normalizeConfidence(advisor.confidence);
-  const credibility = credibilityMap[key] ?? 0.5;
-  const trust = advisor.trust ?? advisor.weight ?? 1;
-
-  const weight = computeEffectiveWeight({
-    confidence,
-    credibility,
-    trust,
-  });
+export function getWeightBreakdown(persona: any, credibility: any) {
+  const key = String(persona.id || persona.name || "").toUpperCase();
 
   return {
-    key,
-    confidence,
-    credibility,
-    trust,
-    weight: Number(weight.toFixed(3)),
+    confidence: persona.confidence ?? 1,
+    credibility: credibility?.[key] ?? 1,
+    weight: Number(
+      ((persona.confidence ?? 1) * (credibility?.[key] ?? 1)).toFixed(2)
+    ),
   };
 }

@@ -33,6 +33,7 @@ import { createInitialAdvisorCredibility, updateAdvisorCredibility } from "@/gam
 import { maybeInterruptAction } from "@/game/advisorInterruption";
 import { maybeForceAction } from "@/game/forcedExecution";
 import { logCompletedRun } from "@/game/runAnalytics";
+import { applyLearningFeedback } from "@/game/learningFeedback";
 import { tickGame } from "@/game/tickEngine";
 
 function buildInitialGame(scenarioId: ScenarioId = "guided_first_run") {
@@ -134,6 +135,12 @@ export default function Page() {
         judgment,
       });
 
+      const learningAdjustedCredibility = applyLearningFeedback({
+        credibility: updatedCredibility,
+        advisors: advisorsForMemory,
+        correct: !String(judgment || "").toLowerCase().includes("bad"),
+      });
+
       const advisorMemory = updateAdvisorMemory({
         memory: game.advisorMemory,
         advisors: advisorsForMemory,
@@ -149,7 +156,7 @@ export default function Page() {
       const afterBurst = applyBurstTicks(next, 3);
 
       setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory,
-        credibility: updatedCredibility });
+        credibility: learningAdjustedCredibility });
     }, 100);
   }
 
