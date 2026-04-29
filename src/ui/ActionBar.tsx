@@ -214,6 +214,10 @@ const decisiveScores = spreadActionScores({
 
   return (
     <section>
+      <div style={{ marginBottom: "12px", fontSize: "13px", opacity: 0.9 }}>
+        Recommended: {getRecommendedControlAction(game).action} — {getRecommendedControlAction(game).reason}
+      </div>
+
       <div className="uc-action-grid">
         {actions.map((action) => {
           const isConflictLocked = conflictLocked.includes(action);
