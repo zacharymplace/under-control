@@ -110,6 +110,30 @@ function getControlDoctrine(game: any) {
 
 
 
+
+function getSignalControlSplit(game: any) {
+  const signal = game.signalClarity ?? game.signal ?? 0;
+  const load = game.load ?? 0;
+  const instability = game.drift ?? game.instability ?? 0;
+
+  const signalLayer =
+    signal < 60
+      ? "Signal Layer: visibility degraded. Reads may be incomplete."
+      : signal < 80
+      ? "Signal Layer: partial visibility. Use caution."
+      : "Signal Layer: visibility stable.";
+
+  const controlLayer =
+    instability >= 45
+      ? "Control Layer: instability containment is the active constraint."
+      : load >= 80
+      ? "Control Layer: load relief is becoming urgent."
+      : "Control Layer: system remains maneuverable.";
+
+  return { signalLayer, controlLayer };
+}
+
+
 function getRecommendedControlGuidance(game: any) {
   const instability = game.drift ?? game.instability ?? 0;
   const pressure = game.pressure ?? "";
@@ -284,6 +308,11 @@ const decisiveScores = spreadActionScores({
 
   return (
     <section>
+      <div style={{ marginBottom: "12px", fontSize: "13px", opacity: 0.9 }}>
+        <div>{getSignalControlSplit(game).signalLayer}</div>
+        <div>{getSignalControlSplit(game).controlLayer}</div>
+      </div>
+
       <div style={{ marginBottom: "12px", fontSize: "13px", opacity: 0.9 }}>
         Guidance: {getRecommendedControlGuidance(game).bias} ({getRecommendedControlGuidance(game).confidence}) — {getRecommendedControlGuidance(game).note}
       </div>
