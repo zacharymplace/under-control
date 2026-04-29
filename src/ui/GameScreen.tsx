@@ -53,7 +53,7 @@ return (
     <main className="uc-root">
       <div className="uc-shell">
         <header className="uc-header">
-          <div>State: {game.state}</div>
+          <div>Control State: {game.state}</div>
           <div className="uc-header-center">Pressure: {game.pressure}</div>
           <div className="uc-header-right">Turn: {game.turn}</div>
         </header>
@@ -62,18 +62,18 @@ return (
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
               <div className="uc-label">Run Goal</div>
-              <div style={{ fontWeight: 800 }}>Objective: Stabilize before collapse</div>
+              <div style={{ fontWeight: 800 }}>Keep the system under control for 15 turns.</div>
               <div className="uc-footer-note">Survive the control window. Keep load, drift, and integrity within recoverable range.</div>
             </div>
 
             <div style={{ textAlign: "right" }}>
-              <div className="uc-label">Decision Window</div>
+              <div className="uc-label">Time to Act</div>
               <div style={{ fontWeight: 900 }}>{decisionWindow.label}</div>
               <div className="uc-footer-note">{decisionWindow.note}</div>
             </div>
 
             <div style={{ textAlign: "right" }}>
-              <div className="uc-label">Run Grade</div>
+              <div className="uc-label">Run Status</div>
               <div style={{ fontWeight: 900 }}>{runGrade}</div>
             </div>
           </div>
@@ -111,9 +111,9 @@ return (
 
           <div className="uc-metrics">
             <Metric label="Load" value={game.load} />
-            <Metric label="Integrity" value={game.integrity} />
+            <Metric label="Structure" value={game.integrity} />
             <Metric label="Signal" value={game.signalClarity ?? game.signal} />
-            <Metric label="Drift" value={game.drift} />
+            <Metric label="Instability" value={game.drift} />
           </div>
         </section>
 
@@ -239,6 +239,14 @@ return (
       </div>
     ))}
   </div>
+)}
+
+{game.simpleFeedback && (
+  <section className="uc-panel" style={{ marginBottom: 12 }}>
+    <div className="uc-label">Immediate Result</div>
+    <div style={{ fontWeight: 800 }}>{game.simpleFeedback.result}</div>
+    <div className="uc-footer-note">{game.simpleFeedback.meaning}</div>
+  </section>
 )}
 
 <ActionBar game={{ ...game, personas: advisors }} onAction={onAction} disabled={gameOver} />
