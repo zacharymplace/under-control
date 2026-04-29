@@ -39,8 +39,8 @@ import { isCorrectDecision } from "@/game/decisionTruth";
 import { tickGame } from "@/game/tickEngine";
 
 
-function safe(n: number, fallback = 0) {
-  if (typeof n !== "number" || isNaN(n)) return fallback;
+function safe(n: number, fallback: number) {
+  if (typeof n !== "number" || Number.isNaN(n)) return fallback;
   return n;
 }
 
@@ -106,6 +106,24 @@ export default function Page() {
       { ...game, adaptiveModifiers },
       action
     );
+
+    console.log("ACTION DEBUG", {
+      action,
+      before: {
+        turn: game.turn,
+        load: game.load,
+        integrity: game.integrity,
+        signalClarity: game.signalClarity,
+        drift: game.drift,
+      },
+      after: {
+        turn: next.turn,
+        load: next.load,
+        integrity: next.integrity,
+        signalClarity: next.signalClarity,
+        drift: next.drift,
+      },
+    });
 
     if (
       (next.state === "FAILED" || next.state === "STABILIZED") &&
@@ -252,27 +270,37 @@ function applyPassiveDecay(game: any) {
   const adaptive = game.adaptiveModifiers || {};
   const scenario = game.scenarioModifiers || {};
 
+  const baseLoad = safe(TUNING.BASE_LOAD, 3);
+  const baseDrift = safe(TUNING.BASE_DRIFT, 1);
+  const baseIntegrityDecay = safe(TUNING.BASE_INTEGRITY_DECAY, 1);
+
   const loadAcceleration =
-    (adaptive.loadPressureMult ?? 1) * (scenario.loadAcceleration ?? 1);
+    safe(adaptive.loadPressureMult, 1) * safe(scenario.loadAcceleration, 1);
 
   const driftMultiplier =
-    (adaptive.driftPenaltyMult ?? 1) * (scenario.driftMultiplier ?? 1);
+    safe(adaptive.driftPenaltyMult, 1) * safe(scenario.driftMultiplier, 1);
 
   const integrityDecay =
-    adaptive.signalDecayMult ?? 1;
+    safe(adaptive.signalDecayMult, 1);
 
-  const next = { ...game };
+  const next = {
+    ...game,
+    load: safe(game.load, 0),
+    integrity: safe(game.integrity, 100),
+    drift: safe(game.drift, 0),
+    signalClarity: safe(game.signalClarity, 50),
+  };
 
   next.load = clamp(
-    next.load + Math.round(TUNING.BASE_LOAD * m * loadAcceleration)
+    next.load + Math.round(baseLoad * m * loadAcceleration)
   );
 
   next.drift = clamp(
-    next.drift + Math.round(TUNING.BASE_DRIFT * m * driftMultiplier)
+    next.drift + Math.round(baseDrift * m * driftMultiplier)
   );
 
   next.integrity = clamp(
-    next.integrity - Math.round(TUNING.BASE_INTEGRITY_DECAY * m * integrityDecay)
+    next.integrity - Math.round(baseIntegrityDecay * m * integrityDecay)
   );
 
   return next;
@@ -403,11 +431,6 @@ function applyDemoAction(game: any, action: string) {
   next.load = clamp(next.load ?? 0);
 next.integrity = clamp(next.integrity ?? 0);
 next.drift = clamp(next.drift ?? 0);
-
-  next.load = safe(next.load);
-next.integrity = safe(next.integrity);
-next.drift = safe(next.drift);
-next.signalClarity = safe(next.signalClarity);
 
 next.pressure = getPressure(next);
   next.state =
