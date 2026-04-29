@@ -28,6 +28,7 @@ import { updateAdvisorMemory } from "@/game/updateAdvisorMemory";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { applyConsensusDrift } from "@/game/consensusDrift";
+import { createInitialAdvisorCredibility, updateAdvisorCredibility } from "@/game/advisorCredibility";
 import { maybeInterruptAction } from "@/game/advisorInterruption";
 import { maybeForceAction } from "@/game/forcedExecution";
 import { logCompletedRun } from "@/game/runAnalytics";
@@ -125,6 +126,13 @@ export default function Page() {
       const combined = judgment ? `${feedback}. ${judgment}` : feedback;
       const reactions = getAdvisorReactions(finalAction, judgment);
 
+      const updatedCredibility = updateAdvisorCredibility({
+        previous: game.credibility || {},
+        advisors: advisorsForMemory,
+        finalAction,
+        judgment,
+      });
+
       const advisorMemory = updateAdvisorMemory({
         memory: game.advisorMemory,
         advisors: advisorsForMemory,
@@ -139,7 +147,8 @@ export default function Page() {
 
       const afterBurst = applyBurstTicks(next, 3);
 
-      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory });
+      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined, reactions, advisorMemory,
+        credibility: updatedCredibility });
     }, 100);
   }
 
@@ -177,7 +186,8 @@ export default function Page() {
 
   function handleScenarioChange(nextScenarioId: ScenarioId) {
   setScenarioId(nextScenarioId);
-  setGame({ ...(buildInitialGame(nextScenarioId) as Game), advisorMemory: createInitialAdvisorMemory(), interrupted: false });
+  setGame({ ...(buildInitialGame(nextScenarioId) as Game), advisorMemory: createInitialAdvisorMemory(),
+    credibility: createInitialAdvisorCredibility(getDefaultPersonas(buildInitialGame(nextScenarioId))), interrupted: false });
 }
 
 return (

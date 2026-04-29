@@ -28,4 +28,5 @@ export type Game = {
   pointOfNoReturn?: any;
   interrupted?: boolean;
   forced?: boolean;
+  credibility?: Record<string, number>;
 };

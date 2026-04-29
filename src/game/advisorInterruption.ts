@@ -23,7 +23,7 @@ export function maybeInterruptAction(action: string, game: any, advisors: any[])
 
   if (turnsSince < 2) return { action, interrupted: false };
 
-  const { dominant, strength } = getAdvisorConsensus(advisors);
+  const { dominant, strength } = getAdvisorConsensus(advisors, game.credibility || {});
 
   // base probability grows with time
   let probability = 0.1 + turnsSince * 0.05;
@@ -37,7 +37,7 @@ export function maybeInterruptAction(action: string, game: any, advisors: any[])
     return { action, interrupted: false };
   }
 
-  const { dominant: override } = getAdvisorConsensus(advisors);
+  const { dominant: override } = getAdvisorConsensus(advisors, game.credibility || {});
   if (!override || override === action) {
     return { action, interrupted: false };
   }

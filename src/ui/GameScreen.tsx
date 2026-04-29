@@ -20,6 +20,7 @@ import { getAdvisorEscalationPhase } from "@/game/advisorEscalationPhase";
 import { getAdvisorDecisionWindowNote } from "@/game/advisorDecisionWindow";
 import { getAdvisorCollapseTone } from "@/game/advisorCollapseTone";
 import { getAdvisorCertaintyTone } from "@/game/advisorCertainty";
+import { getAdvisorCredibilityLabel } from "@/game/advisorCredibilityLabel";
 
 export function GameScreen({
   game,
@@ -107,9 +108,14 @@ advisors = applyPersonaBehavior(advisors, game);
             const decisionWindowNote = getAdvisorDecisionWindowNote(name, game);
             const collapseToneNote = getAdvisorCollapseTone(name, game);
             const certaintyToneNote = getAdvisorCertaintyTone(name, game);
+            const credibilityKey = String(name || "").toUpperCase();
+            const credibilityLabel = getAdvisorCredibilityLabel(game.credibility?.[credibilityKey]);
 
             return (
-              <article key={`${name}-${index}`} className="uc-advisor">
+              <article key={`${name}
+                  <span style={{ marginLeft: 8, color: "#7f8da1", fontSize: 11, fontWeight: 600 }}>
+                    {credibilityLabel}
+                  </span>-${index}`} className="uc-advisor">
                 <div className="uc-advisor-row">
                   <div>
                     <div className="uc-advisor-name">

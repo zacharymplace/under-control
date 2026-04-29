@@ -19,7 +19,7 @@ export function getCollapseCertaintyLevel(game: any) {
 
 export function getAdvisorCertaintyTone(name: string, game: any) {
   const level = getCollapseCertaintyLevel(game);
-  const { strength } = getAdvisorConsensus(game.personas || []);
+  const { strength } = getAdvisorConsensus(game.personas || [], game.credibility || {});
   if (level === "none") return null;
 
   const key = name.toUpperCase();

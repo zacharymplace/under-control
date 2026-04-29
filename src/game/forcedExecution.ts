@@ -8,7 +8,7 @@ export function maybeForceAction(action: string, game: any, advisors: any[]) {
   const collapseTurn = game.pointOfNoReturn?.turn ?? game.turn ?? 1;
   const turnsSince = Math.max(0, (game.turn ?? 1) - collapseTurn);
 
-  const { dominant, strength } = getAdvisorConsensus(advisors);
+  const { dominant, strength } = getAdvisorConsensus(advisors, game.credibility || {});
 
   if (turnsSince < 3 || strength < 0.75 || !dominant) {
     return { action, forced: false };
