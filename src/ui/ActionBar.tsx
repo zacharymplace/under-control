@@ -81,6 +81,34 @@ function explainAction(action: string, game: any, isBehaviorLocked: boolean, isC
   return "No strong signal advantage";
 }
 
+
+function getControlDoctrine(game: any) {
+  const instability = game.drift ?? game.instability ?? 0;
+  const load = game.load ?? 0;
+  const pressure = game.pressure ?? "";
+  const history = game.actionHistory || [];
+  const lastAction = history[history.length - 1];
+
+  if (lastAction === "REROUTE") {
+    return "Doctrine: REROUTE creates hidden instability. STABILIZE next to pay it back.";
+  }
+
+  if ((pressure === "HIGH" || pressure === "CRITICAL") && instability >= 35) {
+    return "Doctrine: pressure is high. Stabilize until instability is clearly safe.";
+  }
+
+  if (instability >= 40) {
+    return "Doctrine: instability is elevated. STABILIZE before releasing more load.";
+  }
+
+  if (instability < 40 && load >= 65) {
+    return "Doctrine: instability is controlled. REROUTE to release load pressure.";
+  }
+
+  return "Doctrine: keep the system balanced. Do not repeat actions without a reason.";
+}
+
+
 export function ActionBar({
   game,
   onAction,
