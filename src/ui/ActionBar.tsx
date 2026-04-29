@@ -1,5 +1,6 @@
 "use client";
 
+import { scoreActionDecisively, spreadActionScores, getActionReason } from "@/game/actionScoring";
 import { getDisagreementPenalty } from "@/game/disagreementScore";
 import {
   buildWeightedSupport,
@@ -38,7 +39,7 @@ function scoreAction(
   if (game.load > 80 && action === "REROUTE") score += 0.5;
   if (signal < 55 && action === "OBSERVE") score += 0.5;
 
-  const weightedSupport = getWeightedSupportMultiplier(action, game);
+  
   const trajectoryPenalty = getTrajectoryPenalty(game);
   const needNeglectPenalty = getNeedNeglectPenalty(game);
   const commitmentScore = getCommitmentScore(game);
@@ -56,7 +57,7 @@ function scoreAction(
   return (
     score *
     disagreementMultiplier *
-    weightedSupport *
+    getWeightedSupportMultiplier(action, game) *
     trajectoryPenalty *
     needNeglectPenalty *
     commitmentScore *
@@ -88,8 +89,11 @@ export function ActionBar({
   onAction?: (action: string) => void;
   disabled?: boolean;
 }) {
-  const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
+  
   const advisors = game.personas || [];
+  
+
+  const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
 
   const collapseLocked = getCollapseLockedActions(game);
 
@@ -105,6 +109,30 @@ export function ActionBar({
 
   const disagreementMultiplier = getDisagreementPenalty(suggestions);
   const weightedSupport = buildWeightedSupport(game);
+
+const decisiveScores = spreadActionScores({
+    STABILIZE: scoreActionDecisively({
+      action: "STABILIZE",
+      baseScore: 0.81,
+      support: weightedSupport?.STABILIZE ?? 0,
+      game,
+      advisors,
+    }),
+    REROUTE: scoreActionDecisively({
+      action: "REROUTE",
+      baseScore: 0.9,
+      support: weightedSupport?.REROUTE ?? 0,
+      game,
+      advisors,
+    }),
+    OBSERVE: scoreActionDecisively({
+      action: "OBSERVE",
+      baseScore: 0.9,
+      support: weightedSupport?.OBSERVE ?? 0,
+      game,
+      advisors,
+    }),
+  });
 
   const impact =
     disagreementMultiplier > 1
