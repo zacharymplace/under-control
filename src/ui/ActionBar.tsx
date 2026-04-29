@@ -110,42 +110,69 @@ function getControlDoctrine(game: any) {
 
 
 
-function getRecommendedControlAction(game: any) {
+function getRecommendedControlGuidance(game: any) {
   const instability = game.drift ?? game.instability ?? 0;
+  const pressure = game.pressure ?? "";
   const history = game.actionHistory || [];
   const lastAction = history[history.length - 1];
 
+  const ignoredTotal = Object.values(game.ignoredCounts || {}).reduce(
+    (sum: number, value: any) => sum + Number(value || 0),
+    0
+  );
+
+  if (ignoredTotal >= 6) {
+    return {
+      bias: "UNCERTAIN",
+      confidence: "LOW",
+      note: "Advisory confidence has degraded because prior guidance was ignored.",
+    };
+  }
+
   if (lastAction === "REROUTE") {
     return {
-      action: "STABILIZE",
-      reason: "REROUTE creates hidden instability. Stabilize next to pay it back.",
+      bias: "STABILIZE",
+      confidence: "HIGH",
+      note: "Recent reroute may have introduced hidden instability. Stabilization is favored.",
+    };
+  }
+
+  if ((pressure === "HIGH" || pressure === "CRITICAL") && instability >= 35 && instability <= 45) {
+    return {
+      bias: "BALANCED",
+      confidence: "LOW",
+      note: "The system is in a transitional band. Both pressure relief and stabilization carry tradeoffs.",
     };
   }
 
   if (instability >= 50) {
     return {
-      action: "STABILIZE",
-      reason: "Instability is high. Stabilize before releasing more load.",
+      bias: "STABILIZE",
+      confidence: "HIGH",
+      note: "Instability is elevated. Further stabilization is likely required before pressure relief.",
     };
   }
 
   if (instability >= 35) {
     if (lastAction === "STABILIZE") {
       return {
-        action: "REROUTE",
-        reason: "Instability is partially contained. Reroute once, then stabilize.",
+        bias: "REROUTE",
+        confidence: "MEDIUM",
+        note: "Instability is partially contained. Load relief may be viable, but risk remains.",
       };
     }
 
     return {
-      action: "STABILIZE",
-      reason: "Instability is still elevated. Continue stabilizing.",
+      bias: "STABILIZE",
+      confidence: "MEDIUM",
+      note: "Instability remains active. Stabilization is favored, but not guaranteed.",
     };
   }
 
   return {
-    action: "REROUTE",
-    reason: "Instability is controlled. Release load pressure now.",
+    bias: "REROUTE",
+    confidence: "MEDIUM",
+    note: "Instability appears controlled. Pressure relief may be the stronger option.",
   };
 }
 
@@ -215,7 +242,7 @@ const decisiveScores = spreadActionScores({
   return (
     <section>
       <div style={{ marginBottom: "12px", fontSize: "13px", opacity: 0.9 }}>
-        Recommended: {getRecommendedControlAction(game).action} — {getRecommendedControlAction(game).reason}
+        Guidance: {getRecommendedControlGuidance(game).bias} ({getRecommendedControlGuidance(game).confidence}) — {getRecommendedControlGuidance(game).note}
       </div>
 
       <div className="uc-action-grid">
