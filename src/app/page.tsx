@@ -414,9 +414,20 @@ function applyDemoAction(game: any, action: string) {
   }
 
   if (action === "STABILIZE") {
-    next.integrity += 9;
-    next.load += 5;
-    next.drift -= 3;
+    const driftLevel = next.drift ?? 0;
+
+    let correction = 6;
+    if (driftLevel > 40) correction = 10;
+    if (driftLevel > 60) correction = 14;
+
+    next.drift -= correction;
+    next.integrity += 8;
+
+    if (next.pressure === "CRITICAL") {
+      next.load -= 6;
+    } else if (next.pressure !== "HIGH") {
+      next.load += 4;
+    }
 
     next.messages = [msg("Mara", "Infrastructure", "Stability improved")];
   }
