@@ -1,23 +1,41 @@
 import { getAdvisorCredibility, type AdvisorCredibilityMap } from "./advisorCredibility";
-export function getAdvisorConsensus(advisors: any[], credibility: AdvisorCredibilityMap = {}) {
+import { computeEffectiveWeight } from "./effectiveWeight";
+
+function getAdvisorAction(advisor: any) {
+  return advisor.suggests || advisor.action || advisor.suggestion || null;
+}
+
+export function getAdvisorConsensus(
+  advisors: any[],
+  credibility: AdvisorCredibilityMap = {}
+) {
   const counts: Record<string, number> = {};
   let total = 0;
 
-  for (const a of advisors) {
-    const action = a.suggests || a.action || a.suggestion;
+  for (const advisor of advisors) {
+    const action = getAdvisorAction(advisor);
     if (!action) continue;
-    counts[action] = (counts[action] || 0) + getAdvisorCredibility(a, credibility);
-    total += getAdvisorCredibility(a, credibility);
+
+    const weight = computeEffectiveWeight({
+      confidence: advisor.confidence,
+      credibility: getAdvisorCredibility(advisor, credibility),
+      trust: advisor.trust ?? advisor.weight ?? 1,
+    });
+
+    counts[action] = (counts[action] || 0) + weight;
+    total += weight;
   }
 
-  if (total === 0) {
-    return { dominant: null, strength: 0 };
+  if (total <= 0) {
+    return { dominant: null, strength: 0, counts };
   }
 
-  const [dominant, count] =
-    Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  const [dominant, score] =
+    Object.entries(counts).sort((a, b) => b[1] - a[1])[0] || [null, 0];
 
-  const strength = count / total; // 0 → 1
-
-  return { dominant, strength };
+  return {
+    dominant,
+    strength: Number((score / total).toFixed(2)),
+    counts,
+  };
 }
