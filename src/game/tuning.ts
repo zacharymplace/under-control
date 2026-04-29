@@ -8,8 +8,8 @@ export const TUNING = {
 
   // phase multipliers
   EARLY: 1.0,
-  MID: 1.35,
-  LATE: 1.75,
+  MID: 1.6,
+  LATE: 2.2,
 
   // failure thresholds
   MAX_LOAD: 100,

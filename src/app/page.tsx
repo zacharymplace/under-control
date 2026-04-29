@@ -393,8 +393,10 @@ function applyDemoAction(game: any, action: string) {
     next.signalClarity = clamp(
       next.signalClarity + Math.round(12 * signalRecoveryMultiplier)
     );
-    next.load += 6;
-    next.drift += 2;
+    const turn = game.turn ?? 1;
+
+    next.load += 6 + Math.floor(turn * 0.8);
+    next.drift += 2 + Math.floor(turn * 0.6);
 
     next.messages = [
       msg("Elena", "Signal", "Signal improved"),
@@ -410,13 +412,30 @@ function applyDemoAction(game: any, action: string) {
     next.messages = [msg("Mara", "Infrastructure", "Stability improved")];
   }
 
+  const history = next.actionHistory || [];
+  const recent = history.slice(-3);
+  const observeCount = recent.filter((a: string) => a === "OBSERVE").length;
+
+  if (observeCount >= 2) {
+    next.drift += 4;
+    next.load += 3;
+  }
+
   next.load = clamp(next.load ?? 0);
 next.integrity = clamp(next.integrity ?? 0);
 next.drift = clamp(next.drift ?? 0);
 
 next.pressure = getPressure(next);
+  const stateTurn = next.turn ?? 1;
+
+  const driftLimit = stateTurn > 6 ? 22 : 25;
+  const loadLimit = stateTurn > 6 ? 75 : 80;
+  const integrityLimit = stateTurn > 6 ? 65 : 60;
+
   next.state =
-    next.drift > 25 || next.integrity < 60 || next.load > 80
+    next.drift > driftLimit ||
+    next.integrity < integrityLimit ||
+    next.load > loadLimit
       ? "DEGRADED"
       : "STABLE";
 
