@@ -45,7 +45,7 @@ advisors = applyPersonaBehavior(advisors, game);
   const gameOver = game.state === "FAILED" || game.state === "STABILIZED";
   const conflict = buildPersonaConflict(advisors, game);
 
-  return (
+return (
     <main className="uc-root">
       <div className="uc-shell">
         <header className="uc-header">
@@ -111,7 +111,7 @@ advisors = applyPersonaBehavior(advisors, game);
             const credibilityKey = String(name || "").toUpperCase();
             const credibilityLabel = getAdvisorCredibilityLabel(game.credibility?.[credibilityKey]);
 
-            return (
+          return (
               <article key={`${name}
                   <span style={{ marginLeft: 8, color: "#7f8da1", fontSize: 11, fontWeight: 600 }}>
                     {credibilityLabel}
@@ -221,7 +221,7 @@ advisors = applyPersonaBehavior(advisors, game);
 }
 
 function Metric({ label, value }: any) {
-  return (
+return (
     <div>
       <div className="uc-label">{label}</div>
       <div className="uc-value">{value}</div>

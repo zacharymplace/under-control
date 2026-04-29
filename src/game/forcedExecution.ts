@@ -1,3 +1,4 @@
+import { applyDecisionGate } from "./decisionGate";
 import { getDecisionWindow } from "./decisionWindow";
 import { getAdvisorConsensus } from "./advisorConsensus";
 
