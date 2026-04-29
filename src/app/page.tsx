@@ -158,7 +158,7 @@ export default function Page() {
 
       const afterBurst = applyBurstTicks(next, 3);
 
-      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...afterBurst, ...next, feedback: combined,
+      setGame({ interrupted: interruption.interrupted, forced: forced.forced, ...next, ...afterBurst, feedback: combined,
         simpleFeedback, reactions, advisorMemory,
         credibility: learningAdjustedCredibility });
     }, 100);
@@ -355,7 +355,7 @@ function applyDemoAction(game: any, action: string) {
   next = {
     ...next,
     turn: game.turn + 1,
-    actionHistory: [] as string[],
+    actionHistory: [...(game.actionHistory || []), action],
   };
 
   if (action === "REROUTE") {
@@ -394,9 +394,9 @@ function applyDemoAction(game: any, action: string) {
     next.messages = [msg("Mara", "Infrastructure", "Stability improved")];
   }
 
-  next.load = clamp(next.load);
-  next.integrity = clamp(next.integrity);
-  next.drift = clamp(next.drift);
+  next.load = clamp(next.load ?? 0);
+next.integrity = clamp(next.integrity ?? 0);
+next.drift = clamp(next.drift ?? 0);
 
   next.pressure = getPressure(next);
   next.state =
