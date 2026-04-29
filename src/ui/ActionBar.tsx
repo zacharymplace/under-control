@@ -169,11 +169,7 @@ const decisiveScores = spreadActionScores({
               <div className="uc-action-score">
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
               </div>
-              <div className="uc-action-reason">
-                {getPostCollapseNote(action, game) ||
-                  getPressureDistortionNote(action, game) ||
-                  explainAction(action, game, isBehaviorLocked, isConflictLocked)}
-              </div>
+              <div className="uc-action-reason">{getActionReason(action as any, game)}</div>
             </button>
           );
         })}
