@@ -37,5 +37,9 @@ export function getCommitmentInsight(game: any) {
 
   if (!need || history.length < 3 || score >= 1) return null;
 
+  if (game.state === "STABILIZED") {
+    return `Control was achieved under pressure. Execution was imperfect but sufficient: ${need}.`;
+  }
+
   return `Correct strategy was identified but not sustained long enough: ${need}.`;
 }

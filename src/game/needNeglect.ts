@@ -32,5 +32,9 @@ export function getNeedNeglectInsight(game: any) {
 
   if (!need || count < 2) return null;
 
+  if (game.state === "STABILIZED") {
+    return `Primary need was not always prioritized, but control was restored: ${need}.`;
+  }
+
   return `Primary need ignored for ${count} turns: ${need}.`;
 }

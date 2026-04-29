@@ -139,7 +139,7 @@ export function buildFailureExplanation(game: any) {
   }
 
   return {
-    title: "Failure explanation",
+    title: game.state === "STABILIZED" ? "Success explanation" : "Failure explanation",
     reasons,
     likelyCorrectAction: getLikelyCorrectAction(final),
   };
