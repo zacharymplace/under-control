@@ -243,6 +243,41 @@ function getRecommendedControlGuidance(game: any) {
   };
 }
 
+
+function getConstraintWarning(game: any) {
+  const instability = game.drift ?? game.instability ?? 0;
+  const load = game.load ?? 0;
+  const pressure = game.pressure ?? "";
+
+  if (instability >= 45) {
+    return {
+      type: "INSTABILITY",
+      message: "Constraint: Instability containment required — stabilize before releasing load.",
+      level: "HIGH",
+    };
+  }
+
+  if (pressure === "HIGH" || pressure === "CRITICAL") {
+    if (instability >= 35) {
+      return {
+        type: "INSTABILITY",
+        message: "Constraint: Instability is borderline under high pressure — favor stabilization.",
+        level: "MEDIUM",
+      };
+    }
+
+    if (load >= 80) {
+      return {
+        type: "LOAD",
+        message: "Constraint: Load is approaching limits — a controlled reroute may be required.",
+        level: "MEDIUM",
+      };
+    }
+  }
+
+  return null;
+}
+
 export function ActionBar({
   game,
   onAction,
@@ -306,6 +341,8 @@ const decisiveScores = spreadActionScores({
       ? "Conflict detected"
       : "Partial disagreement";
 
+  const constraintWarning = getConstraintWarning(game);
+
   return (
     <section>
       <div style={{ marginBottom: "12px", fontSize: "13px", opacity: 0.9 }}>
@@ -316,6 +353,24 @@ const decisiveScores = spreadActionScores({
       <div style={{ marginBottom: "12px", fontSize: "13px", opacity: 0.9 }}>
         Guidance: {getRecommendedControlGuidance(game).bias} ({getRecommendedControlGuidance(game).confidence}) — {getRecommendedControlGuidance(game).note}
       </div>
+
+
+      {constraintWarning && (
+        <div
+          style={{
+            marginBottom: "12px",
+            padding: "10px 12px",
+            borderRadius: "8px",
+            border: "1px solid rgba(255, 120, 120, 0.35)",
+            background: "rgba(255, 80, 80, 0.08)",
+            color: "#ffb3b3",
+            fontSize: "13px",
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>{constraintWarning.type}</strong>: {constraintWarning.message}
+        </div>
+      )}
 
       <div className="uc-action-grid">
         {actions.map((action) => {

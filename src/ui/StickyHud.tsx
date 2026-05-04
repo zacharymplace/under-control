@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+function safeValue(value: any, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export function StickyHud({ game }: { game: any }) {
   const [visible, setVisible] = useState(false);
 
@@ -31,11 +36,11 @@ export function StickyHud({ game }: { game: any }) {
     <section className={`uc-sticky-hud ${visible ? "visible" : ""}`}>
       <div className="uc-hud-item">
         <span>Load</span>
-        <strong>{game.load}</strong>
+        <strong>{safeValue(game.load)}</strong>
       </div>
       <div className="uc-hud-item">
         <span>Integrity</span>
-        <strong>{game.integrity}</strong>
+        <strong>{safeValue(game.integrity)}</strong>
       </div>
       <div className="uc-hud-item">
         <span>Signal</span>
@@ -43,7 +48,7 @@ export function StickyHud({ game }: { game: any }) {
       </div>
       <div className="uc-hud-item">
         <span>Drift</span>
-        <strong>{game.drift}</strong>
+        <strong>{safeValue(game.drift)}</strong>
       </div>
       <div className="uc-hud-state">
         {game.state} · {game.pressure} · Turn {game.turn}

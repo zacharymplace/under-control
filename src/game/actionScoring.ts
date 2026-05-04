@@ -271,7 +271,7 @@ export function getActionReason(action: ActionName, game: any) {
   if (drift > 50 && action === "REROUTE") return "Reroute is risky while instability is elevated";
   if (integrity < 60 && action !== "STABILIZE") return "Structure risk argues against this action";
   if (signal < 65 && action !== "OBSERVE") return "Signal is too weak for confident action";
-  if (load > 85 && action !== "REROUTE") return "Load pressure needs relief";
+  if (load > 80 && action === "REROUTE") return "Load pressure makes reroute necessary";
 
   return "No decisive state advantage";
 }
