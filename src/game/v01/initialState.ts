@@ -20,6 +20,11 @@ export const initialGameState: GameState = {
     reroute: 0,
     stabilize: 0,
   },
+  actionCounts: {
+    observe: 0,
+    reroute: 0,
+    stabilize: 0,
+  },
   advisors: [
     {
       id: "risk",

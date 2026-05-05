@@ -76,6 +76,14 @@ function canAct(state: GameState, action: PlayerActionType) {
   return null;
 }
 
+function incrementActionCount(state: GameState, action: PlayerActionType) {
+  return {
+    observe: state.actionCounts.observe + (action === "observe" ? 1 : 0),
+    reroute: state.actionCounts.reroute + (action === "reroute" ? 1 : 0),
+    stabilize: state.actionCounts.stabilize + (action === "stabilize" ? 1 : 0),
+  };
+}
+
 function applyObserve(state: GameState): GameState {
   const failure = canAct(state, "observe");
   if (failure) return { ...state, events: event(state, failure, "warning") };
@@ -138,6 +146,7 @@ function applyObserve(state: GameState): GameState {
     advisors,
     energy: state.energy - 1,
     cascadeRisk: clamp(state.cascadeRisk - 3),
+    actionCounts: incrementActionCount(state, "observe"),
     actionCooldowns: { ...state.actionCooldowns, observe: 1 },
     events: event(state, `Observed ${getNode(state, targetId)?.label}. Hidden risk reduced.`, "good"),
   };
@@ -209,6 +218,7 @@ function applyReroute(state: GameState): GameState {
     advisors,
     energy: state.energy - 1,
     cascadeRisk: clamp(state.cascadeRisk - 4),
+    actionCounts: incrementActionCount(state, "reroute"),
     actionCooldowns: { ...state.actionCooldowns, reroute: 2 },
     events: event(state, `Rerouted ${target.label}. Pressure shifted through connected paths.`, "good"),
   };
@@ -284,6 +294,7 @@ function applyStabilize(state: GameState): GameState {
     recklessActions: state.recklessActions + (reckless ? 1 : 0),
     observedBeforeCriticalAction:
       state.observedBeforeCriticalAction + (!reckless && target.state === "critical" ? 1 : 0),
+    actionCounts: incrementActionCount(state, "stabilize"),
     actionCooldowns: { ...state.actionCooldowns, stabilize: 2 },
     events: event(
       state,

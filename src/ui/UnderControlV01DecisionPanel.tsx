@@ -4,7 +4,7 @@ import { useMemo, useReducer, useState } from "react";
 import { initialGameState } from "../game/v01/initialState";
 import { gameReducer } from "../game/v01/reducer";
 import { getActionPreview, formatDelta } from "../game/v01/preview";
-import type { Advisor, EventTone, NodeState, PlayerActionType, SystemNode } from "../game/v01/types";
+import type { Advisor, EventTone, GameState, NodeState, PlayerActionType, SystemNode } from "../game/v01/types";
 
 const colors: Record<NodeState, string> = {
   stable: "#6ee7a8",
@@ -27,6 +27,66 @@ const actionCopy: Record<PlayerActionType, { label: string; detail: string; best
   reroute: { label: "REROUTE", detail: "Shift pressure flow.", best: "Best on warning." },
   stabilize: { label: "STABILIZE", detail: "Repair instability.", best: "Best after observe." },
 };
+
+function getAverageAdvisorTrust(game: GameState) {
+  if (game.advisors.length === 0) return 0;
+
+  return Math.round(
+    game.advisors.reduce((sum, advisor) => sum + advisor.trust, 0) / game.advisors.length
+  );
+}
+
+function getOperatorProfile(game: GameState) {
+  const counts = game.actionCounts;
+  const totalActions = counts.observe + counts.reroute + counts.stabilize;
+
+  if (game.recklessActions >= 2) {
+    return {
+      name: "Gambler",
+      summary: "You accepted hidden risk and forced outcomes before the system was fully understood.",
+    };
+  }
+
+  if (counts.stabilize >= counts.observe + counts.reroute && counts.stabilize >= 3) {
+    return {
+      name: "Firefighter",
+      summary: "You prioritized visible failures and direct repair under pressure.",
+    };
+  }
+
+  if (counts.observe >= counts.reroute + counts.stabilize && counts.observe >= 3) {
+    return {
+      name: "Analyst",
+      summary: "You favored information, confirmation, and hidden-risk reduction before intervention.",
+    };
+  }
+
+  if (counts.reroute >= counts.observe + counts.stabilize && counts.reroute >= 3) {
+    return {
+      name: "Flow Operator",
+      summary: "You managed pressure through routing, capacity, and transfer discipline.",
+    };
+  }
+
+  if (
+    totalActions >= 4 &&
+    Math.abs(counts.observe - counts.reroute) <= 2 &&
+    Math.abs(counts.reroute - counts.stabilize) <= 2
+  ) {
+    return {
+      name: "Architect",
+      summary: "You balanced observation, flow control, and repair across the system.",
+    };
+  }
+
+  return {
+    name: game.status === "lost" ? "Passive Containment" : "Containment Lead",
+    summary:
+      game.status === "lost"
+        ? "You preserved action discipline, but the system degraded faster than you intervened."
+        : "You kept the system inside survivable bounds through selective intervention.",
+  };
+}
 
 function Meter({ label, value }: { label: string; value: number }) {
   return (
@@ -404,6 +464,11 @@ export function UnderControlV01DecisionPanel() {
     game.recklessActions * 25 +
     game.observedBeforeCriticalAction * 20;
 
+  const operatorProfile = getOperatorProfile(game);
+  const averageAdvisorTrust = getAverageAdvisorTrust(game);
+  const totalActions =
+    game.actionCounts.observe + game.actionCounts.reroute + game.actionCounts.stabilize;
+
   return (
     <main
       style={{
@@ -671,6 +736,100 @@ export function UnderControlV01DecisionPanel() {
             </div>
           </aside>
         </section>
+
+        {game.status !== "running" && (
+          <section
+            style={{
+              border: "1px solid rgba(251,191,36,0.42)",
+              background:
+                game.status === "won"
+                  ? "linear-gradient(135deg, rgba(20,83,45,0.34), rgba(2,6,23,0.86))"
+                  : "linear-gradient(135deg, rgba(127,29,29,0.34), rgba(2,6,23,0.86))",
+              borderRadius: 20,
+              padding: 16,
+              display: "grid",
+              gridTemplateColumns: "1.2fr 1fr auto",
+              gap: 16,
+              alignItems: "center",
+              boxShadow: "0 0 34px rgba(251,191,36,0.1)",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  color: game.status === "won" ? "#86efac" : "#fb7185",
+                  fontSize: 12,
+                  letterSpacing: 1.8,
+                  textTransform: "uppercase",
+                }}
+              >
+                RUN-END SUMMARY / {game.status.toUpperCase()}
+              </div>
+              <div style={{ fontSize: 22, marginTop: 6, letterSpacing: 1.4 }}>
+                Operator Profile: {operatorProfile.name}
+              </div>
+              <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
+                {operatorProfile.summary}
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+                color: "#cbd5e1",
+                fontSize: 12,
+              }}
+            >
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>FINAL SCORE</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{score}</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>AVG TRUST</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{averageAdvisorTrust}%</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>INTEGRITY</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{game.integrity}%</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>CASCADE</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{game.cascadeRisk}%</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>COMMITTED</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{totalActions}</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>CYCLES</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{Math.max(1, game.cycle - 1)}</div>
+              </div>
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>RECKLESS</div>
+                <div style={{ color: "#f8fafc", fontSize: 18 }}>{game.recklessActions}</div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "reset" })}
+              style={{
+                border: "1px solid rgba(251,191,36,0.58)",
+                background: "rgba(120,53,15,0.38)",
+                color: "#fde68a",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: "pointer",
+                letterSpacing: 1.3,
+                fontSize: 12,
+              }}
+            >
+              RESET RUN
+            </button>
+          </section>
+        )}
 
         <footer
           style={{

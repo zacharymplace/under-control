@@ -66,6 +66,7 @@ export type GameState = {
   nodes: SystemNode[];
   advisors: Advisor[];
   actionCooldowns: Record<PlayerActionType, number>;
+  actionCounts: Record<PlayerActionType, number>;
   currentPriority: string;
   status: GameStatus;
   recklessActions: number;
