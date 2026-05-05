@@ -64,6 +64,15 @@ type ImportedRun = {
   telemetry: RunTelemetry;
 };
 
+type BalanceChangeLogEntry = {
+  id: string;
+  createdAt: string;
+  scenario: string;
+  severity: "note" | "watch" | "tune" | "urgent";
+  title: string;
+  note: string;
+};
+
 type ScenarioSummary = {
   key: string;
   label: string;
@@ -88,6 +97,7 @@ type ScenarioSummary = {
 };
 
 const RUN_STORAGE_KEY = "under-control.playtest-runs.v0.1";
+const CHANGE_LOG_STORAGE_KEY = "under-control.balance-change-log.v0.1";
 
 const filterPresets = [
   {
@@ -1211,6 +1221,14 @@ export default function PlaytestRunsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [confidenceFilter, setConfidenceFilter] = useState("all");
   const [activePresetId, setActivePresetId] = useState("all");
+  const [changeLogEntries, setChangeLogEntries] = useState<BalanceChangeLogEntry[]>([]);
+  const [hasHydratedChangeLog, setHasHydratedChangeLog] = useState(false);
+  const [changeLogDraft, setChangeLogDraft] = useState({
+    scenario: "General",
+    severity: "note" as BalanceChangeLogEntry["severity"],
+    title: "",
+    note: "",
+  });
 
   useEffect(() => {
     try {
@@ -1252,6 +1270,72 @@ export default function PlaytestRunsPage() {
     setScenarioFilter(preset.scenario);
     setStatusFilter(preset.status);
     setConfidenceFilter(preset.confidence);
+  }
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CHANGE_LOG_STORAGE_KEY);
+
+      if (!raw) {
+        setHasHydratedChangeLog(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as BalanceChangeLogEntry[];
+
+      if (Array.isArray(parsed)) {
+        setChangeLogEntries(parsed);
+      }
+    } catch {
+      setError("Saved balance change log could not be restored.");
+    } finally {
+      setHasHydratedChangeLog(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedChangeLog) return;
+
+    try {
+      window.localStorage.setItem(CHANGE_LOG_STORAGE_KEY, JSON.stringify(changeLogEntries));
+    } catch {
+      setError("Could not save balance change log locally.");
+    }
+  }, [changeLogEntries, hasHydratedChangeLog]);
+
+  function addBalanceChangeLogEntry() {
+    const title = changeLogDraft.title.trim();
+    const note = changeLogDraft.note.trim();
+
+    if (!title && !note) {
+      setError("Add a title or note before saving a balance change.");
+      return;
+    }
+
+    const entry: BalanceChangeLogEntry = {
+      id: "balance-change-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+      createdAt: new Date().toISOString(),
+      scenario: changeLogDraft.scenario,
+      severity: changeLogDraft.severity,
+      title: title || "Untitled tuning note",
+      note,
+    };
+
+    setChangeLogEntries((current) => [entry, ...current]);
+    setChangeLogDraft({
+      scenario: "General",
+      severity: "note",
+      title: "",
+      note: "",
+    });
+    setMessage("Saved balance change log entry.");
+    setError(null);
+  }
+
+  function deleteBalanceChangeLogEntry(entryId: string) {
+    setChangeLogEntries((current) => current.filter((entry) => entry.id !== entryId));
+    setMessage("Deleted balance change log entry.");
+    setError(null);
   }
 
   const scenarioOptions = useMemo(() => {
@@ -1311,6 +1395,7 @@ export default function PlaytestRunsPage() {
         confidence: confidenceFilter,
       },
       datasetHealth,
+      balanceChangeLog: changeLogEntries,
       balanceNotes: notes,
       scenarioSummaries,
       scenarioRecommendations: scenarioSummaries.map((summary) => ({
@@ -1366,6 +1451,7 @@ export default function PlaytestRunsPage() {
   }, [
     activePresetId,
     confidenceFilter,
+    changeLogEntries,
     datasetHealth,
     notes,
     runs.length,
@@ -1994,6 +2080,216 @@ export default function PlaytestRunsPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(251,191,36,0.32)",
+            background: "rgba(120,53,15,0.12)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#fde68a",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Balance Change Log
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Local tuning notebook for balance decisions, playtest observations, and scenario adjustments.
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 150px 150px auto",
+              gap: 10,
+              alignItems: "start",
+            }}
+          >
+            <input
+              value={changeLogDraft.title}
+              onChange={(event) =>
+                setChangeLogDraft((draft) => ({ ...draft, title: event.currentTarget.value }))
+              }
+              placeholder="Change title / observation"
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            />
+
+            <select
+              value={changeLogDraft.scenario}
+              onChange={(event) =>
+                setChangeLogDraft((draft) => ({ ...draft, scenario: event.currentTarget.value }))
+              }
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="General">General</option>
+              {scenarioOptions.map(([id, label]) => (
+                <option key={id} value={label}>
+                  {label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={changeLogDraft.severity}
+              onChange={(event) =>
+                setChangeLogDraft((draft) => ({
+                  ...draft,
+                  severity: event.currentTarget.value as BalanceChangeLogEntry["severity"],
+                }))
+              }
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="note">Note</option>
+              <option value="watch">Watch</option>
+              <option value="tune">Tune</option>
+              <option value="urgent">Urgent</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={addBalanceChangeLogEntry}
+              style={{
+                border: "1px solid rgba(251,191,36,0.48)",
+                background: "rgba(120,53,15,0.28)",
+                color: "#fde68a",
+                borderRadius: 12,
+                padding: "10px 12px",
+                cursor: "pointer",
+                letterSpacing: 1.1,
+                fontSize: 12,
+              }}
+            >
+              ADD NOTE
+            </button>
+          </div>
+
+          <textarea
+            value={changeLogDraft.note}
+            onChange={(event) =>
+              setChangeLogDraft((draft) => ({ ...draft, note: event.currentTarget.value }))
+            }
+            placeholder="Describe what changed, why, and what to watch in the next runs..."
+            rows={3}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(2,6,23,0.72)",
+              color: "#e2e8f0",
+              borderRadius: 12,
+              padding: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+
+          {changeLogEntries.length === 0 ? (
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+              No balance notes yet.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {changeLogEntries.map((entry) => (
+                <article
+                  key={entry.id}
+                  style={{
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    background: "rgba(15,23,42,0.52)",
+                    borderRadius: 14,
+                    padding: 12,
+                    display: "grid",
+                    gap: 7,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div
+                        style={{
+                          color:
+                            entry.severity === "urgent"
+                              ? "#fb7185"
+                              : entry.severity === "tune"
+                                ? "#fde68a"
+                                : entry.severity === "watch"
+                                  ? "#67e8f9"
+                                  : "#94a3b8",
+                          fontSize: 10,
+                          letterSpacing: 1.2,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {entry.severity} · {entry.scenario}
+                      </div>
+                      <div style={{ color: "#f8fafc", fontSize: 14, marginTop: 4 }}>
+                        {entry.title}
+                      </div>
+                      <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => deleteBalanceChangeLogEntry(entry.id)}
+                      style={{
+                        border: "1px solid rgba(251,113,133,0.34)",
+                        background: "rgba(127,29,29,0.18)",
+                        color: "#fecdd3",
+                        borderRadius: 10,
+                        padding: "7px 9px",
+                        cursor: "pointer",
+                        fontSize: 10,
+                        letterSpacing: 1.1,
+                        alignSelf: "start",
+                      }}
+                    >
+                      DELETE
+                    </button>
+                  </div>
+
+                  {entry.note && (
+                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
+                      {entry.note}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section
