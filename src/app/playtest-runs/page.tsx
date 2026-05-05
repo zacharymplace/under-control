@@ -1017,6 +1017,43 @@ function RunCard({
   );
 }
 
+function isRunTelemetry(value: unknown): value is RunTelemetry {
+  if (!value || typeof value !== "object") return false;
+
+  const telemetry = value as RunTelemetry & {
+    schemaVersion?: string;
+    importedRuns?: unknown;
+    scenarioSummaries?: unknown;
+    trendRows?: unknown;
+  };
+
+  if (telemetry.schemaVersion === "under-control.playtest-review.v0.1") {
+    return false;
+  }
+
+  if (
+    "importedRuns" in telemetry ||
+    "scenarioSummaries" in telemetry ||
+    "trendRows" in telemetry
+  ) {
+    return false;
+  }
+
+  const hasRunShape =
+    typeof telemetry.status === "string" ||
+    typeof telemetry.score === "number" ||
+    typeof telemetry.cyclesSurvived === "number" ||
+    typeof telemetry.cycleReached === "number";
+
+  const hasTelemetrySections =
+    typeof telemetry.finalState === "object" ||
+    typeof telemetry.actions === "object" ||
+    Array.isArray(telemetry.events) ||
+    Array.isArray(telemetry.nodes);
+
+  return hasRunShape && hasTelemetrySections;
+}
+
 export default function PlaytestRunsPage() {
   const [runs, setRuns] = useState<ImportedRun[]>([]);
   const [hasHydratedRuns, setHasHydratedRuns] = useState(false);
@@ -1288,7 +1325,13 @@ export default function PlaytestRunsPage() {
     for (const file of fileArray) {
       try {
         const text = await file.text();
-        const telemetry = JSON.parse(text) as RunTelemetry;
+        const parsed = JSON.parse(text);
+
+        if (!isRunTelemetry(parsed)) {
+          throw new Error("Not an Under Control run telemetry export.");
+        }
+
+        const telemetry = parsed as RunTelemetry;
 
         imported.push({
           id: file.name + "-" + Date.now() + "-" + Math.random().toString(16).slice(2),
@@ -1308,7 +1351,9 @@ export default function PlaytestRunsPage() {
     }
 
     if (failed.length > 0) {
-      setError(`Could not import: ${failed.join(", ")}.`);
+      setError(
+        `Could not import: ${failed.join(", ")}. Only individual run JSON exports from /playable-v01 are accepted here; review JSON files should be archived separately.`
+      );
     }
   }
 
@@ -1501,8 +1546,8 @@ export default function PlaytestRunsPage() {
             textAlign: "center",
           }}
         >
-          Drag exported run JSON files here, or click <strong>IMPORT RUN JSON</strong>. Loaded runs:{" "}
-          <strong>{runs.length}</strong>. Imported runs persist in this browser.
+          Drag individual run JSON files here, or click <strong>IMPORT RUN JSON</strong>. Loaded runs:{" "}
+          <strong>{runs.length}</strong>. Imported runs persist in this browser. Review JSON exports are not accepted as runs.
         </section>
 
         <section
