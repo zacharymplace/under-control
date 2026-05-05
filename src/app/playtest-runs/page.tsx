@@ -414,6 +414,64 @@ function criticalNodeCount(run: RunTelemetry) {
   return (run.nodes ?? []).filter((node) => node.state === "critical").length;
 }
 
+type DatasetHealth = {
+  totalRuns: number;
+  visibleRuns: number;
+  validRuns: number;
+  lowConfidenceRuns: number;
+  scenariosCovered: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  avgActions: number;
+  avgCycles: number;
+  avgScore: number;
+};
+
+function getDatasetHealth(allRuns: ImportedRun[], visibleRuns: ImportedRun[]): DatasetHealth {
+  const validRuns = allRuns.filter((run) => actionTotal(run.telemetry) > 0);
+  const lowConfidenceRuns = allRuns.length - validRuns.length;
+  const wins = visibleRuns.filter((run) => run.telemetry.status === "won").length;
+  const losses = visibleRuns.filter((run) => run.telemetry.status === "lost").length;
+  const scenariosCovered = new Set(
+    allRuns.map((run) => run.telemetry.scenario?.id ?? "unknown")
+  ).size;
+
+  return {
+    totalRuns: allRuns.length,
+    visibleRuns: visibleRuns.length,
+    validRuns: validRuns.length,
+    lowConfidenceRuns,
+    scenariosCovered,
+    wins,
+    losses,
+    winRate: visibleRuns.length > 0 ? Math.round((wins / visibleRuns.length) * 100) : 0,
+    avgActions:
+      visibleRuns.length > 0
+        ? Math.round(
+            visibleRuns.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) /
+              visibleRuns.length
+          )
+        : 0,
+    avgCycles:
+      visibleRuns.length > 0
+        ? Math.round(
+            visibleRuns.reduce(
+              (sum, run) => sum + safeNumber(run.telemetry.cyclesSurvived),
+              0
+            ) / visibleRuns.length
+          )
+        : 0,
+    avgScore:
+      visibleRuns.length > 0
+        ? Math.round(
+            visibleRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.score), 0) /
+              visibleRuns.length
+          )
+        : 0,
+  };
+}
+
 function analyze(runs: ImportedRun[]) {
   if (runs.length === 0) {
     return ["No runs loaded yet. Export JSON from /playable-v01, then import it here."];
@@ -699,6 +757,95 @@ const trendCellStyle: React.CSSProperties = {
   verticalAlign: "top",
   whiteSpace: "nowrap",
 };
+
+function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
+  const enoughScenarios = health.scenariosCovered >= 3;
+  const enoughValidRuns = health.validRuns >= 5;
+  const lowConfidenceRatio =
+    health.totalRuns > 0 ? Math.round((health.lowConfidenceRuns / health.totalRuns) * 100) : 0;
+
+  return (
+    <section
+      style={{
+        border: "1px solid rgba(103,232,249,0.26)",
+        background: "rgba(8,47,73,0.14)",
+        borderRadius: 20,
+        padding: 16,
+        display: "grid",
+        gap: 14,
+      }}
+    >
+      <div>
+        <div
+          style={{
+            color: "#67e8f9",
+            fontSize: 12,
+            letterSpacing: 1.5,
+            textTransform: "uppercase",
+          }}
+        >
+          Dataset Health
+        </div>
+        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+          Snapshot of the currently loaded review dataset. Win rate and averages follow active filters.
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+          gap: 12,
+        }}
+      >
+        <Metric label="Visible Runs" value={health.visibleRuns} />
+        <Metric label="Total Runs" value={health.totalRuns} />
+        <Metric label="Valid Runs" value={health.validRuns} />
+        <Metric label="Low Confidence" value={health.lowConfidenceRuns} />
+        <Metric label="Scenarios" value={health.scenariosCovered} />
+        <Metric label="Win Rate" value={health.winRate + "%"} />
+        <Metric label="Avg Actions" value={health.avgActions} />
+        <Metric label="Avg Cycles" value={health.avgCycles} />
+        <Metric label="Avg Score" value={health.avgScore} />
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 7,
+          color: "#cbd5e1",
+          fontSize: 12,
+          lineHeight: 1.45,
+        }}
+      >
+        <div>
+          <span style={{ color: enoughValidRuns ? "#86efac" : "#fde68a" }}>
+            {enoughValidRuns ? "Good" : "Watch"}:
+          </span>{" "}
+          {enoughValidRuns
+            ? "Enough valid runs exist for early tuning reads."
+            : "Collect at least 5 valid committed-action runs before making firm tuning calls."}
+        </div>
+
+        <div>
+          <span style={{ color: enoughScenarios ? "#86efac" : "#fde68a" }}>
+            {enoughScenarios ? "Good" : "Watch"}:
+          </span>{" "}
+          {enoughScenarios
+            ? "Multiple scenarios are represented."
+            : "Run more scenarios to avoid overfitting balance decisions."}
+        </div>
+
+        {health.lowConfidenceRuns > 0 && (
+          <div>
+            <span style={{ color: "#fb7185" }}>Data hygiene:</span> Low-confidence runs are{" "}
+            {lowConfidenceRatio}% of the loaded dataset. Use DELETE LOW-CONFIDENCE when ready.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
   const winRate = summary.winRate;
@@ -1148,6 +1295,8 @@ export default function PlaytestRunsPage() {
 
   const notes = useMemo(() => analyze(sortedRuns), [sortedRuns]);
 
+  const datasetHealth = useMemo(() => getDatasetHealth(runs, sortedRuns), [runs, sortedRuns]);
+
   const reviewExportPayload = useMemo(() => {
     return {
       schemaVersion: "under-control.playtest-review.v0.1",
@@ -1161,6 +1310,7 @@ export default function PlaytestRunsPage() {
         status: statusFilter,
         confidence: confidenceFilter,
       },
+      datasetHealth,
       balanceNotes: notes,
       scenarioSummaries,
       scenarioRecommendations: scenarioSummaries.map((summary) => ({
@@ -1216,6 +1366,7 @@ export default function PlaytestRunsPage() {
   }, [
     activePresetId,
     confidenceFilter,
+    datasetHealth,
     notes,
     runs.length,
     scenarioFilter,
@@ -1783,6 +1934,8 @@ export default function PlaytestRunsPage() {
             <strong style={{ color: "#cbd5e1" }}>{runs.length}</strong> imported runs.
           </div>
         </section>
+
+        <DatasetHealthPanel health={datasetHealth} />
 
         {message && (
           <section
