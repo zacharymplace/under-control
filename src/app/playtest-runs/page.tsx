@@ -526,6 +526,47 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function MiniBar({
+  value,
+  max,
+  tone,
+}: {
+  value: number;
+  max: number;
+  tone: "score" | "integrity" | "cascade";
+}) {
+  const pct = max <= 0 ? 0 : Math.max(0, Math.min(100, Math.round((value / max) * 100)));
+  const fill =
+    tone === "cascade"
+      ? "#fb7185"
+      : tone === "integrity"
+        ? "#86efac"
+        : "#67e8f9";
+
+  return (
+    <div
+      title={String(value)}
+      style={{
+        width: 92,
+        height: 9,
+        borderRadius: 999,
+        background: "rgba(148,163,184,0.16)",
+        overflow: "hidden",
+        border: "1px solid rgba(148,163,184,0.12)",
+      }}
+    >
+      <div
+        style={{
+          width: pct + "%",
+          height: "100%",
+          background: fill,
+          boxShadow: "0 0 10px " + fill + "88",
+        }}
+      />
+    </div>
+  );
+}
+
 function TrendTable({ runs }: { runs: ImportedRun[] }) {
   if (runs.length === 0) {
     return (
@@ -539,13 +580,18 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
     return new Date(a.importedAt).getTime() - new Date(b.importedAt).getTime();
   });
 
+  const maxTrendScore = Math.max(
+    1,
+    ...orderedRuns.map((run) => safeNumber(run.telemetry.score))
+  );
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table
         style={{
           width: "100%",
           borderCollapse: "collapse",
-          minWidth: 980,
+          minWidth: 1240,
           color: "#cbd5e1",
           fontSize: 12,
         }}
@@ -558,9 +604,12 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
               "Scenario",
               "Status",
               "Score",
+              "Score Bar",
               "Cycles",
               "Integrity",
+              "Integrity Bar",
               "Cascade",
+              "Cascade Bar",
               "Actions",
               "OBS",
               "RER",
@@ -613,9 +662,18 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
                   {status}
                 </td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.score)}</td>
+                <td style={trendCellStyle}>
+                  <MiniBar value={safeNumber(telemetry.score)} max={maxTrendScore} tone="score" />
+                </td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.cyclesSurvived)}</td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.finalState?.integrity)}%</td>
+                <td style={trendCellStyle}>
+                  <MiniBar value={safeNumber(telemetry.finalState?.integrity)} max={100} tone="integrity" />
+                </td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.finalState?.cascadeRisk)}%</td>
+                <td style={trendCellStyle}>
+                  <MiniBar value={safeNumber(telemetry.finalState?.cascadeRisk)} max={100} tone="cascade" />
+                </td>
                 <td style={trendCellStyle}>{actionTotal(telemetry)}</td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.actions?.observe)}</td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.actions?.reroute)}</td>
@@ -1658,6 +1716,9 @@ export default function PlaytestRunsPage() {
             </div>
             <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
               Runs shown in import order, filtered by the active review filters.
+            </div>
+            <div style={{ color: "#64748b", fontSize: 11, marginTop: 5 }}>
+              Mini bars: score is relative to loaded runs; integrity and cascade are scaled to 100%.
             </div>
           </div>
 
