@@ -272,6 +272,23 @@ function ActionButton({
   );
 }
 
+function downloadRunTelemetry(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
 function NodeButton({
   node,
   selected,
@@ -493,6 +510,65 @@ export function UnderControlV01DecisionPanel() {
   const averageAdvisorTrust = getAverageAdvisorTrust(game);
   const totalActions =
     game.actionCounts.observe + game.actionCounts.reroute + game.actionCounts.stabilize;
+
+  const runTelemetry = useMemo(() => {
+    return {
+      schemaVersion: "under-control.playtest-run.v0.1",
+      exportedAt: new Date().toISOString(),
+      route: "/playable-v01",
+      status: game.status,
+      cycleReached: game.cycle,
+      cyclesSurvived: Math.max(1, game.cycle - 1),
+      maxCycles: game.maxCycles,
+      score,
+      operatorProfile,
+      finalState: {
+        integrity: game.integrity,
+        pressure: game.pressure,
+        cascadeRisk: game.cascadeRisk,
+        cascadeBreaches: game.cascadeBreaches,
+        energy: game.energy,
+      },
+      actions: {
+        total: totalActions,
+        observe: game.actionCounts.observe,
+        reroute: game.actionCounts.reroute,
+        stabilize: game.actionCounts.stabilize,
+        reckless: game.recklessActions,
+        observedBeforeCriticalAction: game.observedBeforeCriticalAction,
+      },
+      advisors: game.advisors.map((advisor) => ({
+        id: advisor.id,
+        name: advisor.name,
+        trust: advisor.trust,
+        confidence: advisor.confidence,
+        state: advisor.state,
+        recommendation: advisor.recommendation,
+      })),
+      nodes: game.nodes.map((node) => ({
+        id: node.id,
+        label: node.label,
+        state: node.state,
+        pressure: node.pressure,
+        volatility: node.volatility,
+        integrity: node.integrity,
+        hiddenRisk: node.hiddenRisk,
+        observed: node.observed,
+        ignoredCriticalCycles: node.ignoredCriticalCycles,
+        lastAction: node.lastAction ?? null,
+      })),
+      events: game.events,
+    };
+  }, [game, operatorProfile, score, totalActions]);
+
+  const telemetryFilename =
+    "under-control-run-" +
+    game.status +
+    "-cycle-" +
+    game.cycle +
+    "-score-" +
+    score +
+    ".json";
 
   return (
     <main
@@ -837,22 +913,41 @@ export function UnderControlV01DecisionPanel() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "reset" })}
-              style={{
-                border: "1px solid rgba(251,191,36,0.58)",
-                background: "rgba(120,53,15,0.38)",
-                color: "#fde68a",
-                borderRadius: 14,
-                padding: "12px 14px",
-                cursor: "pointer",
-                letterSpacing: 1.3,
-                fontSize: 12,
-              }}
-            >
-              RESET RUN
-            </button>
+            <div style={{ display: "grid", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => downloadRunTelemetry(telemetryFilename, runTelemetry)}
+                style={{
+                  border: "1px solid rgba(103,232,249,0.5)",
+                  background: "rgba(8,47,73,0.45)",
+                  color: "#cffafe",
+                  borderRadius: 14,
+                  padding: "12px 14px",
+                  cursor: "pointer",
+                  letterSpacing: 1.3,
+                  fontSize: 12,
+                }}
+              >
+                EXPORT RUN JSON
+              </button>
+
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "reset" })}
+                style={{
+                  border: "1px solid rgba(251,191,36,0.58)",
+                  background: "rgba(120,53,15,0.38)",
+                  color: "#fde68a",
+                  borderRadius: 14,
+                  padding: "12px 14px",
+                  cursor: "pointer",
+                  letterSpacing: 1.3,
+                  fontSize: 12,
+                }}
+              >
+                RESET RUN
+              </button>
+            </div>
           </section>
         )}
 
