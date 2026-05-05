@@ -386,10 +386,19 @@ function applyDemoAction(game: any, action: string) {
   if (action === "REROUTE") {
     const turn = game.turn ?? 1;
     const spike = 14 + Math.floor(turn * 0.6);
+    const rerouteIntoInstability = (game.drift ?? 0) >= 45;
 
     next.load -= 14;
     next.drift += Math.min(spike, 18);
     next.integrity -= 5;
+
+    if (rerouteIntoInstability) {
+      next.drift += 8;
+      next.integrity -= 4;
+      next.eventTitle = "Bad Reroute";
+      next.eventSub = "Pressure was released into an unstable system";
+    }
+
     next.driftVisible = true;
 
     next.messages = [
@@ -489,6 +498,16 @@ next.pressure = getPressure(next);
           : "Improved signal, allowed pressure to rise.",
     },
   ];
+
+  const recentPattern = next.actionHistory?.slice(-3).join(">");
+  if (recentPattern === "STABILIZE>STABILIZE>REROUTE") {
+    next.drift -= 4;
+    next.signalClarity += 3;
+    next.feedback = {
+      ...(next.feedback || {}),
+      note: "Clean control rhythm detected. Pressure relief landed after sufficient stabilization.",
+    };
+  }
 
   next.telemetry = updateTelemetry(next.telemetry, next);
 

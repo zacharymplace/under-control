@@ -249,6 +249,14 @@ function getConstraintWarning(game: any) {
   const load = game.load ?? 0;
   const pressure = game.pressure ?? "";
 
+  if (instability >= 55) {
+    return {
+      type: "CRITICAL INSTABILITY",
+      message: "Immediate correction required — reroute will likely accelerate collapse.",
+      level: "CRITICAL",
+    };
+  }
+
   if (instability >= 45) {
     return {
       type: "INSTABILITY",
@@ -257,22 +265,20 @@ function getConstraintWarning(game: any) {
     };
   }
 
-  if (pressure === "HIGH" || pressure === "CRITICAL") {
-    if (instability >= 35) {
-      return {
-        type: "INSTABILITY",
-        message: "Constraint: Instability is borderline under high pressure — favor stabilization.",
-        level: "MEDIUM",
-      };
-    }
+  if ((pressure === "HIGH" || pressure === "CRITICAL") && instability >= 35) {
+    return {
+      type: "INSTABILITY",
+      message: "Constraint: Instability is borderline under high pressure — favor stabilization.",
+      level: "MEDIUM",
+    };
+  }
 
-    if (load >= 80) {
-      return {
-        type: "LOAD",
-        message: "Constraint: Load is approaching limits — a controlled reroute may be required.",
-        level: "MEDIUM",
-      };
-    }
+  if ((pressure === "HIGH" || pressure === "CRITICAL") && load >= 80) {
+    return {
+      type: "LOAD",
+      message: "Constraint: Load is approaching limits — controlled reroute may be required.",
+      level: "MEDIUM",
+    };
   }
 
   return null;
@@ -361,9 +367,24 @@ const decisiveScores = spreadActionScores({
             marginBottom: "12px",
             padding: "10px 12px",
             borderRadius: "8px",
-            border: "1px solid rgba(255, 120, 120, 0.35)",
-            background: "rgba(255, 80, 80, 0.08)",
-            color: "#ffb3b3",
+            border:
+              constraintWarning.level === "CRITICAL"
+                ? "1px solid rgba(255, 80, 80, 0.75)"
+                : constraintWarning.level === "HIGH"
+                ? "1px solid rgba(255, 120, 120, 0.5)"
+                : "1px solid rgba(255, 180, 90, 0.45)",
+            background:
+              constraintWarning.level === "CRITICAL"
+                ? "rgba(255, 40, 40, 0.16)"
+                : constraintWarning.level === "HIGH"
+                ? "rgba(255, 80, 80, 0.1)"
+                : "rgba(255, 170, 60, 0.08)",
+            color:
+              constraintWarning.level === "CRITICAL"
+                ? "#ffd0d0"
+                : constraintWarning.level === "HIGH"
+                ? "#ffb3b3"
+                : "#ffd6a0",
             fontSize: "13px",
             lineHeight: 1.4,
           }}
