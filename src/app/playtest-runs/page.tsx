@@ -526,6 +526,117 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function TrendTable({ runs }: { runs: ImportedRun[] }) {
+  if (runs.length === 0) {
+    return (
+      <div style={{ color: "#94a3b8", fontSize: 13 }}>
+        Import runs to see trend rows.
+      </div>
+    );
+  }
+
+  const orderedRuns = [...runs].sort((a, b) => {
+    return new Date(a.importedAt).getTime() - new Date(b.importedAt).getTime();
+  });
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          minWidth: 980,
+          color: "#cbd5e1",
+          fontSize: 12,
+        }}
+      >
+        <thead>
+          <tr>
+            {[
+              "#",
+              "Imported",
+              "Scenario",
+              "Status",
+              "Score",
+              "Cycles",
+              "Integrity",
+              "Cascade",
+              "Actions",
+              "OBS",
+              "RER",
+              "STA",
+              "Profile",
+            ].map((header) => (
+              <th
+                key={header}
+                style={{
+                  textAlign: "left",
+                  padding: "9px 8px",
+                  borderBottom: "1px solid rgba(148,163,184,0.24)",
+                  color: "#94a3b8",
+                  fontSize: 10,
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {orderedRuns.map((run, index) => {
+            const telemetry = run.telemetry;
+            const status = telemetry.status ?? "unknown";
+            const scenario = telemetry.scenario?.label ?? "Unknown Scenario";
+            const profile = telemetry.operatorProfile?.name ?? "Unclassified";
+            const importedAt = new Date(run.importedAt);
+            const importedLabel = Number.isNaN(importedAt.getTime())
+              ? "Unknown"
+              : importedAt.toLocaleString();
+
+            return (
+              <tr key={run.id}>
+                <td style={trendCellStyle}>{index + 1}</td>
+                <td style={trendCellStyle}>{importedLabel}</td>
+                <td style={trendCellStyle}>{scenario}</td>
+                <td
+                  style={{
+                    ...trendCellStyle,
+                    color: statusColor(status),
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  {status}
+                </td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.score)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.cyclesSurvived)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.finalState?.integrity)}%</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.finalState?.cascadeRisk)}%</td>
+                <td style={trendCellStyle}>{actionTotal(telemetry)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.actions?.observe)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.actions?.reroute)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.actions?.stabilize)}</td>
+                <td style={trendCellStyle}>{profile}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const trendCellStyle: React.CSSProperties = {
+  padding: "9px 8px",
+  borderBottom: "1px solid rgba(148,163,184,0.12)",
+  verticalAlign: "top",
+  whiteSpace: "nowrap",
+};
+
 function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
   const winRate = summary.winRate;
   const balanceTone =
@@ -884,6 +995,24 @@ export default function PlaytestRunsPage() {
         zeroActionRuns: summary.zeroActionRuns,
         dominantAction: summary.dominantAction,
       })),
+      trendRows: [...sortedRuns]
+        .sort((a, b) => new Date(a.importedAt).getTime() - new Date(b.importedAt).getTime())
+        .map((run, index) => ({
+          order: index + 1,
+          filename: run.filename,
+          importedAt: run.importedAt,
+          scenario: run.telemetry.scenario?.label ?? "Unknown Scenario",
+          status: run.telemetry.status ?? "unknown",
+          score: safeNumber(run.telemetry.score),
+          cyclesSurvived: safeNumber(run.telemetry.cyclesSurvived),
+          integrity: safeNumber(run.telemetry.finalState?.integrity),
+          cascadeRisk: safeNumber(run.telemetry.finalState?.cascadeRisk),
+          actionsTotal: actionTotal(run.telemetry),
+          observe: safeNumber(run.telemetry.actions?.observe),
+          reroute: safeNumber(run.telemetry.actions?.reroute),
+          stabilize: safeNumber(run.telemetry.actions?.stabilize),
+          profile: run.telemetry.operatorProfile?.name ?? "Unclassified",
+        })),
       importedRuns: sortedRuns.map((run) => ({
         id: run.id,
         filename: run.filename,
@@ -1504,6 +1633,35 @@ export default function PlaytestRunsPage() {
               ))}
             </div>
           )}
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(15,23,42,0.44)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#cbd5e1",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Trend View
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Runs shown in import order, filtered by the active review filters.
+            </div>
+          </div>
+
+          <TrendTable runs={sortedRuns} />
         </section>
 
         <section
