@@ -39,52 +39,77 @@ function getAverageAdvisorTrust(game: GameState) {
 function getOperatorProfile(game: GameState) {
   const counts = game.actionCounts;
   const totalActions = counts.observe + counts.reroute + counts.stabilize;
+  const maxAction = Math.max(counts.observe, counts.reroute, counts.stabilize);
+  const minAction = Math.min(counts.observe, counts.reroute, counts.stabilize);
+  const observeShare = totalActions > 0 ? counts.observe / totalActions : 0;
+  const rerouteShare = totalActions > 0 ? counts.reroute / totalActions : 0;
+  const stabilizeShare = totalActions > 0 ? counts.stabilize / totalActions : 0;
+  const lost = game.status === "lost";
+
+  if (totalActions <= 2 && lost) {
+    return {
+      name: "Passive Containment",
+      summary: "You preserved action discipline, but the system degraded faster than you intervened.",
+    };
+  }
 
   if (game.recklessActions >= 2) {
     return {
-      name: "Gambler",
-      summary: "You accepted hidden risk and forced outcomes before the system was fully understood.",
+      name: lost ? "Overexposed Gambler" : "Gambler",
+      summary: lost
+        ? "You forced outcomes through hidden risk until the system could no longer absorb the volatility."
+        : "You accepted hidden risk and forced outcomes before the system was fully understood.",
     };
   }
 
-  if (counts.stabilize >= counts.observe + counts.reroute && counts.stabilize >= 3) {
+  if (totalActions >= 6 && maxAction - minAction <= 4 && counts.observe > 0 && counts.reroute > 0 && counts.stabilize > 0) {
     return {
-      name: "Firefighter",
-      summary: "You prioritized visible failures and direct repair under pressure.",
+      name: lost ? "Overloaded Architect" : "Architect",
+      summary: lost
+        ? "You used a balanced operating style, but the cascade outran the system before final stabilization."
+        : "You balanced observation, flow control, and repair across the system.",
     };
   }
 
-  if (counts.observe >= counts.reroute + counts.stabilize && counts.observe >= 3) {
+  if (stabilizeShare >= 0.45 && totalActions >= 4) {
     return {
-      name: "Analyst",
-      summary: "You favored information, confirmation, and hidden-risk reduction before intervention.",
+      name: lost ? "Exhausted Firefighter" : "Firefighter",
+      summary: lost
+        ? "You fought visible failures directly, but too many critical nodes accumulated before recovery."
+        : "You prioritized visible failures and direct repair under pressure.",
     };
   }
 
-  if (counts.reroute >= counts.observe + counts.stabilize && counts.reroute >= 3) {
+  if (observeShare >= 0.45 && totalActions >= 4) {
     return {
-      name: "Flow Operator",
-      summary: "You managed pressure through routing, capacity, and transfer discipline.",
+      name: lost ? "Delayed Analyst" : "Analyst",
+      summary: lost
+        ? "You gathered information and reduced hidden risk, but confirmation lagged behind the cascade."
+        : "You favored information, confirmation, and hidden-risk reduction before intervention.",
     };
   }
 
-  if (
-    totalActions >= 4 &&
-    Math.abs(counts.observe - counts.reroute) <= 2 &&
-    Math.abs(counts.reroute - counts.stabilize) <= 2
-  ) {
+  if (rerouteShare >= 0.45 && totalActions >= 4) {
     return {
-      name: "Architect",
-      summary: "You balanced observation, flow control, and repair across the system.",
+      name: lost ? "Overloaded Flow Operator" : "Flow Operator",
+      summary: lost
+        ? "You managed pressure through routing, but transferred load eventually overwhelmed the network."
+        : "You managed pressure through routing, capacity, and transfer discipline.",
+    };
+  }
+
+  if (lost && game.cascadeRisk >= 80) {
+    return {
+      name: "Cascade Manager",
+      summary: "You stayed active deep into the run, but cascading failures crossed the system's tolerance.",
     };
   }
 
   return {
-    name: game.status === "lost" ? "Passive Containment" : "Containment Lead",
-    summary:
-      game.status === "lost"
-        ? "You preserved action discipline, but the system degraded faster than you intervened."
-        : "You kept the system inside survivable bounds through selective intervention.",
+    name: lost ? "Failed Containment Lead" : "Containment Lead",
+    summary: lost
+      ? "You intervened selectively, but the system crossed failure thresholds before stabilization."
+      : "You kept the system inside survivable bounds through selective intervention.",
   };
 }
 
@@ -803,7 +828,7 @@ export function UnderControlV01DecisionPanel() {
                 <div style={{ color: "#f8fafc", fontSize: 18 }}>{totalActions}</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>CYCLES</div>
+                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>CYCLES SURVIVED</div>
                 <div style={{ color: "#f8fafc", fontSize: 18 }}>{Math.max(1, game.cycle - 1)}</div>
               </div>
               <div>
