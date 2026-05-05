@@ -77,6 +77,7 @@ type ScenarioSummary = {
   avgActions: number;
   avgTrust: number;
   avgReckless: number;
+  zeroActionRuns: number;
   dominantAction: string;
   recommendation: string;
   recommendationSeverity: "watch" | "tune" | "urgent";
@@ -93,6 +94,7 @@ function recommendScenarioBalance(input: {
   avgIntegrity: number;
   avgActions: number;
   avgReckless: number;
+  zeroActionRuns: number;
   dominantAction: string;
 }) {
   const {
@@ -104,8 +106,17 @@ function recommendScenarioBalance(input: {
     avgIntegrity,
     avgActions,
     avgReckless,
+    zeroActionRuns,
     dominantAction,
   } = input;
+
+  if (zeroActionRuns > 0) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Low-confidence sample: this scenario includes zero-action/no-action telemetry. Import fresh committed-action runs before tuning.",
+    };
+  }
 
   if (totalRuns < 3) {
     return {
@@ -253,6 +264,7 @@ function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
         groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.reckless), 0) /
           totalRuns
       );
+      const zeroActionRuns = groupRuns.filter((run) => actionTotal(run.telemetry) === 0).length;
 
       const actionTotals = {
         OBSERVE: groupRuns.reduce(
@@ -280,6 +292,7 @@ function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
         avgIntegrity,
         avgActions,
         avgReckless,
+        zeroActionRuns,
         dominantAction,
       });
 
@@ -297,6 +310,7 @@ function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
         avgActions,
         avgTrust,
         avgReckless,
+        zeroActionRuns,
         dominantAction,
         recommendation: recommendation.recommendation,
         recommendationSeverity: recommendation.severity,
@@ -487,6 +501,7 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
         <Metric label="Avg Cascade" value={summary.avgCascade + "%"} />
         <Metric label="Avg Trust" value={summary.avgTrust + "%"} />
         <Metric label="Avg Reckless" value={summary.avgReckless} />
+        <Metric label="Zero-Action Runs" value={summary.zeroActionRuns} />
         <Metric label="Dominant Action" value={summary.dominantAction} />
       </div>
 
@@ -585,6 +600,22 @@ function RunCard({ run }: { run: ImportedRun }) {
         <Metric label="Critical Nodes" value={criticalNodeCount(telemetry)} />
       </div>
 
+      {actionTotal(telemetry) === 0 && (
+        <div
+          style={{
+            border: "1px solid rgba(251,191,36,0.34)",
+            background: "rgba(120,53,15,0.18)",
+            borderRadius: 12,
+            padding: 10,
+            color: "#fde68a",
+            fontSize: 12,
+            lineHeight: 1.4,
+          }}
+        >
+          Low-confidence telemetry: no committed actions recorded. Use this run cautiously for balance tuning.
+        </div>
+      )}
+
       <div
         style={{
           borderTop: "1px solid rgba(148,163,184,0.18)",
@@ -664,6 +695,7 @@ export default function PlaytestRunsPage() {
         avgCycles: summary.avgCycles,
         avgCascade: summary.avgCascade,
         avgActions: summary.avgActions,
+        zeroActionRuns: summary.zeroActionRuns,
         dominantAction: summary.dominantAction,
       })),
       importedRuns: sortedRuns.map((run) => ({
