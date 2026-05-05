@@ -37,6 +37,48 @@ function getAverageAdvisorTrust(game: GameState) {
   );
 }
 
+function deriveActionCountsFromEvents(game: GameState) {
+  const fromState = game.actionCounts ?? {
+    observe: 0,
+    reroute: 0,
+    stabilize: 0,
+  };
+
+  const stateTotal = fromState.observe + fromState.reroute + fromState.stabilize;
+
+  if (stateTotal > 0) {
+    return {
+      observe: fromState.observe,
+      reroute: fromState.reroute,
+      stabilize: fromState.stabilize,
+      total: stateTotal,
+      source: "state" as const,
+    };
+  }
+
+  const fromEvents = {
+    observe: 0,
+    reroute: 0,
+    stabilize: 0,
+  };
+
+  for (const entry of game.events ?? []) {
+    const message = entry.message.toLowerCase();
+
+    if (message.startsWith("observed ")) fromEvents.observe += 1;
+    if (message.startsWith("rerouted ")) fromEvents.reroute += 1;
+    if (message.startsWith("stabilized ")) fromEvents.stabilize += 1;
+  }
+
+  return {
+    observe: fromEvents.observe,
+    reroute: fromEvents.reroute,
+    stabilize: fromEvents.stabilize,
+    total: fromEvents.observe + fromEvents.reroute + fromEvents.stabilize,
+    source: "event_fallback" as const,
+  };
+}
+
 function getOperatorProfile(game: GameState) {
   const counts = game.actionCounts;
   const totalActions = counts.observe + counts.reroute + counts.stabilize;
@@ -501,6 +543,8 @@ export function UnderControlV01DecisionPanel() {
       ? game.nodes.find((node) => node.id === hardGuidedPathNodeIds[1]) ?? null
       : null;
 
+  const effectiveActionCounts = deriveActionCountsFromEvents(game);
+
   const score =
     game.integrity * 10 +
     Math.round(game.advisors.reduce((sum, advisor) => sum + advisor.trust, 0) / 3) * 5 -
@@ -510,8 +554,7 @@ export function UnderControlV01DecisionPanel() {
 
   const operatorProfile = getOperatorProfile(game);
   const averageAdvisorTrust = getAverageAdvisorTrust(game);
-  const totalActions =
-    game.actionCounts.observe + game.actionCounts.reroute + game.actionCounts.stabilize;
+  const totalActions = effectiveActionCounts.total;
 
   const runTelemetry = useMemo(() => {
     return {
@@ -537,11 +580,12 @@ export function UnderControlV01DecisionPanel() {
       },
       actions: {
         total: totalActions,
-        observe: game.actionCounts.observe,
-        reroute: game.actionCounts.reroute,
-        stabilize: game.actionCounts.stabilize,
+        observe: effectiveActionCounts.observe,
+        reroute: effectiveActionCounts.reroute,
+        stabilize: effectiveActionCounts.stabilize,
         reckless: game.recklessActions,
         observedBeforeCriticalAction: game.observedBeforeCriticalAction,
+        countSource: effectiveActionCounts.source,
       },
       advisors: game.advisors.map((advisor) => ({
         id: advisor.id,
@@ -878,6 +922,39 @@ export function UnderControlV01DecisionPanel() {
             <Meter label="INTEGRITY" value={game.integrity} />
             <Meter label="CASCADE" value={game.cascadeRisk} />
             <Meter label="ENERGY" value={game.energy * 50} />
+
+            <div
+              style={{
+                border: "1px solid rgba(148,163,184,0.22)",
+                borderRadius: 14,
+                padding: 12,
+                background: "rgba(15,23,42,0.65)",
+              }}
+            >
+              <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>
+                COMMITTED ACTIONS
+              </div>
+              <div style={{ color: "#f8fafc", fontSize: 20, marginTop: 6 }}>
+                {totalActions}
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: 8,
+                  color: "#cbd5e1",
+                  fontSize: 11,
+                  marginTop: 8,
+                }}
+              >
+                <span>OBS {effectiveActionCounts.observe}</span>
+                <span>RER {effectiveActionCounts.reroute}</span>
+                <span>STA {effectiveActionCounts.stabilize}</span>
+              </div>
+              <div style={{ color: "#64748b", fontSize: 10, marginTop: 6 }}>
+                Source: {effectiveActionCounts.source}
+              </div>
+            </div>
 
             <div style={{ border: "1px solid rgba(148,163,184,0.22)", borderRadius: 14, padding: 12, background: "rgba(15,23,42,0.65)" }}>
               <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>ACTIVE THREATS</div>
