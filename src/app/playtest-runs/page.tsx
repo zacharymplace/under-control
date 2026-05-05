@@ -75,6 +75,9 @@ type ScenarioSummary = {
   avgIntegrity: number;
   avgCascade: number;
   avgActions: number;
+  avgObserve: number;
+  avgReroute: number;
+  avgStabilize: number;
   avgTrust: number;
   avgReckless: number;
   zeroActionRuns: number;
@@ -257,6 +260,18 @@ function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
       const avgActions = Math.round(
         groupRuns.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) / totalRuns
       );
+      const avgObserve = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.observe), 0) /
+          totalRuns
+      );
+      const avgReroute = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.reroute), 0) /
+          totalRuns
+      );
+      const avgStabilize = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.stabilize), 0) /
+          totalRuns
+      );
       const avgTrust = Math.round(
         groupRuns.reduce((sum, run) => sum + averageTrust(run.telemetry), 0) / totalRuns
       );
@@ -308,6 +323,9 @@ function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
         avgIntegrity,
         avgCascade,
         avgActions,
+        avgObserve,
+        avgReroute,
+        avgStabilize,
         avgTrust,
         avgReckless,
         zeroActionRuns,
@@ -497,6 +515,9 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
         <Metric label="Avg Cycles" value={summary.avgCycles} />
         <Metric label="Avg Score" value={summary.avgScore} />
         <Metric label="Avg Actions" value={summary.avgActions} />
+        <Metric label="Avg OBS" value={summary.avgObserve} />
+        <Metric label="Avg RER" value={summary.avgReroute} />
+        <Metric label="Avg STA" value={summary.avgStabilize} />
         <Metric label="Avg Integrity" value={summary.avgIntegrity + "%"} />
         <Metric label="Avg Cascade" value={summary.avgCascade + "%"} />
         <Metric label="Avg Trust" value={summary.avgTrust + "%"} />
@@ -618,6 +639,39 @@ function RunCard({ run }: { run: ImportedRun }) {
 
       <div
         style={{
+          border: "1px solid rgba(103,232,249,0.2)",
+          background: "rgba(8,47,73,0.14)",
+          borderRadius: 12,
+          padding: 10,
+          display: "grid",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            color: "#67e8f9",
+            fontSize: 10,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          Action Breakdown
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 8,
+          }}
+        >
+          <Metric label="Observe" value={safeNumber(telemetry.actions?.observe)} />
+          <Metric label="Reroute" value={safeNumber(telemetry.actions?.reroute)} />
+          <Metric label="Stabilize" value={safeNumber(telemetry.actions?.stabilize)} />
+        </div>
+      </div>
+
+      <div
+        style={{
           borderTop: "1px solid rgba(148,163,184,0.18)",
           paddingTop: 10,
           color: "#94a3b8",
@@ -695,6 +749,9 @@ export default function PlaytestRunsPage() {
         avgCycles: summary.avgCycles,
         avgCascade: summary.avgCascade,
         avgActions: summary.avgActions,
+        avgObserve: summary.avgObserve,
+        avgReroute: summary.avgReroute,
+        avgStabilize: summary.avgStabilize,
         zeroActionRuns: summary.zeroActionRuns,
         dominantAction: summary.dominantAction,
       })),
