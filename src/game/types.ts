@@ -1,32 +1,7 @@
-import { AdvisorMemoryMap } from "./advisorMemory";
-
-export type Game = {
-  turn: number;
-  state: string;
-  pressure: string;
-  scenarioId: any;
-
-  load: number;
-  signal?: number;
-  signalClarity?: number;
-  integrity: number;
-  drift: number;
-
-  personas?: any[];
-
-  trust: Record<string, number>;
-  ignoredCounts: Record<string, number>;
-
-  feedback: string | null;
-  reactions?: any[];
-
-  actionHistory?: string[];
-
-  advisorMemory?: AdvisorMemoryMap;
-
-  playerTendency?: any;
-  pointOfNoReturn?: any;
-  interrupted?: boolean;
-  forced?: boolean;
-  credibility?: Record<string, number>;
-};
+/**
+ * Legacy prototype compatibility types.
+ *
+ * v0.1 systems-arena types now live in src/game/v01/types.ts.
+ * The existing home-page prototype still imports Game from "@/game/types".
+ */
+export type Game = Record<string, any>;

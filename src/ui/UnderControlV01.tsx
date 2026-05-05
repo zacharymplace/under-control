@@ -1,0 +1,641 @@
+"use client";
+
+import { useMemo, useReducer } from "react";
+import { initialGameState } from "../game/v01/initialState";
+import { gameReducer } from "../game/v01/reducer";
+import type { Advisor, EventTone, NodeState, PlayerActionType, SystemNode } from "../game/v01/types";
+
+const colors: Record<NodeState, string> = {
+  stable: "#6ee7a8",
+  active: "#67e8f9",
+  warning: "#fbbf24",
+  critical: "#fb7185",
+  unknown: "#94a3b8",
+  suppressed: "#64748b",
+};
+
+const toneColors: Record<EventTone, string> = {
+  neutral: "#cbd5e1",
+  good: "#86efac",
+  warning: "#fbbf24",
+  critical: "#fb7185",
+};
+
+const actionCopy: Record<PlayerActionType, { label: string; detail: string; best: string }> = {
+  observe: {
+    label: "OBSERVE",
+    detail: "Reveal hidden risk.",
+    best: "Best before force.",
+  },
+  reroute: {
+    label: "REROUTE",
+    detail: "Shift pressure flow.",
+    best: "Best on warning.",
+  },
+  stabilize: {
+    label: "STABILIZE",
+    detail: "Repair instability.",
+    best: "Best after observe.",
+  },
+};
+
+function nodeUrgency(node: SystemNode) {
+  if (node.state === "critical") return 4;
+  if (node.state === "warning") return 3;
+  if (node.state === "unknown") return 2;
+  if (node.state === "active") return 1;
+  return 0;
+}
+
+function AdvisorCard({ advisor }: { advisor: Advisor }) {
+  const active = advisor.state === "speaking";
+  return (
+    <div
+      style={{
+        border: `1px solid ${active ? "#67e8f9" : "rgba(148,163,184,0.25)"}`,
+        background: active ? "rgba(8,47,73,0.55)" : "rgba(15,23,42,0.68)",
+        borderRadius: 14,
+        padding: 12,
+        boxShadow: active ? "0 0 28px rgba(103,232,249,0.14)" : "none",
+      }}
+    >
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 12,
+            background:
+              "linear-gradient(135deg, rgba(103,232,249,0.22), rgba(15,23,42,0.9))",
+            border: "1px solid rgba(103,232,249,0.35)",
+          }}
+        />
+        <div>
+          <div style={{ color: "#f8fafc", letterSpacing: 1.6, fontSize: 13 }}>
+            {advisor.name}
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: 11, textTransform: "uppercase" }}>
+            {advisor.state.replace("_", " ")}
+          </div>
+        </div>
+      </div>
+
+      <p style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.35, minHeight: 34 }}>
+        {advisor.recommendation}
+      </p>
+
+      <div style={{ display: "grid", gap: 6 }}>
+        <Meter label="TRUST" value={advisor.trust} />
+        <Meter label="CONF" value={advisor.confidence} />
+      </div>
+    </div>
+  );
+}
+
+function Meter({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          color: "#94a3b8",
+          fontSize: 10,
+          letterSpacing: 1,
+          marginBottom: 4,
+        }}
+      >
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <div
+        style={{
+          height: 5,
+          borderRadius: 99,
+          background: "rgba(148,163,184,0.18)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${value}%`,
+            height: "100%",
+            background: value > 66 ? "#67e8f9" : value > 40 ? "#fbbf24" : "#fb7185",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({
+  action,
+  cooldown,
+  energy,
+  onClick,
+}: {
+  action: PlayerActionType;
+  cooldown: number;
+  energy: number;
+  onClick: () => void;
+}) {
+  const disabled = cooldown > 0 || energy < 1;
+  const copy = actionCopy[action];
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        textAlign: "left",
+        border: `1px solid ${disabled ? "rgba(148,163,184,0.18)" : "rgba(103,232,249,0.45)"}`,
+        background: disabled ? "rgba(15,23,42,0.62)" : "rgba(8,47,73,0.45)",
+        color: disabled ? "#64748b" : "#f8fafc",
+        borderRadius: 16,
+        padding: "14px 16px",
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      <div style={{ fontSize: 15, letterSpacing: 1.8, marginBottom: 7 }}>{copy.label}</div>
+      <div style={{ fontSize: 12, color: disabled ? "#64748b" : "#cbd5e1" }}>
+        {copy.detail}
+      </div>
+      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>{copy.best}</div>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 11, color: "#94a3b8" }}>
+        <span>COST 1</span>
+        <span>CD {cooldown}</span>
+      </div>
+    </button>
+  );
+}
+
+function NodeButton({
+  node,
+  selected,
+  operator,
+  inRange,
+  onSelect,
+}: {
+  node: SystemNode;
+  selected: boolean;
+  operator: boolean;
+  inRange: boolean;
+  onSelect: () => void;
+}) {
+  const color = colors[node.state];
+  const urgency = nodeUrgency(node);
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      style={{
+        position: "absolute",
+        left: `${node.x}%`,
+        top: `${node.y}%`,
+        transform: "translate(-50%, -50%)",
+        width: selected ? 86 : 74,
+        height: selected ? 86 : 74,
+        borderRadius: "50%",
+        border: `2px solid ${selected ? "#f8fafc" : color}`,
+        background:
+          "radial-gradient(circle at center, rgba(15,23,42,0.92), rgba(2,6,23,0.96))",
+        color: "#f8fafc",
+        boxShadow: `0 0 ${16 + urgency * 8}px ${color}55`,
+        cursor: "pointer",
+        opacity: inRange || operator ? 1 : 0.64,
+      }}
+      title={node.label}
+    >
+      <span
+        style={{
+          display: "block",
+          margin: "0 auto 3px",
+          width: 9,
+          height: 9,
+          borderRadius: "50%",
+          background: color,
+          boxShadow: `0 0 12px ${color}`,
+        }}
+      />
+      <span style={{ display: "block", fontSize: 10, letterSpacing: 1.1 }}>{node.label}</span>
+      <span
+        style={{
+          display: "block",
+          color,
+          fontSize: 9,
+          marginTop: 4,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+        }}
+      >
+        {node.state}
+      </span>
+      {operator && (
+        <span
+          style={{
+            position: "absolute",
+            inset: -13,
+            border: "1px dashed rgba(248,250,252,0.55)",
+            borderRadius: "50%",
+          }}
+        />
+      )}
+    </button>
+  );
+}
+
+export function UnderControlV01() {
+  const [game, dispatch] = useReducer(gameReducer, initialGameState);
+
+  const operatorNode = game.nodes.find((node) => node.id === game.operatorNodeId)!;
+  const selectedNode = game.nodes.find((node) => node.id === game.selectedNodeId) ?? operatorNode;
+
+  const inRangeIds = useMemo(() => {
+    return new Set([operatorNode.id, ...operatorNode.connections]);
+  }, [operatorNode]);
+
+  const score =
+    game.integrity * 10 +
+    Math.round(game.advisors.reduce((sum, advisor) => sum + advisor.trust, 0) / 3) * 5 -
+    game.cascadeRisk * 4 -
+    game.recklessActions * 25 +
+    game.observedBeforeCriticalAction * 20;
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at 50% 20%, rgba(14,116,144,0.12), transparent 32%), #020617",
+        color: "#f8fafc",
+        padding: 22,
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      }}
+    >
+      <section
+        style={{
+          maxWidth: 1480,
+          margin: "0 auto",
+          display: "grid",
+          gridTemplateRows: "auto 1fr auto",
+          gap: 14,
+        }}
+      >
+        <header
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(2,6,23,0.72)",
+            borderRadius: 20,
+            padding: "16px 18px",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto 1fr",
+              alignItems: "center",
+              gap: 18,
+            }}
+          >
+            <div style={{ color: "#94a3b8", fontSize: 12, letterSpacing: 1.4 }}>
+              CYCLE {game.cycle}/{game.maxCycles}
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 24, letterSpacing: 5 }}>UNDER CONTROL</div>
+              <div style={{ color: "#fbbf24", fontSize: 12, letterSpacing: 2, marginTop: 4 }}>
+                {game.status === "running"
+                  ? game.cascadeRisk > 68
+                    ? "UNSTABLE"
+                    : game.pressure > 50
+                      ? "DEGRADED"
+                      : "STABLE"
+                  : game.status.toUpperCase()}
+              </div>
+            </div>
+            <div style={{ textAlign: "right", color: "#94a3b8", fontSize: 12 }}>
+              SCORE {score}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <Meter label="PRESSURE" value={game.pressure} />
+          </div>
+
+          <div
+            style={{
+              marginTop: 14,
+              border: "1px solid rgba(251,191,36,0.35)",
+              background: "rgba(120,53,15,0.18)",
+              borderRadius: 14,
+              padding: "10px 12px",
+              color: "#fde68a",
+              fontSize: 13,
+            }}
+          >
+            <strong style={{ letterSpacing: 1.3 }}>CURRENT PRIORITY:</strong>{" "}
+            {game.currentPriority}
+          </div>
+        </header>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "260px 1fr 270px",
+            gap: 14,
+            minHeight: 620,
+          }}
+        >
+          <aside
+            style={{
+              border: "1px solid rgba(148,163,184,0.22)",
+              background: "rgba(2,6,23,0.72)",
+              borderRadius: 20,
+              padding: 14,
+              display: "grid",
+              gap: 12,
+              alignContent: "start",
+            }}
+          >
+            <div style={{ color: "#e2e8f0", letterSpacing: 2, fontSize: 13 }}>ADVISORS</div>
+            {game.advisors.map((advisor) => (
+              <AdvisorCard advisor={advisor} key={advisor.id} />
+            ))}
+          </aside>
+
+          <section
+            style={{
+              position: "relative",
+              border: "1px solid rgba(148,163,184,0.22)",
+              background:
+                "linear-gradient(180deg, rgba(15,23,42,0.78), rgba(2,6,23,0.92))",
+              borderRadius: 24,
+              overflow: "hidden",
+              minHeight: 620,
+            }}
+          >
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                opacity: 0.78,
+              }}
+            >
+              {game.nodes.flatMap((node) =>
+                node.connections
+                  .filter((targetId) => node.id < targetId)
+                  .map((targetId) => {
+                    const target = game.nodes.find((item) => item.id === targetId)!;
+                    const hot =
+                      node.state === "critical" ||
+                      target.state === "critical" ||
+                      node.state === "warning" ||
+                      target.state === "warning";
+                    return (
+                      <line
+                        key={`${node.id}-${target.id}`}
+                        x1={node.x}
+                        y1={node.y}
+                        x2={target.x}
+                        y2={target.y}
+                        stroke={hot ? "rgba(251,191,36,0.58)" : "rgba(103,232,249,0.34)"}
+                        strokeWidth={hot ? 0.42 : 0.28}
+                      />
+                    );
+                  })
+              )}
+            </svg>
+
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage:
+                  "linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px)",
+                backgroundSize: "44px 44px",
+                maskImage: "radial-gradient(circle at center, black, transparent 82%)",
+              }}
+            />
+
+            {game.nodes.map((node) => (
+              <NodeButton
+                key={node.id}
+                node={node}
+                selected={selectedNode.id === node.id}
+                operator={operatorNode.id === node.id}
+                inRange={inRangeIds.has(node.id)}
+                onSelect={() => dispatch({ type: "select_node", nodeId: node.id })}
+              />
+            ))}
+
+            <div
+              style={{
+                position: "absolute",
+                left: `${operatorNode.x}%`,
+                top: `${operatorNode.y}%`,
+                transform: "translate(-50%, -50%)",
+                width: 22,
+                height: 36,
+                borderRadius: "12px 12px 8px 8px",
+                background: "linear-gradient(180deg, #f8fafc, #67e8f9)",
+                boxShadow: "0 0 26px rgba(103,232,249,0.7)",
+                pointerEvents: "none",
+              }}
+            />
+
+            <div
+              style={{
+                position: "absolute",
+                left: 18,
+                bottom: 18,
+                right: 18,
+                border: "1px solid rgba(148,163,184,0.22)",
+                background: "rgba(2,6,23,0.76)",
+                borderRadius: 18,
+                padding: 14,
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                gap: 14,
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <div style={{ color: colors[selectedNode.state], fontSize: 12, letterSpacing: 1.5 }}>
+                  SELECTED NODE / {selectedNode.state.toUpperCase()}
+                </div>
+                <div style={{ fontSize: 18, marginTop: 4 }}>{selectedNode.label}</div>
+                <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+                  Pressure {selectedNode.pressure}% · Integrity {selectedNode.integrity}% · Hidden risk{" "}
+                  {selectedNode.observed ? `${selectedNode.hiddenRisk}%` : "unresolved"}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => dispatch({ type: "move_operator", nodeId: selectedNode.id })}
+                disabled={!inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id}
+                style={{
+                  border: "1px solid rgba(103,232,249,0.45)",
+                  background:
+                    !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id
+                      ? "rgba(15,23,42,0.5)"
+                      : "rgba(8,47,73,0.65)",
+                  color:
+                    !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id
+                      ? "#64748b"
+                      : "#f8fafc",
+                  borderRadius: 14,
+                  padding: "11px 14px",
+                  cursor:
+                    !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                MOVE TO NODE
+              </button>
+            </div>
+          </section>
+
+          <aside
+            style={{
+              border: "1px solid rgba(148,163,184,0.22)",
+              background: "rgba(2,6,23,0.72)",
+              borderRadius: 20,
+              padding: 14,
+              display: "grid",
+              gap: 14,
+              alignContent: "start",
+            }}
+          >
+            <div style={{ color: "#e2e8f0", letterSpacing: 2, fontSize: 13 }}>
+              SYSTEM STATUS
+            </div>
+
+            <Meter label="INTEGRITY" value={game.integrity} />
+            <Meter label="CASCADE" value={game.cascadeRisk} />
+            <Meter label="ENERGY" value={game.energy * 50} />
+
+            <div
+              style={{
+                border: "1px solid rgba(148,163,184,0.22)",
+                borderRadius: 14,
+                padding: 12,
+                background: "rgba(15,23,42,0.65)",
+              }}
+            >
+              <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>
+                ACTIVE THREATS
+              </div>
+              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                {game.nodes
+                  .filter((node) => ["critical", "warning", "unknown"].includes(node.state))
+                  .sort((a, b) => nodeUrgency(b) - nodeUrgency(a))
+                  .slice(0, 4)
+                  .map((node) => (
+                    <div
+                      key={node.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        color: "#cbd5e1",
+                        fontSize: 12,
+                      }}
+                    >
+                      <span>{node.label}</span>
+                      <span style={{ color: colors[node.state] }}>{node.state}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div
+              style={{
+                border: "1px solid rgba(148,163,184,0.22)",
+                borderRadius: 14,
+                padding: 12,
+                background: "rgba(15,23,42,0.65)",
+              }}
+            >
+              <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>
+                EVENT LOG
+              </div>
+              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                {game.events.map((entry, index) => (
+                  <div
+                    key={`${entry.cycle}-${entry.message}-${index}`}
+                    style={{ color: toneColors[entry.tone], fontSize: 12, lineHeight: 1.35 }}
+                  >
+                    C{entry.cycle}: {entry.message}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <footer
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(2,6,23,0.72)",
+            borderRadius: 20,
+            padding: 14,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr auto auto",
+            gap: 12,
+          }}
+        >
+          {(["observe", "reroute", "stabilize"] as PlayerActionType[]).map((action) => (
+            <ActionButton
+              key={action}
+              action={action}
+              cooldown={game.actionCooldowns[action]}
+              energy={game.energy}
+              onClick={() => dispatch({ type: "perform_action", action })}
+            />
+          ))}
+
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "advance_cycle" })}
+            disabled={game.status !== "running"}
+            style={{
+              border: "1px solid rgba(251,191,36,0.45)",
+              background: "rgba(120,53,15,0.3)",
+              color: game.status === "running" ? "#fde68a" : "#64748b",
+              borderRadius: 16,
+              padding: "0 18px",
+              cursor: game.status === "running" ? "pointer" : "not-allowed",
+              letterSpacing: 1.6,
+            }}
+          >
+            ADVANCE CYCLE
+          </button>
+
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "reset" })}
+            style={{
+              border: "1px solid rgba(148,163,184,0.28)",
+              background: "rgba(15,23,42,0.6)",
+              color: "#cbd5e1",
+              borderRadius: 16,
+              padding: "0 18px",
+              cursor: "pointer",
+              letterSpacing: 1.4,
+            }}
+          >
+            RESET
+          </button>
+        </footer>
+      </section>
+    </main>
+  );
+}
