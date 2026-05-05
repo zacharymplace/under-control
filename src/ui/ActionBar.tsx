@@ -245,6 +245,14 @@ function getRecommendedControlGuidance(game: any) {
 
 
 function getConstraintWarning(game: any) {
+  if (game.state === "STABILIZED") {
+    return {
+      type: "RESIDUAL INSTABILITY",
+      message: "Instability remains elevated, but control has been restored.",
+      level: "LOW",
+    };
+  }
+
   const instability = game.drift ?? game.instability ?? 0;
   const load = game.load ?? 0;
   const pressure = game.pressure ?? "";
@@ -372,18 +380,24 @@ const decisiveScores = spreadActionScores({
                 ? "1px solid rgba(255, 80, 80, 0.75)"
                 : constraintWarning.level === "HIGH"
                 ? "1px solid rgba(255, 120, 120, 0.5)"
+                : constraintWarning.level === "LOW"
+                ? "1px solid rgba(120, 220, 160, 0.35)"
                 : "1px solid rgba(255, 180, 90, 0.45)",
             background:
               constraintWarning.level === "CRITICAL"
                 ? "rgba(255, 40, 40, 0.16)"
                 : constraintWarning.level === "HIGH"
                 ? "rgba(255, 80, 80, 0.1)"
+                : constraintWarning.level === "LOW"
+                ? "rgba(60, 180, 100, 0.08)"
                 : "rgba(255, 170, 60, 0.08)",
             color:
               constraintWarning.level === "CRITICAL"
                 ? "#ffd0d0"
                 : constraintWarning.level === "HIGH"
                 ? "#ffb3b3"
+                : constraintWarning.level === "LOW"
+                ? "#baf5cf"
                 : "#ffd6a0",
             fontSize: "13px",
             lineHeight: 1.4,
