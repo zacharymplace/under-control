@@ -111,6 +111,76 @@ function getControlDoctrine(game: any) {
 
 
 
+
+function getOnboardingHint(game: any) {
+  const turn = game.turn ?? 1;
+  const state = game.state ?? "";
+  const instability = game.drift ?? game.instability ?? 0;
+  const history = game.actionHistory || [];
+  const lastAction = history[history.length - 1];
+
+  if (state === "FAILED" || state === "STABILIZED") return null;
+
+  if (turn === 1) {
+    return {
+      title: "First read",
+      copy: "Start by observing. Signal clarity improves before stronger actions are reliable.",
+      action: "OBSERVE",
+    };
+  }
+
+  if (turn === 2) {
+    return {
+      title: "Confirm the signal",
+      copy: "A second observation helps separate noise from a real control problem.",
+      action: "OBSERVE",
+    };
+  }
+
+  if (turn === 3) {
+    return {
+      title: "First commitment",
+      copy: "Reroute releases load, but it can introduce hidden instability. Use it deliberately.",
+      action: "REROUTE",
+    };
+  }
+
+  if (turn === 4) {
+    return {
+      title: "Pay back instability",
+      copy: "After rerouting, stabilize to contain the instability you may have created.",
+      action: "STABILIZE",
+    };
+  }
+
+  if (lastAction === "REROUTE") {
+    return {
+      title: "Sequencing rule",
+      copy: "Reroute is not free. Stabilize after it to prevent hidden drift from compounding.",
+      action: "STABILIZE",
+    };
+  }
+
+  if (instability >= 45) {
+    return {
+      title: "Constraint mode",
+      copy: "Instability is now the active constraint. Do not release more load until it is contained.",
+      action: "STABILIZE",
+    };
+  }
+
+  if (instability < 35 && turn >= 6) {
+    return {
+      title: "Safe release window",
+      copy: "Instability is contained. This is usually the best window to relieve load.",
+      action: "REROUTE",
+    };
+  }
+
+  return null;
+}
+
+
 function getSignalControlSplit(game: any) {
   const signal = game.signalClarity ?? game.signal ?? 0;
   const load = game.load ?? 0;
@@ -356,6 +426,7 @@ const decisiveScores = spreadActionScores({
       : "Partial disagreement";
 
   const constraintWarning = getConstraintWarning(game);
+  const onboardingHint = getOnboardingHint(game);
 
   return (
     <section>
@@ -368,6 +439,27 @@ const decisiveScores = spreadActionScores({
         Guidance: {getRecommendedControlGuidance(game).bias} ({getRecommendedControlGuidance(game).confidence}) — {getRecommendedControlGuidance(game).note}
       </div>
 
+
+
+      {onboardingHint && (
+        <div
+          style={{
+            marginBottom: "12px",
+            padding: "10px 12px",
+            borderRadius: "8px",
+            border: "1px solid rgba(120, 180, 255, 0.35)",
+            background: "rgba(80, 140, 255, 0.08)",
+            color: "#cfe0ff",
+            fontSize: "13px",
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>{onboardingHint.title}</strong>: {onboardingHint.copy}
+          <div style={{ marginTop: "4px", opacity: 0.8 }}>
+            Suggested action: {onboardingHint.action}
+          </div>
+        </div>
+      )}
 
       {constraintWarning && (
         <div
