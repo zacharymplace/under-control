@@ -433,6 +433,47 @@ function downloadJson(filename: string, payload: unknown) {
   URL.revokeObjectURL(url);
 }
 
+function csvCell(value: unknown) {
+  if (value === null || value === undefined) return "";
+
+  const text = String(value);
+  const escaped = text.replace(/"/g, '""');
+
+  if (/[",\n\r]/.test(escaped)) {
+    return `"${escaped}"`;
+  }
+
+  return escaped;
+}
+
+function toCsv(rows: Array<Record<string, unknown>>) {
+  if (rows.length === 0) return "";
+
+  const headers = Object.keys(rows[0]);
+  const headerRow = headers.map(csvCell).join(",");
+  const bodyRows = rows.map((row) => headers.map((header) => csvCell(row[header])).join(","));
+
+  return [headerRow, ...bodyRows].join("\n");
+}
+
+function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
+  const csv = toCsv(rows);
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
@@ -814,6 +855,69 @@ export default function PlaytestRunsPage() {
     new Date().toISOString().replace(/[:.]/g, "-") +
     ".json";
 
+  const runCsvRows = useMemo(() => {
+    return sortedRuns.map((run) => {
+      const telemetry = run.telemetry;
+
+      return {
+        filename: run.filename,
+        importedAt: run.importedAt,
+        exportedAt: telemetry.exportedAt ?? "",
+        status: telemetry.status ?? "unknown",
+        scenarioId: telemetry.scenario?.id ?? "unknown",
+        scenarioLabel: telemetry.scenario?.label ?? "Unknown Scenario",
+        score: safeNumber(telemetry.score),
+        cyclesSurvived: safeNumber(telemetry.cyclesSurvived),
+        cycleReached: safeNumber(telemetry.cycleReached),
+        maxCycles: safeNumber(telemetry.maxCycles),
+        integrity: safeNumber(telemetry.finalState?.integrity),
+        pressure: safeNumber(telemetry.finalState?.pressure),
+        cascadeRisk: safeNumber(telemetry.finalState?.cascadeRisk),
+        cascadeBreaches: safeNumber(telemetry.finalState?.cascadeBreaches),
+        actionsTotal: actionTotal(telemetry),
+        observe: safeNumber(telemetry.actions?.observe),
+        reroute: safeNumber(telemetry.actions?.reroute),
+        stabilize: safeNumber(telemetry.actions?.stabilize),
+        reckless: safeNumber(telemetry.actions?.reckless),
+        observedBeforeCriticalAction: safeNumber(telemetry.actions?.observedBeforeCriticalAction),
+        averageAdvisorTrust: averageTrust(telemetry),
+        criticalNodeCount: criticalNodeCount(telemetry),
+        mostUsedAction: mostUsedAction(telemetry),
+        lowConfidence: actionTotal(telemetry) === 0,
+        operatorProfile: telemetry.operatorProfile?.name ?? "Unclassified",
+        operatorProfileSummary: telemetry.operatorProfile?.summary ?? "",
+      };
+    });
+  }, [sortedRuns]);
+
+  const scenarioCsvRows = useMemo(() => {
+    return scenarioSummaries.map((summary) => ({
+      scenario: summary.label,
+      totalRuns: summary.totalRuns,
+      wins: summary.wins,
+      losses: summary.losses,
+      winRate: summary.winRate,
+      avgCycles: summary.avgCycles,
+      avgScore: summary.avgScore,
+      avgIntegrity: summary.avgIntegrity,
+      avgCascade: summary.avgCascade,
+      avgActions: summary.avgActions,
+      avgObserve: summary.avgObserve,
+      avgReroute: summary.avgReroute,
+      avgStabilize: summary.avgStabilize,
+      avgTrust: summary.avgTrust,
+      avgReckless: summary.avgReckless,
+      zeroActionRuns: summary.zeroActionRuns,
+      dominantAction: summary.dominantAction,
+      recommendationSeverity: summary.recommendationSeverity,
+      recommendation: summary.recommendation,
+    }));
+  }, [scenarioSummaries]);
+
+  const csvTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const runCsvFilename = "under-control-runs-" + csvTimestamp + ".csv";
+  const scenarioCsvFilename = "under-control-scenarios-" + csvTimestamp + ".csv";
+
   async function importFiles(files: FileList | File[]) {
     setError(null);
     setMessage(null);
@@ -957,6 +1061,42 @@ export default function PlaytestRunsPage() {
               }}
             >
               EXPORT REVIEW JSON
+            </button>
+
+            <button
+              type="button"
+              onClick={() => downloadCsv(runCsvFilename, runCsvRows)}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(103,232,249,0.44)",
+                background: "rgba(8,47,73,0.34)",
+                color: runs.length === 0 ? "#64748b" : "#cffafe",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              EXPORT RUNS CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={() => downloadCsv(scenarioCsvFilename, scenarioCsvRows)}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(103,232,249,0.44)",
+                background: "rgba(8,47,73,0.34)",
+                color: runs.length === 0 ? "#64748b" : "#cffafe",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              EXPORT SCENARIOS CSV
             </button>
 
             <button
