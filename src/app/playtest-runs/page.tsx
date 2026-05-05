@@ -1142,6 +1142,10 @@ export default function PlaytestRunsPage() {
 
   const scenarioSummaries = useMemo(() => summarizeByScenario(sortedRuns), [sortedRuns]);
 
+  const lowConfidenceRunCount = useMemo(() => {
+    return runs.filter((run) => actionTotal(run.telemetry) === 0).length;
+  }, [runs]);
+
   const notes = useMemo(() => analyze(sortedRuns), [sortedRuns]);
 
   const reviewExportPayload = useMemo(() => {
@@ -1305,6 +1309,28 @@ export default function PlaytestRunsPage() {
   function deleteImportedRun(runId: string) {
     setRuns((current) => current.filter((run) => run.id !== runId));
     setMessage("Deleted imported run.");
+    setError(null);
+  }
+
+  function deleteLowConfidenceRuns() {
+    const lowConfidenceCount = runs.filter((run) => actionTotal(run.telemetry) === 0).length;
+
+    if (lowConfidenceCount === 0) {
+      setMessage("No low-confidence runs to delete.");
+      setError(null);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${lowConfidenceCount} low-confidence run${lowConfidenceCount === 1 ? "" : "s"} with zero committed actions?`
+    );
+
+    if (!confirmed) return;
+
+    setRuns((current) => current.filter((run) => actionTotal(run.telemetry) > 0));
+    setMessage(
+      `Deleted ${lowConfidenceCount} low-confidence run${lowConfidenceCount === 1 ? "" : "s"}.`
+    );
     setError(null);
   }
 
@@ -1500,6 +1526,24 @@ export default function PlaytestRunsPage() {
 
             <button
               type="button"
+              onClick={deleteLowConfidenceRuns}
+              disabled={lowConfidenceRunCount === 0}
+              style={{
+                border: "1px solid rgba(251,191,36,0.36)",
+                background: "rgba(120,53,15,0.22)",
+                color: lowConfidenceRunCount === 0 ? "#64748b" : "#fde68a",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: lowConfidenceRunCount === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              DELETE LOW-CONFIDENCE ({lowConfidenceRunCount})
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 setRuns([]);
                 setMessage("Cleared imported runs from this browser.");
@@ -1547,7 +1591,7 @@ export default function PlaytestRunsPage() {
           }}
         >
           Drag individual run JSON files here, or click <strong>IMPORT RUN JSON</strong>. Loaded runs:{" "}
-          <strong>{runs.length}</strong>. Imported runs persist in this browser. Review JSON exports are not accepted as runs.
+          <strong>{runs.length}</strong>. Imported runs persist in this browser. Low-confidence runs: <strong>{lowConfidenceRunCount}</strong>. Review JSON exports are not accepted as runs.
         </section>
 
         <section
