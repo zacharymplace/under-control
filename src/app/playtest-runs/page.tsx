@@ -215,6 +215,23 @@ function analyze(runs: ImportedRun[]) {
   return notes;
 }
 
+function downloadJson(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
@@ -428,6 +445,37 @@ export default function PlaytestRunsPage() {
 
   const notes = useMemo(() => analyze(sortedRuns), [sortedRuns]);
 
+  const reviewExportPayload = useMemo(() => {
+    return {
+      schemaVersion: "under-control.playtest-review.v0.1",
+      exportedAt: new Date().toISOString(),
+      route: "/playtest-runs",
+      runCount: sortedRuns.length,
+      balanceNotes: notes,
+      scenarioSummaries,
+      importedRuns: sortedRuns.map((run) => ({
+        id: run.id,
+        filename: run.filename,
+        importedAt: run.importedAt,
+        status: run.telemetry.status ?? "unknown",
+        scenario: run.telemetry.scenario ?? null,
+        score: safeNumber(run.telemetry.score),
+        cyclesSurvived: safeNumber(run.telemetry.cyclesSurvived),
+        operatorProfile: run.telemetry.operatorProfile ?? null,
+        finalState: run.telemetry.finalState ?? null,
+        actions: run.telemetry.actions ?? null,
+        averageAdvisorTrust: avgTrust(run.telemetry),
+        criticalNodeCount: criticalNodeCount(run.telemetry),
+        mostUsedAction: mostUsedAction(run.telemetry),
+      })),
+    };
+  }, [notes, scenarioSummaries, sortedRuns]);
+
+  const reviewExportFilename =
+    "under-control-playtest-review-" +
+    new Date().toISOString().replace(/[:.]/g, "-") +
+    ".json";
+
   async function importFiles(files: FileList | File[]) {
     setError(null);
     setMessage(null);
@@ -554,6 +602,24 @@ export default function PlaytestRunsPage() {
                 }}
               />
             </label>
+
+            <button
+              type="button"
+              onClick={() => downloadJson(reviewExportFilename, reviewExportPayload)}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(251,191,36,0.44)",
+                background: "rgba(120,53,15,0.28)",
+                color: runs.length === 0 ? "#64748b" : "#fde68a",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              EXPORT REVIEW JSON
+            </button>
 
             <button
               type="button"
