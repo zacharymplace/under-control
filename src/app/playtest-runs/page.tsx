@@ -88,6 +88,45 @@ type ScenarioSummary = {
 
 const RUN_STORAGE_KEY = "under-control.playtest-runs.v0.1";
 
+const filterPresets = [
+  {
+    id: "all",
+    label: "All Runs",
+    scenario: "all",
+    status: "all",
+    confidence: "all",
+  },
+  {
+    id: "valid",
+    label: "Valid Runs Only",
+    scenario: "all",
+    status: "all",
+    confidence: "exclude_low",
+  },
+  {
+    id: "loss",
+    label: "Loss Review",
+    scenario: "all",
+    status: "lost",
+    confidence: "exclude_low",
+  },
+  {
+    id: "win",
+    label: "Win Review",
+    scenario: "all",
+    status: "won",
+    confidence: "exclude_low",
+  },
+  {
+    id: "scenario_tuning",
+    label: "Scenario Tuning",
+    scenario: "all",
+    status: "all",
+    confidence: "exclude_low",
+  },
+] as const;
+
+
 function recommendScenarioBalance(input: {
   label: string;
   totalRuns: number;
@@ -735,6 +774,7 @@ export default function PlaytestRunsPage() {
   const [scenarioFilter, setScenarioFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [confidenceFilter, setConfidenceFilter] = useState("all");
+  const [activePresetId, setActivePresetId] = useState("all");
 
   useEffect(() => {
     try {
@@ -766,6 +806,17 @@ export default function PlaytestRunsPage() {
       setError("Could not save imported runs locally. Browser storage may be full or unavailable.");
     }
   }, [hasHydratedRuns, runs]);
+
+  function applyFilterPreset(presetId: string) {
+    const preset = filterPresets.find((item) => item.id === presetId);
+
+    if (!preset) return;
+
+    setActivePresetId(preset.id);
+    setScenarioFilter(preset.scenario);
+    setStatusFilter(preset.status);
+    setConfidenceFilter(preset.confidence);
+  }
 
   const scenarioOptions = useMemo(() => {
     const options = new Map<string, string>();
@@ -812,6 +863,7 @@ export default function PlaytestRunsPage() {
       runCount: sortedRuns.length,
       totalImportedRunCount: runs.length,
       filters: {
+        preset: activePresetId,
         scenario: scenarioFilter,
         status: statusFilter,
         confidence: confidenceFilter,
@@ -848,7 +900,16 @@ export default function PlaytestRunsPage() {
         mostUsedAction: mostUsedAction(run.telemetry),
       })),
     };
-  }, [confidenceFilter, notes, runs.length, scenarioFilter, scenarioSummaries, sortedRuns, statusFilter]);
+  }, [
+    activePresetId,
+    confidenceFilter,
+    notes,
+    runs.length,
+    scenarioFilter,
+    scenarioSummaries,
+    sortedRuns,
+    statusFilter,
+  ]);
 
   const reviewExportFilename =
     "under-control-playtest-review-" +
@@ -1163,13 +1224,78 @@ export default function PlaytestRunsPage() {
             alignItems: "end",
           }}
         >
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                color: "#94a3b8",
+                fontSize: 10,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginRight: 4,
+              }}
+            >
+              Presets
+            </span>
+
+            {filterPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => applyFilterPreset(preset.id)}
+                style={{
+                  border:
+                    "1px solid " +
+                    (activePresetId === preset.id
+                      ? "rgba(251,191,36,0.58)"
+                      : "rgba(148,163,184,0.24)"),
+                  background:
+                    activePresetId === preset.id
+                      ? "rgba(120,53,15,0.32)"
+                      : "rgba(15,23,42,0.62)",
+                  color: activePresetId === preset.id ? "#fde68a" : "#cbd5e1",
+                  borderRadius: 999,
+                  padding: "7px 10px",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  letterSpacing: 1.05,
+                }}
+              >
+                {preset.label}
+              </button>
+            ))}
+
+            {activePresetId === "custom" && (
+              <span
+                style={{
+                  color: "#67e8f9",
+                  fontSize: 11,
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                }}
+              >
+                Custom
+              </span>
+            )}
+          </div>
+
           <div>
             <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
               SCENARIO
             </div>
             <select
               value={scenarioFilter}
-              onChange={(event) => setScenarioFilter(event.currentTarget.value)}
+              onChange={(event) => {
+                setScenarioFilter(event.currentTarget.value);
+                setActivePresetId("custom");
+              }}
               style={{
                 width: "100%",
                 border: "1px solid rgba(148,163,184,0.28)",
@@ -1195,7 +1321,10 @@ export default function PlaytestRunsPage() {
             </div>
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.currentTarget.value)}
+              onChange={(event) => {
+                setStatusFilter(event.currentTarget.value);
+                setActivePresetId("custom");
+              }}
               style={{
                 width: "100%",
                 border: "1px solid rgba(148,163,184,0.28)",
@@ -1219,7 +1348,10 @@ export default function PlaytestRunsPage() {
             </div>
             <select
               value={confidenceFilter}
-              onChange={(event) => setConfidenceFilter(event.currentTarget.value)}
+              onChange={(event) => {
+                setConfidenceFilter(event.currentTarget.value);
+                setActivePresetId("custom");
+              }}
               style={{
                 width: "100%",
                 border: "1px solid rgba(148,163,184,0.28)",
@@ -1242,6 +1374,7 @@ export default function PlaytestRunsPage() {
               setScenarioFilter("all");
               setStatusFilter("all");
               setConfidenceFilter("all");
+              setActivePresetId("all");
             }}
             style={{
               border: "1px solid rgba(148,163,184,0.28)",
