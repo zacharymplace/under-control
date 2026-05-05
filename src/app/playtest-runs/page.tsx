@@ -814,9 +814,11 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
 function RunCard({
   run,
   onNoteChange,
+  onDelete,
 }: {
   run: ImportedRun;
   onNoteChange: (runId: string, note: string) => void;
+  onDelete: (runId: string) => void;
 }) {
   const telemetry = run.telemetry;
   const scenario = telemetry.scenario?.label ?? "Unknown Scenario";
@@ -854,13 +856,40 @@ function RunCard({
           </div>
         </div>
 
-        <div style={{ textAlign: "right" }}>
-          <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>
-            SCORE
+        <div style={{ textAlign: "right", display: "grid", gap: 8, justifyItems: "end" }}>
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>
+              SCORE
+            </div>
+            <div style={{ color: "#f8fafc", fontSize: 20 }}>
+              {safeNumber(telemetry.score)}
+            </div>
           </div>
-          <div style={{ color: "#f8fafc", fontSize: 20 }}>
-            {safeNumber(telemetry.score)}
-          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm(
+                "Delete this imported run from the local review lab?"
+              );
+
+              if (confirmed) {
+                onDelete(run.id);
+              }
+            }}
+            style={{
+              border: "1px solid rgba(251,113,133,0.38)",
+              background: "rgba(127,29,29,0.22)",
+              color: "#fecdd3",
+              borderRadius: 10,
+              padding: "7px 9px",
+              cursor: "pointer",
+              fontSize: 10,
+              letterSpacing: 1.1,
+            }}
+          >
+            DELETE
+          </button>
         </div>
       </div>
 
@@ -1234,6 +1263,12 @@ export default function PlaytestRunsPage() {
         };
       })
     );
+  }
+
+  function deleteImportedRun(runId: string) {
+    setRuns((current) => current.filter((run) => run.id !== runId));
+    setMessage("Deleted imported run.");
+    setError(null);
   }
 
   async function importFiles(files: FileList | File[]) {
@@ -1808,6 +1843,7 @@ export default function PlaytestRunsPage() {
               run={run}
               key={run.id}
               onNoteChange={updateRunNote}
+              onDelete={deleteImportedRun}
             />
           ))}
         </section>
