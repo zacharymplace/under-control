@@ -2,6 +2,7 @@
 
 import { useMemo, useReducer, useState } from "react";
 import { initialGameState } from "../game/v01/initialState";
+import { createInitialGameState, scenarioCatalog } from "../game/v01/scenarios";
 import { gameReducer } from "../game/v01/reducer";
 import { getActionPreview, formatDelta } from "../game/v01/preview";
 import type { Advisor, EventTone, GameState, NodeState, PlayerActionType, SystemNode } from "../game/v01/types";
@@ -440,7 +441,8 @@ function NodeButton({
 }
 
 export function UnderControlV01DecisionPanel() {
-  const [game, dispatch] = useReducer(gameReducer, initialGameState);
+  const [selectedScenarioId, setSelectedScenarioId] = useState("baseline_degraded");
+  const [game, dispatch] = useReducer(gameReducer, createInitialGameState("baseline_degraded"));
   const [previewAction, setPreviewAction] = useState<PlayerActionType>("reroute");
 
   const operatorNode = game.nodes.find((node) => node.id === game.operatorNodeId)!;
@@ -516,6 +518,10 @@ export function UnderControlV01DecisionPanel() {
       schemaVersion: "under-control.playtest-run.v0.1",
       exportedAt: new Date().toISOString(),
       route: "/playable-v01",
+      scenario: {
+        id: game.scenarioId,
+        label: game.scenarioLabel,
+      },
       status: game.status,
       cycleReached: game.cycle,
       cyclesSurvived: Math.max(1, game.cycle - 1),
@@ -590,7 +596,70 @@ export function UnderControlV01DecisionPanel() {
                 {game.status === "running" ? (game.cascadeRisk > 68 ? "UNSTABLE" : game.pressure > 50 ? "DEGRADED" : "STABLE") : game.status.toUpperCase()}
               </div>
             </div>
-            <div style={{ textAlign: "right", color: "#94a3b8", fontSize: 12 }}>SCORE {score}</div>
+            <div style={{ textAlign: "right", color: "#94a3b8", fontSize: 12 }}>
+              <div>SCORE {score}</div>
+              <a
+                href="/playtest-runs"
+                style={{
+                  display: "inline-block",
+                  marginTop: 8,
+                  border: "1px solid rgba(251,191,36,0.36)",
+                  background: "rgba(120,53,15,0.2)",
+                  color: "#fde68a",
+                  borderRadius: 10,
+                  padding: "7px 8px",
+                  textDecoration: "none",
+                  fontSize: 11,
+                  letterSpacing: 1.1,
+                }}
+              >
+                RUN LAB
+              </a>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "flex-end",
+                  marginTop: 8,
+                }}
+              >
+                <select
+                  value={selectedScenarioId}
+                  onChange={(event) => setSelectedScenarioId(event.currentTarget.value)}
+                  style={{
+                    border: "1px solid rgba(148,163,184,0.28)",
+                    background: "rgba(15,23,42,0.88)",
+                    color: "#cbd5e1",
+                    borderRadius: 10,
+                    padding: "7px 8px",
+                    fontSize: 11,
+                  }}
+                >
+                  {scenarioCatalog.map((scenario) => (
+                    <option key={scenario.id} value={scenario.id}>
+                      {scenario.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "reset", scenarioId: selectedScenarioId })}
+                  style={{
+                    border: "1px solid rgba(103,232,249,0.42)",
+                    background: "rgba(8,47,73,0.45)",
+                    color: "#cffafe",
+                    borderRadius: 10,
+                    padding: "7px 8px",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    letterSpacing: 1.1,
+                  }}
+                >
+                  START
+                </button>
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: 10 }}>
@@ -598,7 +667,8 @@ export function UnderControlV01DecisionPanel() {
           </div>
 
           <div style={{ marginTop: 10, border: "1px solid rgba(251,191,36,0.35)", background: "rgba(120,53,15,0.18)", borderRadius: 14, padding: "10px 12px", color: "#fde68a", fontSize: 13 }}>
-            <strong style={{ letterSpacing: 1.3 }}>CURRENT PRIORITY:</strong> {game.currentPriority}
+            <strong style={{ letterSpacing: 1.3 }}>{game.scenarioLabel} / CURRENT PRIORITY:</strong>{" "}
+            {game.currentPriority}
           </div>
         </header>
 
@@ -933,7 +1003,7 @@ export function UnderControlV01DecisionPanel() {
 
               <button
                 type="button"
-                onClick={() => dispatch({ type: "reset" })}
+                onClick={() => dispatch({ type: "reset", scenarioId: selectedScenarioId })}
                 style={{
                   border: "1px solid rgba(251,191,36,0.58)",
                   background: "rgba(120,53,15,0.38)",
@@ -1108,7 +1178,7 @@ export function UnderControlV01DecisionPanel() {
 
           <button
             type="button"
-            onClick={() => dispatch({ type: "reset" })}
+            onClick={() => dispatch({ type: "reset", scenarioId: selectedScenarioId })}
             style={{
               border: "1px solid rgba(148,163,184,0.28)",
               background: "rgba(15,23,42,0.6)",

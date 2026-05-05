@@ -1,4 +1,4 @@
-import { initialGameState } from "./initialState";
+import { createInitialGameState } from "./scenarios";
 import type {
   Advisor,
   EventLogEntry,
@@ -331,10 +331,10 @@ function resolveCycle(state: GameState): GameState {
 
     if (node.state === "stable") pressure -= 2;
     if (node.state === "active") pressure += 2;
-    if (node.state === "warning") pressure += 5;
+    if (node.state === "warning") pressure += 4;
     if (node.state === "critical") {
-      pressure += 10;
-      integrity -= 6;
+      pressure += 8;
+      integrity -= 4;
     }
     if (node.state === "unknown" && node.hiddenRisk > 60) {
       pressure += 3;
@@ -360,7 +360,7 @@ function resolveCycle(state: GameState): GameState {
   const criticalCount = nodes.filter((node) => node.state === "critical").length;
   const warningCount = nodes.filter((node) => node.state === "warning").length;
   const ignoredCriticalPenalty = nodes.reduce(
-    (sum, node) => sum + (node.ignoredCriticalCycles >= 2 ? 10 : 0),
+    (sum, node) => sum + (node.ignoredCriticalCycles >= 2 ? 8 : 0),
     0
   );
 
@@ -371,7 +371,7 @@ function resolveCycle(state: GameState): GameState {
   let cascadeRisk = clamp(
     state.cascadeRisk +
       criticalCount * 8 +
-      warningCount * 3 +
+      warningCount * 2 +
       ignoredCriticalPenalty -
       (criticalCount === 0 ? 4 : 0)
   );
@@ -379,9 +379,9 @@ function resolveCycle(state: GameState): GameState {
   let cascadeBreaches = state.cascadeBreaches;
   let integrity = clamp(
     state.integrity -
-      criticalCount * 6 -
-      warningCount * 2 -
-      (cascadeRisk > 70 ? 10 : 0) +
+      criticalCount * 4 -
+      warningCount * 1 -
+      (cascadeRisk > 70 ? 8 : 0) +
       stabilityRecovery
   );
 
@@ -389,7 +389,7 @@ function resolveCycle(state: GameState): GameState {
 
   if (cascadeRisk >= 100) {
     cascadeBreaches += 1;
-    integrity = clamp(integrity - 30);
+    integrity = clamp(integrity - 24);
     cascadeRisk = 70;
     cycleEvents = [
       {
@@ -410,8 +410,8 @@ function resolveCycle(state: GameState): GameState {
 
   if (integrity <= 0 || cascadeBreaches >= 2) status = "lost";
   if (core?.state === "critical" && core.ignoredCriticalCycles >= 2) status = "lost";
-  if (state.cycle >= state.maxCycles && integrity > 40 && cascadeBreaches < 2) status = "won";
-  if (state.cycle >= state.maxCycles && integrity <= 40) status = "lost";
+  if (state.cycle >= state.maxCycles && integrity > 35 && cascadeBreaches < 2) status = "won";
+  if (state.cycle >= state.maxCycles && integrity <= 35) status = "lost";
 
   const actionCooldowns = {
     observe: Math.max(0, state.actionCooldowns.observe - 1),
@@ -523,7 +523,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return resolveCycle(state);
 
     case "reset":
-      return initialGameState;
+      return createInitialGameState(action.scenarioId ?? state.scenarioId ?? "baseline_degraded");
 
     default:
       return state;

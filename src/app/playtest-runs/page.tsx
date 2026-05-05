@@ -69,15 +69,138 @@ type ScenarioSummary = {
   totalRuns: number;
   wins: number;
   losses: number;
+  winRate: number;
   avgCycles: number;
   avgScore: number;
   avgIntegrity: number;
   avgCascade: number;
   avgActions: number;
   avgTrust: number;
+  avgReckless: number;
+  dominantAction: string;
+  recommendation: string;
+  recommendationSeverity: "watch" | "tune" | "urgent";
 };
 
 const RUN_STORAGE_KEY = "under-control.playtest-runs.v0.1";
+
+function recommendScenarioBalance(input: {
+  label: string;
+  totalRuns: number;
+  winRate: number;
+  avgCycles: number;
+  avgCascade: number;
+  avgIntegrity: number;
+  avgActions: number;
+  avgReckless: number;
+  dominantAction: string;
+}) {
+  const {
+    label,
+    totalRuns,
+    winRate,
+    avgCycles,
+    avgCascade,
+    avgIntegrity,
+    avgActions,
+    avgReckless,
+    dominantAction,
+  } = input;
+
+  if (totalRuns < 3) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Collect at least 3 runs before making balance changes for this scenario.",
+    };
+  }
+
+  if (winRate < 25 && avgCycles < 7) {
+    return {
+      severity: "urgent" as const,
+      recommendation:
+        "Too punishing early. Reduce starting cascade pressure, critical-node pressure growth, or ignored-critical penalties.",
+    };
+  }
+
+  if (winRate < 35 && avgCascade >= 80) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Losses are cascade-heavy. Add stronger cascade relief, earlier warnings, or soften late-cycle cascade penalties.",
+    };
+  }
+
+  if (winRate > 75 && avgIntegrity > 55) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Likely too forgiving. Increase late-cycle pressure drift or require cleaner stabilization for a win.",
+    };
+  }
+
+  if (avgActions < 5 && avgCycles < 8) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Players may not understand when to intervene. Strengthen priority prompts, guided moves, or first-run onboarding.",
+    };
+  }
+
+  if (avgReckless >= 2) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Reckless interventions are common. Improve observe affordances or make hidden-risk warnings more visible.",
+    };
+  }
+
+  if (dominantAction === "OBSERVE" && winRate < 45) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Observation may be delaying recovery. Consider clearer timing cues for when to transition from observe to action.",
+    };
+  }
+
+  if (dominantAction === "REROUTE" && avgCascade > 70) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Rerouting may be transferring too much unresolved load. Review load-transfer values and connected-node penalties.",
+    };
+  }
+
+  if (dominantAction === "STABILIZE" && winRate < 45) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Direct repair is not converting into recovery. Review stabilize strength, cooldown, and hidden-risk penalties.",
+    };
+  }
+
+  if (label === "Critical Cascade" && winRate < 40) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Critical Cascade is doing its job, but may need one extra recovery lever: lower starting cascade or improve early Risk guidance.",
+    };
+  }
+
+  if (label === "Recovery Window" && winRate < 55) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Recovery Window should teach success. Reduce initial pressure or make the first priority more explicit.",
+    };
+  }
+
+  return {
+    severity: "watch" as const,
+    recommendation:
+      "Scenario appears near target range. Keep collecting runs before adjusting.",
+  };
+}
 
 function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
   const groups = new Map<string, ImportedRun[]>();
@@ -100,37 +223,83 @@ function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
       const wins = groupRuns.filter((run) => run.telemetry.status === "won").length;
       const losses = groupRuns.filter((run) => run.telemetry.status === "lost").length;
 
+      const winRate = totalRuns > 0 ? Math.round((wins / totalRuns) * 100) : 0;
+      const avgCycles = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.cyclesSurvived), 0) /
+          totalRuns
+      );
+      const avgScore = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.score), 0) / totalRuns
+      );
+      const avgIntegrity = Math.round(
+        groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.finalState?.integrity),
+          0
+        ) / totalRuns
+      );
+      const avgCascade = Math.round(
+        groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.finalState?.cascadeRisk),
+          0
+        ) / totalRuns
+      );
+      const avgActions = Math.round(
+        groupRuns.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) / totalRuns
+      );
+      const avgTrust = Math.round(
+        groupRuns.reduce((sum, run) => sum + averageTrust(run.telemetry), 0) / totalRuns
+      );
+      const avgReckless = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.reckless), 0) /
+          totalRuns
+      );
+
+      const actionTotals = {
+        OBSERVE: groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.actions?.observe),
+          0
+        ),
+        REROUTE: groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.actions?.reroute),
+          0
+        ),
+        STABILIZE: groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.actions?.stabilize),
+          0
+        ),
+      };
+
+      const dominantAction = Object.entries(actionTotals).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "NONE";
+
+      const recommendation = recommendScenarioBalance({
+        label,
+        totalRuns,
+        winRate,
+        avgCycles,
+        avgCascade,
+        avgIntegrity,
+        avgActions,
+        avgReckless,
+        dominantAction,
+      });
+
       return {
         key,
         label,
         totalRuns,
         wins,
         losses,
-        avgCycles: Math.round(
-          groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.cyclesSurvived), 0) /
-            totalRuns
-        ),
-        avgScore: Math.round(
-          groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.score), 0) / totalRuns
-        ),
-        avgIntegrity: Math.round(
-          groupRuns.reduce(
-            (sum, run) => sum + safeNumber(run.telemetry.finalState?.integrity),
-            0
-          ) / totalRuns
-        ),
-        avgCascade: Math.round(
-          groupRuns.reduce(
-            (sum, run) => sum + safeNumber(run.telemetry.finalState?.cascadeRisk),
-            0
-          ) / totalRuns
-        ),
-        avgActions: Math.round(
-          groupRuns.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) / totalRuns
-        ),
-        avgTrust: Math.round(
-          groupRuns.reduce((sum, run) => sum + avgTrust(run.telemetry), 0) / totalRuns
-        ),
+        winRate,
+        avgCycles,
+        avgScore,
+        avgIntegrity,
+        avgCascade,
+        avgActions,
+        avgTrust,
+        avgReckless,
+        dominantAction,
+        recommendation: recommendation.recommendation,
+        recommendationSeverity: recommendation.severity,
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -146,7 +315,7 @@ function statusColor(status: string | undefined) {
   return "#fbbf24";
 }
 
-function avgTrust(run: RunTelemetry) {
+function averageTrust(run: RunTelemetry) {
   const advisors = run.advisors ?? [];
   if (advisors.length === 0) return 0;
 
@@ -246,14 +415,13 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 }
 
 function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
-  const winRate =
-    summary.totalRuns > 0 ? Math.round((summary.wins / summary.totalRuns) * 100) : 0;
+  const winRate = summary.winRate;
   const balanceTone =
-    winRate > 70
-      ? "Likely too forgiving"
-      : winRate < 30
-        ? "Likely too punishing"
-        : "Near target range";
+    summary.recommendationSeverity === "urgent"
+      ? "Urgent tuning"
+      : summary.recommendationSeverity === "tune"
+        ? "Tune candidate"
+        : "Watch";
 
   return (
     <article
@@ -289,7 +457,12 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
 
         <div
           style={{
-            color: winRate > 70 ? "#86efac" : winRate < 30 ? "#fb7185" : "#fde68a",
+            color:
+              summary.recommendationSeverity === "urgent"
+                ? "#fb7185"
+                : summary.recommendationSeverity === "tune"
+                  ? "#fde68a"
+                  : "#67e8f9",
             fontSize: 11,
             letterSpacing: 1.1,
             textAlign: "right",
@@ -313,6 +486,36 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
         <Metric label="Avg Integrity" value={summary.avgIntegrity + "%"} />
         <Metric label="Avg Cascade" value={summary.avgCascade + "%"} />
         <Metric label="Avg Trust" value={summary.avgTrust + "%"} />
+        <Metric label="Avg Reckless" value={summary.avgReckless} />
+        <Metric label="Dominant Action" value={summary.dominantAction} />
+      </div>
+
+      <div
+        style={{
+          borderTop: "1px solid rgba(148,163,184,0.18)",
+          paddingTop: 10,
+          color: "#cbd5e1",
+          fontSize: 12,
+          lineHeight: 1.45,
+        }}
+      >
+        <div
+          style={{
+            color:
+              summary.recommendationSeverity === "urgent"
+                ? "#fb7185"
+                : summary.recommendationSeverity === "tune"
+                  ? "#fde68a"
+                  : "#67e8f9",
+            fontSize: 10,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+            marginBottom: 5,
+          }}
+        >
+          Tuning Recommendation
+        </div>
+        {summary.recommendation}
       </div>
     </article>
   );
@@ -375,7 +578,7 @@ function RunCard({ run }: { run: ImportedRun }) {
         <Metric label="Cycles" value={safeNumber(telemetry.cyclesSurvived)} />
         <Metric label="Integrity" value={safeNumber(telemetry.finalState?.integrity) + "%"} />
         <Metric label="Cascade" value={safeNumber(telemetry.finalState?.cascadeRisk) + "%"} />
-        <Metric label="Trust" value={avgTrust(telemetry) + "%"} />
+        <Metric label="Trust" value={averageTrust(telemetry) + "%"} />
         <Metric label="Actions" value={actionTotal(telemetry)} />
         <Metric label="Main Action" value={mostUsedAction(telemetry)} />
         <Metric label="Reckless" value={safeNumber(telemetry.actions?.reckless)} />
@@ -453,6 +656,16 @@ export default function PlaytestRunsPage() {
       runCount: sortedRuns.length,
       balanceNotes: notes,
       scenarioSummaries,
+      scenarioRecommendations: scenarioSummaries.map((summary) => ({
+        scenario: summary.label,
+        severity: summary.recommendationSeverity,
+        recommendation: summary.recommendation,
+        winRate: summary.winRate,
+        avgCycles: summary.avgCycles,
+        avgCascade: summary.avgCascade,
+        avgActions: summary.avgActions,
+        dominantAction: summary.dominantAction,
+      })),
       importedRuns: sortedRuns.map((run) => ({
         id: run.id,
         filename: run.filename,
@@ -464,7 +677,7 @@ export default function PlaytestRunsPage() {
         operatorProfile: run.telemetry.operatorProfile ?? null,
         finalState: run.telemetry.finalState ?? null,
         actions: run.telemetry.actions ?? null,
-        averageAdvisorTrust: avgTrust(run.telemetry),
+        averageAdvisorTrust: averageTrust(run.telemetry),
         criticalNodeCount: criticalNodeCount(run.telemetry),
         mostUsedAction: mostUsedAction(run.telemetry),
       })),

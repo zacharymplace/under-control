@@ -56,6 +56,8 @@ export type GameStatus = "running" | "won" | "lost";
 export type GameState = {
   cycle: number;
   maxCycles: number;
+  scenarioId: string;
+  scenarioLabel: string;
   integrity: number;
   pressure: number;
   cascadeRisk: number;
@@ -80,4 +82,4 @@ export type GameAction =
   | { type: "move_operator"; nodeId: string }
   | { type: "perform_action"; action: PlayerActionType }
   | { type: "advance_cycle" }
-  | { type: "reset" };
+  | { type: "reset"; scenarioId?: string };
