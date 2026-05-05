@@ -60,6 +60,7 @@ type ImportedRun = {
   id: string;
   filename: string;
   importedAt: string;
+  note?: string;
   telemetry: RunTelemetry;
 };
 
@@ -615,6 +616,7 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
               "RER",
               "STA",
               "Profile",
+              "Note",
             ].map((header) => (
               <th
                 key={header}
@@ -679,6 +681,9 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
                 <td style={trendCellStyle}>{safeNumber(telemetry.actions?.reroute)}</td>
                 <td style={trendCellStyle}>{safeNumber(telemetry.actions?.stabilize)}</td>
                 <td style={trendCellStyle}>{profile}</td>
+                <td style={{ ...trendCellStyle, whiteSpace: "normal", minWidth: 220 }}>
+                  {run.note ?? ""}
+                </td>
               </tr>
             );
           })}
@@ -806,7 +811,13 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
   );
 }
 
-function RunCard({ run }: { run: ImportedRun }) {
+function RunCard({
+  run,
+  onNoteChange,
+}: {
+  run: ImportedRun;
+  onNoteChange: (runId: string, note: string) => void;
+}) {
   const telemetry = run.telemetry;
   const scenario = telemetry.scenario?.label ?? "Unknown Scenario";
   const profile = telemetry.operatorProfile?.name ?? "Unclassified";
@@ -917,6 +928,49 @@ function RunCard({ run }: { run: ImportedRun }) {
           <Metric label="Reroute" value={safeNumber(telemetry.actions?.reroute)} />
           <Metric label="Stabilize" value={safeNumber(telemetry.actions?.stabilize)} />
         </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid rgba(148,163,184,0.18)",
+          background: "rgba(2,6,23,0.34)",
+          borderRadius: 12,
+          padding: 10,
+          display: "grid",
+          gap: 7,
+        }}
+      >
+        <label
+          htmlFor={"run-note-" + run.id}
+          style={{
+            color: "#67e8f9",
+            fontSize: 10,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          Run Note
+        </label>
+        <textarea
+          id={"run-note-" + run.id}
+          value={run.note ?? ""}
+          onChange={(event) => onNoteChange(run.id, event.currentTarget.value)}
+          placeholder="Add playtest observation..."
+          rows={3}
+          style={{
+            width: "100%",
+            resize: "vertical",
+            border: "1px solid rgba(148,163,184,0.24)",
+            background: "rgba(15,23,42,0.82)",
+            color: "#e2e8f0",
+            borderRadius: 10,
+            padding: 9,
+            fontSize: 12,
+            lineHeight: 1.4,
+            fontFamily: "inherit",
+            boxSizing: "border-box",
+          }}
+        />
       </div>
 
       <div
@@ -1059,6 +1113,7 @@ export default function PlaytestRunsPage() {
           order: index + 1,
           filename: run.filename,
           importedAt: run.importedAt,
+          note: run.note ?? "",
           scenario: run.telemetry.scenario?.label ?? "Unknown Scenario",
           status: run.telemetry.status ?? "unknown",
           score: safeNumber(run.telemetry.score),
@@ -1075,6 +1130,7 @@ export default function PlaytestRunsPage() {
         id: run.id,
         filename: run.filename,
         importedAt: run.importedAt,
+        note: run.note ?? "",
         status: run.telemetry.status ?? "unknown",
         scenario: run.telemetry.scenario ?? null,
         score: safeNumber(run.telemetry.score),
@@ -1110,6 +1166,7 @@ export default function PlaytestRunsPage() {
       return {
         filename: run.filename,
         importedAt: run.importedAt,
+        note: run.note ?? "",
         exportedAt: telemetry.exportedAt ?? "",
         status: telemetry.status ?? "unknown",
         scenarioId: telemetry.scenario?.id ?? "unknown",
@@ -1166,6 +1223,19 @@ export default function PlaytestRunsPage() {
   const runCsvFilename = "under-control-runs-" + csvTimestamp + ".csv";
   const scenarioCsvFilename = "under-control-scenarios-" + csvTimestamp + ".csv";
 
+  function updateRunNote(runId: string, note: string) {
+    setRuns((current) =>
+      current.map((run) => {
+        if (run.id !== runId) return run;
+
+        return {
+          ...run,
+          note,
+        };
+      })
+    );
+  }
+
   async function importFiles(files: FileList | File[]) {
     setError(null);
     setMessage(null);
@@ -1189,6 +1259,7 @@ export default function PlaytestRunsPage() {
           id: file.name + "-" + Date.now() + "-" + Math.random().toString(16).slice(2),
           filename: file.name,
           importedAt: new Date().toISOString(),
+          note: "",
           telemetry,
         });
       } catch {
@@ -1733,7 +1804,11 @@ export default function PlaytestRunsPage() {
           }}
         >
           {sortedRuns.map((run) => (
-            <RunCard run={run} key={run.id} />
+            <RunCard
+              run={run}
+              key={run.id}
+              onNoteChange={updateRunNote}
+            />
           ))}
         </section>
       </section>
