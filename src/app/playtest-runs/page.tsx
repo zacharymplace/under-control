@@ -73,6 +73,20 @@ type BalanceChangeLogEntry = {
   note: string;
 };
 
+type ScenarioTuningAdjustment = {
+  scenario: string;
+  change: string;
+};
+
+type ScenarioTuningProfile = {
+  id: string;
+  name: string;
+  version: string;
+  createdAt: string;
+  summary: string;
+  adjustments: ScenarioTuningAdjustment[];
+};
+
 type ScenarioSummary = {
   key: string;
   label: string;
@@ -98,6 +112,7 @@ type ScenarioSummary = {
 
 const RUN_STORAGE_KEY = "under-control.playtest-runs.v0.1";
 const CHANGE_LOG_STORAGE_KEY = "under-control.balance-change-log.v0.1";
+const TUNING_PROFILE_STORAGE_KEY = "under-control.tuning-profiles.v0.1";
 
 const filterPresets = [
   {
@@ -1229,6 +1244,14 @@ export default function PlaytestRunsPage() {
     title: "",
     note: "",
   });
+  const [tuningProfiles, setTuningProfiles] = useState<ScenarioTuningProfile[]>([]);
+  const [hasHydratedTuningProfiles, setHasHydratedTuningProfiles] = useState(false);
+  const [tuningProfileDraft, setTuningProfileDraft] = useState({
+    name: "",
+    version: "v0.1.1",
+    summary: "",
+    adjustmentsText: "",
+  });
 
   useEffect(() => {
     try {
@@ -1338,6 +1361,176 @@ export default function PlaytestRunsPage() {
     setError(null);
   }
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(TUNING_PROFILE_STORAGE_KEY);
+
+      if (!raw) {
+        setHasHydratedTuningProfiles(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as ScenarioTuningProfile[];
+
+      if (Array.isArray(parsed)) {
+        setTuningProfiles(parsed);
+      }
+    } catch {
+      setError("Saved scenario tuning profiles could not be restored.");
+    } finally {
+      setHasHydratedTuningProfiles(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedTuningProfiles) return;
+
+    try {
+      window.localStorage.setItem(TUNING_PROFILE_STORAGE_KEY, JSON.stringify(tuningProfiles));
+    } catch {
+      setError("Could not save scenario tuning profiles locally.");
+    }
+  }, [hasHydratedTuningProfiles, tuningProfiles]);
+
+  function parseTuningAdjustments(text: string): ScenarioTuningAdjustment[] {
+    return text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [scenarioPart, ...changeParts] = line.split(":");
+        const scenario = scenarioPart?.trim() || "General";
+        const change = changeParts.join(":").trim() || line;
+
+        return {
+          scenario,
+          change,
+        };
+      });
+  }
+
+  function createScenarioTuningProfile() {
+    const name = tuningProfileDraft.name.trim();
+    const version = tuningProfileDraft.version.trim() || "v0.1.1";
+    const summary = tuningProfileDraft.summary.trim();
+    const adjustments = parseTuningAdjustments(tuningProfileDraft.adjustmentsText);
+
+    if (!name && !summary && adjustments.length === 0) {
+      setError("Add a profile name, summary, or at least one scenario adjustment before saving.");
+      return;
+    }
+
+    const profile: ScenarioTuningProfile = {
+      id: "tuning-profile-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+      name: name || "Untitled tuning profile",
+      version,
+      createdAt: new Date().toISOString(),
+      summary,
+      adjustments,
+    };
+
+    setTuningProfiles((current) => [profile, ...current]);
+    setTuningProfileDraft({
+      name: "",
+      version,
+      summary: "",
+      adjustmentsText: "",
+    });
+    setMessage("Saved scenario tuning profile.");
+    setError(null);
+  }
+
+  function deleteScenarioTuningProfile(profileId: string) {
+    const confirmed = window.confirm("Delete this scenario tuning profile?");
+
+    if (!confirmed) return;
+
+    setTuningProfiles((current) => current.filter((profile) => profile.id !== profileId));
+    setMessage("Deleted scenario tuning profile.");
+    setError(null);
+  }
+
+  function exportScenarioTuningProfile(profile: ScenarioTuningProfile) {
+    downloadJson(
+      "under-control-tuning-profile-" +
+        profile.version.replace(/[^a-zA-Z0-9._-]/g, "-") +
+        "-" +
+        profile.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 42) +
+        ".json",
+      {
+        schemaVersion: "under-control.scenario-tuning-profile.v0.1",
+        exportedAt: new Date().toISOString(),
+        profile,
+      }
+    );
+  }
+
+  function isScenarioTuningProfilePayload(value: unknown): value is {
+    schemaVersion?: string;
+    profile?: ScenarioTuningProfile;
+  } {
+    if (!value || typeof value !== "object") return false;
+
+    const payload = value as {
+      schemaVersion?: string;
+      profile?: ScenarioTuningProfile;
+    };
+
+    if (payload.schemaVersion !== "under-control.scenario-tuning-profile.v0.1") {
+      return false;
+    }
+
+    if (!payload.profile || typeof payload.profile !== "object") return false;
+    if (typeof payload.profile.name !== "string") return false;
+    if (typeof payload.profile.version !== "string") return false;
+
+    return true;
+  }
+
+  async function importScenarioTuningProfiles(files: FileList | File[]) {
+    setError(null);
+    setMessage(null);
+
+    const fileArray = Array.from(files).filter((file) => file.name.endsWith(".json"));
+
+    if (fileArray.length === 0) {
+      setError("No JSON files selected for tuning profile import.");
+      return;
+    }
+
+    const imported: ScenarioTuningProfile[] = [];
+    const failed: string[] = [];
+
+    for (const file of fileArray) {
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        if (!isScenarioTuningProfilePayload(parsed) || !parsed.profile) {
+          throw new Error("Not a scenario tuning profile export.");
+        }
+
+        imported.push({
+          ...parsed.profile,
+          id:
+            parsed.profile.id ||
+            "tuning-profile-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        });
+      } catch {
+        failed.push(file.name);
+      }
+    }
+
+    if (imported.length > 0) {
+      setTuningProfiles((current) => [...imported, ...current]);
+      setMessage(`Imported ${imported.length} tuning profile${imported.length === 1 ? "" : "s"}.`);
+    }
+
+    if (failed.length > 0) {
+      setError(`Could not import tuning profile file${failed.length === 1 ? "" : "s"}: ${failed.join(", ")}.`);
+    }
+  }
+
   const scenarioOptions = useMemo(() => {
     const options = new Map<string, string>();
 
@@ -1396,6 +1589,7 @@ export default function PlaytestRunsPage() {
       },
       datasetHealth,
       balanceChangeLog: changeLogEntries,
+      scenarioTuningProfiles: tuningProfiles,
       balanceNotes: notes,
       scenarioSummaries,
       scenarioRecommendations: scenarioSummaries.map((summary) => ({
@@ -1459,6 +1653,7 @@ export default function PlaytestRunsPage() {
     scenarioSummaries,
     sortedRuns,
     statusFilter,
+    tuningProfiles,
   ]);
 
   const reviewExportFilename =
@@ -2080,6 +2275,277 @@ export default function PlaytestRunsPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(103,232,249,0.26)",
+            background: "rgba(8,47,73,0.12)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#67e8f9",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Scenario Tuning Profiles
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Save named balance passes and import/export tuning intent separately from run data.
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 140px auto",
+              gap: 10,
+              alignItems: "start",
+            }}
+          >
+            <input
+              value={tuningProfileDraft.name}
+              onChange={(event) =>
+                setTuningProfileDraft((draft) => ({ ...draft, name: event.currentTarget.value }))
+              }
+              placeholder="Profile name, e.g. Softer Critical Cascade"
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            />
+
+            <input
+              value={tuningProfileDraft.version}
+              onChange={(event) =>
+                setTuningProfileDraft((draft) => ({ ...draft, version: event.currentTarget.value }))
+              }
+              placeholder="v0.1.1"
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={createScenarioTuningProfile}
+                style={{
+                  border: "1px solid rgba(103,232,249,0.48)",
+                  background: "rgba(8,47,73,0.34)",
+                  color: "#cffafe",
+                  borderRadius: 12,
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  letterSpacing: 1.1,
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                SAVE PROFILE
+              </button>
+
+              <label
+                style={{
+                  border: "1px solid rgba(251,191,36,0.4)",
+                  background: "rgba(120,53,15,0.24)",
+                  color: "#fde68a",
+                  borderRadius: 12,
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  letterSpacing: 1.1,
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                IMPORT PROFILE
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  multiple
+                  onChange={(event) => {
+                    if (event.currentTarget.files) {
+                      importScenarioTuningProfiles(event.currentTarget.files);
+                      event.currentTarget.value = "";
+                    }
+                  }}
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <textarea
+            value={tuningProfileDraft.summary}
+            onChange={(event) =>
+              setTuningProfileDraft((draft) => ({ ...draft, summary: event.currentTarget.value }))
+            }
+            placeholder="Profile summary: what this balance pass is trying to test..."
+            rows={2}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(2,6,23,0.72)",
+              color: "#e2e8f0",
+              borderRadius: 12,
+              padding: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+
+          <textarea
+            value={tuningProfileDraft.adjustmentsText}
+            onChange={(event) =>
+              setTuningProfileDraft((draft) => ({
+                ...draft,
+                adjustmentsText: event.currentTarget.value,
+              }))
+            }
+            placeholder={"Scenario adjustments, one per line. Example:\nCritical Cascade: reduce starting cascade by 6\nHidden Dependency: strengthen observe prompt\nRecovery Window: no change"}
+            rows={4}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(2,6,23,0.72)",
+              color: "#e2e8f0",
+              borderRadius: 12,
+              padding: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+
+          {tuningProfiles.length === 0 ? (
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+              No tuning profiles saved yet.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {tuningProfiles.map((profile) => (
+                <article
+                  key={profile.id}
+                  style={{
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    background: "rgba(15,23,42,0.52)",
+                    borderRadius: 14,
+                    padding: 12,
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div
+                        style={{
+                          color: "#67e8f9",
+                          fontSize: 10,
+                          letterSpacing: 1.2,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {profile.version} · {new Date(profile.createdAt).toLocaleString()}
+                      </div>
+                      <div style={{ color: "#f8fafc", fontSize: 15, marginTop: 4 }}>
+                        {profile.name}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, alignSelf: "start" }}>
+                      <button
+                        type="button"
+                        onClick={() => exportScenarioTuningProfile(profile)}
+                        style={{
+                          border: "1px solid rgba(103,232,249,0.36)",
+                          background: "rgba(8,47,73,0.24)",
+                          color: "#cffafe",
+                          borderRadius: 10,
+                          padding: "7px 9px",
+                          cursor: "pointer",
+                          fontSize: 10,
+                          letterSpacing: 1.1,
+                        }}
+                      >
+                        EXPORT
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteScenarioTuningProfile(profile.id)}
+                        style={{
+                          border: "1px solid rgba(251,113,133,0.34)",
+                          background: "rgba(127,29,29,0.18)",
+                          color: "#fecdd3",
+                          borderRadius: 10,
+                          padding: "7px 9px",
+                          cursor: "pointer",
+                          fontSize: 10,
+                          letterSpacing: 1.1,
+                        }}
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  </div>
+
+                  {profile.summary && (
+                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
+                      {profile.summary}
+                    </div>
+                  )}
+
+                  {profile.adjustments.length > 0 && (
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {profile.adjustments.map((adjustment, index) => (
+                        <div
+                          key={profile.id + "-" + index}
+                          style={{
+                            borderLeft: "2px solid rgba(103,232,249,0.44)",
+                            paddingLeft: 9,
+                            color: "#cbd5e1",
+                            fontSize: 12,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          <strong style={{ color: "#f8fafc" }}>{adjustment.scenario}:</strong>{" "}
+                          {adjustment.change}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section
