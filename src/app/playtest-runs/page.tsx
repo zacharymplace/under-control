@@ -691,6 +691,9 @@ export default function PlaytestRunsPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [scenarioFilter, setScenarioFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [confidenceFilter, setConfidenceFilter] = useState("all");
 
   useEffect(() => {
     try {
@@ -723,11 +726,38 @@ export default function PlaytestRunsPage() {
     }
   }, [hasHydratedRuns, runs]);
 
+  const scenarioOptions = useMemo(() => {
+    const options = new Map<string, string>();
+
+    for (const run of runs) {
+      const id = run.telemetry.scenario?.id ?? "unknown";
+      const label = run.telemetry.scenario?.label ?? "Unknown Scenario";
+      options.set(id, label);
+    }
+
+    return Array.from(options.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [runs]);
+
+  const filteredRuns = useMemo(() => {
+    return runs.filter((run) => {
+      const scenarioId = run.telemetry.scenario?.id ?? "unknown";
+      const status = run.telemetry.status ?? "unknown";
+      const lowConfidence = actionTotal(run.telemetry) === 0;
+
+      if (scenarioFilter !== "all" && scenarioId !== scenarioFilter) return false;
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (confidenceFilter === "exclude_low" && lowConfidence) return false;
+      if (confidenceFilter === "only_low" && !lowConfidence) return false;
+
+      return true;
+    });
+  }, [confidenceFilter, runs, scenarioFilter, statusFilter]);
+
   const sortedRuns = useMemo(() => {
-    return [...runs].sort(
+    return [...filteredRuns].sort(
       (a, b) => safeNumber(b.telemetry.score) - safeNumber(a.telemetry.score)
     );
-  }, [runs]);
+  }, [filteredRuns]);
 
   const scenarioSummaries = useMemo(() => summarizeByScenario(sortedRuns), [sortedRuns]);
 
@@ -739,6 +769,12 @@ export default function PlaytestRunsPage() {
       exportedAt: new Date().toISOString(),
       route: "/playtest-runs",
       runCount: sortedRuns.length,
+      totalImportedRunCount: runs.length,
+      filters: {
+        scenario: scenarioFilter,
+        status: statusFilter,
+        confidence: confidenceFilter,
+      },
       balanceNotes: notes,
       scenarioSummaries,
       scenarioRecommendations: scenarioSummaries.map((summary) => ({
@@ -771,7 +807,7 @@ export default function PlaytestRunsPage() {
         mostUsedAction: mostUsedAction(run.telemetry),
       })),
     };
-  }, [notes, scenarioSummaries, sortedRuns]);
+  }, [confidenceFilter, notes, runs.length, scenarioFilter, scenarioSummaries, sortedRuns, statusFilter]);
 
   const reviewExportFilename =
     "under-control-playtest-review-" +
@@ -973,6 +1009,124 @@ export default function PlaytestRunsPage() {
         >
           Drag exported run JSON files here, or click <strong>IMPORT RUN JSON</strong>. Loaded runs:{" "}
           <strong>{runs.length}</strong>. Imported runs persist in this browser.
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(15,23,42,0.52)",
+            borderRadius: 20,
+            padding: 14,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr auto",
+            gap: 12,
+            alignItems: "end",
+          }}
+        >
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+              SCENARIO
+            </div>
+            <select
+              value={scenarioFilter}
+              onChange={(event) => setScenarioFilter(event.currentTarget.value)}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.82)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="all">All scenarios</option>
+              {scenarioOptions.map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+              STATUS
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.currentTarget.value)}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.82)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="all">All statuses</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+              CONFIDENCE
+            </div>
+            <select
+              value={confidenceFilter}
+              onChange={(event) => setConfidenceFilter(event.currentTarget.value)}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.82)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="all">All runs</option>
+              <option value="exclude_low">Exclude low-confidence</option>
+              <option value="only_low">Only low-confidence</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setScenarioFilter("all");
+              setStatusFilter("all");
+              setConfidenceFilter("all");
+            }}
+            style={{
+              border: "1px solid rgba(148,163,184,0.28)",
+              background: "rgba(15,23,42,0.6)",
+              color: "#cbd5e1",
+              borderRadius: 12,
+              padding: "10px 12px",
+              cursor: "pointer",
+              letterSpacing: 1.1,
+              fontSize: 12,
+            }}
+          >
+            RESET FILTERS
+          </button>
+
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              color: "#64748b",
+              fontSize: 12,
+            }}
+          >
+            Showing <strong style={{ color: "#cbd5e1" }}>{sortedRuns.length}</strong> of{" "}
+            <strong style={{ color: "#cbd5e1" }}>{runs.length}</strong> imported runs.
+          </div>
         </section>
 
         {message && (
