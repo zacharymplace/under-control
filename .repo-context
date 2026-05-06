@@ -1,0 +1,6 @@
+PROJECT=under-control
+WORKSTATION_ROLE=CONTROL
+CANONICAL_REMOTE=git@github.com:zacharymplace/under-control.git
+PRIMARY_MACHINE=MacBook
+PRIMARY_RUNTIME=node
+EXPECTED_NODE_MAJOR=24
