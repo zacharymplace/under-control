@@ -19,10 +19,11 @@ It is not the release gate. The current release gate remains:
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 248 |
-| @typescript-eslint/no-unused-vars | 27 |
-| react-hooks/exhaustive-deps | 2 |
-| react-hooks/set-state-in-effect | 4 |
+| @typescript-eslint/no-explicit-any | 247 |
+| @typescript-eslint/no-unused-vars | 26 |
+| react-hooks/exhaustive-deps | 1 |
+| react-hooks/set-state-in-effect | 3 |
+
 
 
 ## Top Affected Files
@@ -54,6 +55,7 @@ It is not the release gate. The current release gate remains:
 | src/game/telemetry.ts | 3 |
 | src/game/timelineCompression.ts | 3 |
 | src/game/timelineStory.ts | 3 |
+
 
 
 ## Usage
