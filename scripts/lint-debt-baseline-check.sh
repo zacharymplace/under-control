@@ -12,6 +12,11 @@ echo "Baseline: $BASELINE_FILE"
 echo "Report: $REPORT_FILE"
 echo
 
+if [ ! -f "$BASELINE_FILE" ]; then
+  echo "FAIL | missing lint debt baseline: $BASELINE_FILE"
+  exit 1
+fi
+
 set +e
 npm run lint >"$REPORT_FILE" 2>&1
 lint_status=$?
@@ -44,16 +49,12 @@ def parse_metric(name: str) -> int:
         fail(f"could not parse baseline metric: {name}")
     return int(match.group(1))
 
-summary_match = re.search(
-    r"([0-9]+)\s+problems?\s+$begin:math:text$\(\[0\-9\]\+\)\\s\+errors\?\,\\s\+\(\[0\-9\]\+\)\\s\+warnings\?$end:math:text$",
-    report,
-)
-if not summary_match:
-    fail("could not parse ESLint problem summary")
+diagnostic_pattern = re.compile(r"^\s+[0-9]+:[0-9]+\s+(error|warning)\s+", re.MULTILINE)
+diagnostics = diagnostic_pattern.findall(report)
 
-actual_total = int(summary_match.group(1))
-actual_errors = int(summary_match.group(2))
-actual_warnings = int(summary_match.group(3))
+actual_errors = sum(1 for item in diagnostics if item == "error")
+actual_warnings = sum(1 for item in diagnostics if item == "warning")
+actual_total = actual_errors + actual_warnings
 
 expected_total = parse_metric("Total problems")
 expected_errors = parse_metric("Errors")
@@ -68,6 +69,7 @@ checks = [
 ]
 
 failed = False
+
 for label, expected, actual in checks:
     if expected == actual:
         print(f"PASS | {label} | {actual}")
@@ -77,18 +79,26 @@ for label, expected, actual in checks:
 
 baseline_rules = {}
 in_rules = False
+
 for line in baseline.splitlines():
-    if line.strip() == "## Rule Counts":
+    stripped = line.strip()
+
+    if stripped == "## Rule Counts":
         in_rules = True
         continue
-    if in_rules and line.startswith("## "):
+
+    if in_rules and stripped.startswith("## "):
         break
+
     if in_rules:
         match = re.match(r"\|\s*([^|]+?)\s*\|\s*([0-9]+)\s*\|", line)
-        if match and match.group(1).strip() not in {"Rule", "---"}:
-            baseline_rules[match.group(1).strip()] = int(match.group(2))
+        if match:
+            rule = match.group(1).strip()
+            if rule not in {"Rule", "---"}:
+                baseline_rules[rule] = int(match.group(2))
 
 actual_rules = {}
+
 for match in re.finditer(r"((?:@typescript-eslint|react-hooks)/[A-Za-z0-9-]+)", report):
     rule = match.group(1)
     actual_rules[rule] = actual_rules.get(rule, 0) + 1
@@ -102,11 +112,15 @@ for rule, expected in sorted(baseline_rules.items()):
         failed = True
 
 undocumented = sorted(set(actual_rules) - set(baseline_rules))
+
 if undocumented:
     print("FAIL | undocumented rules present | " + ", ".join(undocumented))
     failed = True
 
 if failed:
+    print()
+    print("Lint debt baseline drift detected.")
+    print(f"Run npm run lint:debt, then update {baseline_file} intentionally.")
     sys.exit(1)
 
 print()
