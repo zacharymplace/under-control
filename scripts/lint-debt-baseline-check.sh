@@ -12,80 +12,103 @@ echo "Baseline: $BASELINE_FILE"
 echo "Report: $REPORT_FILE"
 echo
 
-if [ ! -f "$BASELINE_FILE" ]; then
-  echo "FAIL | missing lint debt baseline: $BASELINE_FILE"
-  exit 1
-fi
-
 set +e
 npm run lint >"$REPORT_FILE" 2>&1
 lint_status=$?
 set -e
 
-problem_line="$(grep -E '^✖ [0-9]+ problems $begin:math:text$\[0\-9\]\+ errors\, \[0\-9\]\+ warnings$end:math:text$' "$REPORT_FILE" || true)"
+BASELINE_FILE="$BASELINE_FILE" REPORT_FILE="$REPORT_FILE" LINT_STATUS="$lint_status" python3 - <<'PY'
+from pathlib import Path
+import os
+import re
+import sys
 
-if [ -z "$problem_line" ]; then
-  if [ "$lint_status" -eq 0 ]; then
-    actual_total=0
-    actual_errors=0
-    actual_warnings=0
-  else
-    echo "FAIL | could not parse ESLint problem summary"
-    tail -n 60 "$REPORT_FILE" || true
-    exit 1
-  fi
-else
-  actual_total="$(echo "$problem_line" | sed -E 's/^✖ ([0-9]+) problems.*/\1/')"
-  actual_errors="$(echo "$problem_line" | sed -E 's/^✖ [0-9]+ problems $begin:math:text$\(\[0\-9\]\+\) errors\, \(\[0\-9\]\+\) warnings$end:math:text$.*/\1/')"
-  actual_warnings="$(echo "$problem_line" | sed -E 's/^✖ [0-9]+ problems $begin:math:text$\(\[0\-9\]\+\) errors\, \(\[0\-9\]\+\) warnings$end:math:text$.*/\2/')"
-fi
+baseline_file = Path(os.environ["BASELINE_FILE"])
+report_file = Path(os.environ["REPORT_FILE"])
+lint_status = int(os.environ["LINT_STATUS"])
 
-baseline_total="$(grep -E '^\| Total problems \|' "$BASELINE_FILE" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
-baseline_errors="$(grep -E '^\| Errors \|' "$BASELINE_FILE" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
-baseline_warnings="$(grep -E '^\| Warnings \|' "$BASELINE_FILE" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
-baseline_exit="$(grep -E '^\| Lint exit code \|' "$BASELINE_FILE" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
+baseline = baseline_file.read_text()
+report = report_file.read_text()
 
-echo "Measured:"
-echo "- total=$actual_total"
-echo "- errors=$actual_errors"
-echo "- warnings=$actual_warnings"
-echo "- lint_exit=$lint_status"
-echo
-echo "Baseline:"
-echo "- total=$baseline_total"
-echo "- errors=$baseline_errors"
-echo "- warnings=$baseline_warnings"
-echo "- lint_exit=$baseline_exit"
-echo
+def fail(message: str) -> None:
+    print(f"FAIL | {message}")
+    print()
+    print("Last 60 lines of ESLint report:")
+    print("\n".join(report.splitlines()[-60:]))
+    sys.exit(1)
 
-failed=0
+def parse_metric(name: str) -> int:
+    pattern = rf"\|\s*{re.escape(name)}\s*\|\s*([0-9]+)\s*\|"
+    match = re.search(pattern, baseline)
+    if not match:
+        fail(f"could not parse baseline metric: {name}")
+    return int(match.group(1))
 
-if [ "$actual_total" != "$baseline_total" ]; then
-  echo "FAIL | total problems mismatch"
-  failed=1
-fi
+summary_match = re.search(
+    r"([0-9]+)\s+problems?\s+$begin:math:text$\(\[0\-9\]\+\)\\s\+errors\?\,\\s\+\(\[0\-9\]\+\)\\s\+warnings\?$end:math:text$",
+    report,
+)
+if not summary_match:
+    fail("could not parse ESLint problem summary")
 
-if [ "$actual_errors" != "$baseline_errors" ]; then
-  echo "FAIL | error count mismatch"
-  failed=1
-fi
+actual_total = int(summary_match.group(1))
+actual_errors = int(summary_match.group(2))
+actual_warnings = int(summary_match.group(3))
 
-if [ "$actual_warnings" != "$baseline_warnings" ]; then
-  echo "FAIL | warning count mismatch"
-  failed=1
-fi
+expected_total = parse_metric("Total problems")
+expected_errors = parse_metric("Errors")
+expected_warnings = parse_metric("Warnings")
+expected_exit = parse_metric("Lint exit code")
 
-if [ "$lint_status" != "$baseline_exit" ]; then
-  echo "FAIL | lint exit code mismatch"
-  failed=1
-fi
+checks = [
+    ("total problems", expected_total, actual_total),
+    ("errors", expected_errors, actual_errors),
+    ("warnings", expected_warnings, actual_warnings),
+    ("lint exit code", expected_exit, lint_status),
+]
 
-if [ "$failed" -ne 0 ]; then
-  echo
-  echo "Lint debt baseline drift detected."
-  echo "Run npm run lint:debt, then update $BASELINE_FILE intentionally."
-  exit 1
-fi
+failed = False
+for label, expected, actual in checks:
+    if expected == actual:
+        print(f"PASS | {label} | {actual}")
+    else:
+        print(f"FAIL | {label} | expected={expected} actual={actual}")
+        failed = True
 
-echo "PASS | lint debt baseline matches current measured totals"
-exit 0
+baseline_rules = {}
+in_rules = False
+for line in baseline.splitlines():
+    if line.strip() == "## Rule Counts":
+        in_rules = True
+        continue
+    if in_rules and line.startswith("## "):
+        break
+    if in_rules:
+        match = re.match(r"\|\s*([^|]+?)\s*\|\s*([0-9]+)\s*\|", line)
+        if match and match.group(1).strip() not in {"Rule", "---"}:
+            baseline_rules[match.group(1).strip()] = int(match.group(2))
+
+actual_rules = {}
+for match in re.finditer(r"((?:@typescript-eslint|react-hooks)/[A-Za-z0-9-]+)", report):
+    rule = match.group(1)
+    actual_rules[rule] = actual_rules.get(rule, 0) + 1
+
+for rule, expected in sorted(baseline_rules.items()):
+    actual = actual_rules.get(rule, 0)
+    if expected == actual:
+        print(f"PASS | {rule} | {actual}")
+    else:
+        print(f"FAIL | {rule} | expected={expected} actual={actual}")
+        failed = True
+
+undocumented = sorted(set(actual_rules) - set(baseline_rules))
+if undocumented:
+    print("FAIL | undocumented rules present | " + ", ".join(undocumented))
+    failed = True
+
+if failed:
+    sys.exit(1)
+
+print()
+print("PASS | lint debt baseline matches current ESLint output")
+PY
