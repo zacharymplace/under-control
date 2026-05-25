@@ -10,9 +10,9 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | unknown |
-| Errors | unknown |
-| Warnings | unknown |
+| Total problems | 297 |
+| Errors | 260 |
+| Warnings | 37 |
 | Lint exit code | 1 |
 
 ## Rule Counts
