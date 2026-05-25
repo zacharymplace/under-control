@@ -117,6 +117,47 @@ if undocumented:
     print("FAIL | undocumented rules present | " + ", ".join(undocumented))
     failed = True
 
+baseline_top_files = {}
+in_top_files = False
+
+for line in baseline.splitlines():
+    stripped = line.strip()
+
+    if stripped == "## Top Affected Files":
+        in_top_files = True
+        continue
+
+    if in_top_files and stripped.startswith("## "):
+        break
+
+    if in_top_files:
+        match = re.match(r"\\|\\s*([^|]+?)\\s*\\|\\s*([0-9]+)\\s*\\|", line)
+        if match:
+            file_name = match.group(1).strip()
+            if file_name not in {"File", "---"}:
+                baseline_top_files[file_name] = int(match.group(2))
+
+actual_file_counts = {}
+current_file = None
+root = str(Path.cwd()) + "/"
+
+for line in report.splitlines():
+    if re.match(r"^/.*\\.(ts|tsx)$", line):
+        current_file = line.replace(root, "")
+        continue
+
+    if re.match(r"^\\s+[0-9]+:[0-9]+\\s+(error|warning)\\s+", line):
+        if current_file:
+            actual_file_counts[current_file] = actual_file_counts.get(current_file, 0) + 1
+
+for file_name, expected in sorted(baseline_top_files.items()):
+    actual = actual_file_counts.get(file_name, 0)
+    if expected == actual:
+        print(f"PASS | {file_name} | {actual}")
+    else:
+        print(f"FAIL | {file_name} | expected={expected} actual={actual}")
+        failed = True
+
 if failed:
     print()
     print("Lint debt baseline drift detected.")
