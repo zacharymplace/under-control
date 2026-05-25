@@ -1272,7 +1272,7 @@ export default function PlaytestRunsPage() {
         deferStateUpdate(() => setRuns(parsed));
       }
     } catch {
-      setError("Saved playtest runs could not be restored. Clear saved runs and re-import JSON files.");
+      deferStateUpdate(() => setError("Saved playtest runs could not be restored. Clear saved runs and re-import JSON files."));
     } finally {
       deferStateUpdate(() => setHasHydratedRuns(true));
     }
@@ -1314,7 +1314,7 @@ export default function PlaytestRunsPage() {
         deferStateUpdate(() => setChangeLogEntries(parsed));
       }
     } catch {
-      setError("Saved balance change log could not be restored.");
+      deferStateUpdate(() => setError("Saved balance change log could not be restored."));
     } finally {
       deferStateUpdate(() => setHasHydratedChangeLog(true));
     }
@@ -1380,7 +1380,7 @@ export default function PlaytestRunsPage() {
         deferStateUpdate(() => setTuningProfiles(parsed));
       }
     } catch {
-      setError("Saved scenario tuning profiles could not be restored.");
+      deferStateUpdate(() => setError("Saved scenario tuning profiles could not be restored."));
     } finally {
       deferStateUpdate(() => setHasHydratedTuningProfiles(true));
     }
