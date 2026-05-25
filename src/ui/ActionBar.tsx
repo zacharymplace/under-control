@@ -3,14 +3,8 @@
 import { scoreActionDecisively, spreadActionScores, getActionReason } from "@/game/actionScoring";
 import { getInvalidActions } from "@/game/actionScoring";
 import { getDisagreementPenalty } from "@/game/disagreementScore";
-import {
-  buildWeightedSupport,
-  getWeightedSupportMultiplier,
-} from "@/game/personaConfidence";
-import {
-  getConflictSeverity,
-  getLockedActions as getConflictLockedActions,
-} from "@/game/conflictSystem";
+import { buildWeightedSupport, getWeightedSupportMultiplier } from "@/game/personaConfidence";
+import { getConflictSeverity, getLockedActions as getConflictLockedActions } from "@/game/conflictSystem";
 import { getLockedActions as getBehaviorLockedActions } from "@/game/lockIn";
 import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
 import { getDominantNeedLabel } from "@/game/dominantNeed";
