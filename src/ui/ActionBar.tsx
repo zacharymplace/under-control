@@ -58,18 +58,6 @@ function scoreAction(
   ).toFixed(2);
 }
 
-function explainAction(action: string, game: any, isBehaviorLocked: boolean, isConflictLocked: boolean) {
-  if (isBehaviorLocked) return "Behavior lock: repeated pattern is constraining this option";
-  if (isConflictLocked) return "Conflict lock";
-
-  const signal = game.signalClarity ?? game.signal ?? 0;
-
-  if (game.drift > 50 && action === "STABILIZE") return "High drift favors stabilization";
-  if (game.load > 80 && action === "REROUTE") return "High load favors reroute";
-  if (signal < 55 && action === "OBSERVE") return "Low signal favors observation";
-
-  return "No strong signal advantage";
-}
 
 
 function getControlDoctrine(game: any) {
