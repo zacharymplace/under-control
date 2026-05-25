@@ -1,18 +1,6 @@
 import { getDecisionWindow } from "./decisionWindow";
 import { getAdvisorConsensus } from "./advisorConsensus";
 
-function pickDominantAction(advisors: any[]) {
-  const counts: Record<string, number> = {};
-
-  for (const a of advisors) {
-    const action = a.suggests || a.action || a.suggestion;
-    if (!action) continue;
-    counts[action] = (counts[action] || 0) + 1;
-  }
-
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-}
 
 export function maybeInterruptAction(action: string, game: any, advisors: any[]) {
   const window = getDecisionWindow(game);
@@ -23,7 +11,7 @@ export function maybeInterruptAction(action: string, game: any, advisors: any[])
 
   if (turnsSince < 2) return { action, interrupted: false };
 
-  const { dominant, strength } = getAdvisorConsensus(advisors, game.credibility || {});
+  const { strength } = getAdvisorConsensus(advisors, game.credibility || {});
 
   // base probability grows with time
   let probability = 0.1 + turnsSince * 0.05;
