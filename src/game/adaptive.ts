@@ -1,4 +1,20 @@
-export function derivePlayerProfile(runs: any[]) {
+type RunWithActions = {
+  actionHistory?: string[];
+};
+
+type PlayerProfile = {
+  stabilizeBias: number;
+  rerouteBias: number;
+  observeBias: number;
+};
+
+type AdaptiveModifiers = {
+  loadPressureMult: number;
+  driftPenaltyMult: number;
+  signalDecayMult: number;
+};
+
+export function derivePlayerProfile(runs: RunWithActions[]): PlayerProfile | null {
   if (!runs.length) return null;
 
   let stabilize = 0;
@@ -6,10 +22,10 @@ export function derivePlayerProfile(runs: any[]) {
   let observe = 0;
 
   runs.forEach((run) => {
-    (run.actionHistory || []).forEach((a: string) => {
-      if (a === "STABILIZE") stabilize++;
-      if (a === "REROUTE") reroute++;
-      if (a === "OBSERVE") observe++;
+    (run.actionHistory || []).forEach((action) => {
+      if (action === "STABILIZE") stabilize++;
+      if (action === "REROUTE") reroute++;
+      if (action === "OBSERVE") observe++;
     });
   });
 
@@ -20,7 +36,9 @@ export function derivePlayerProfile(runs: any[]) {
   };
 }
 
-export function deriveAdaptiveModifiers(profile: any) {
+export function deriveAdaptiveModifiers(
+  profile: PlayerProfile | null
+): AdaptiveModifiers {
   if (!profile) return defaultModifiers();
 
   const total =
@@ -41,7 +59,7 @@ export function deriveAdaptiveModifiers(profile: any) {
   };
 }
 
-function defaultModifiers() {
+function defaultModifiers(): AdaptiveModifiers {
   return {
     loadPressureMult: 1,
     driftPenaltyMult: 1,
