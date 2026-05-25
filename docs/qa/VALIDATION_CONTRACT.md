@@ -59,6 +59,14 @@ The current lint debt snapshot is documented in:
 
 Use it to choose narrow cleanup branches and avoid mixing lint cleanup with gameplay or release-gate changes.
 
+## Lint Debt Baseline Check
+
+Use this command when updating or reviewing the lint baseline:
+
+    npm run lint:debt:baseline
+
+It compares the documented baseline totals against the current ESLint report. This is a guardrail for lint documentation drift, not a gameplay or release-gate change.
+
 ## Recommended Lint Cleanup Strategy
 
 Handle lint debt in staged passes:
