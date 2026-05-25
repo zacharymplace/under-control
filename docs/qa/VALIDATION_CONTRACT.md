@@ -51,6 +51,14 @@ Use this command only when you need the full raw ESLint output in the terminal:
 
     npm run lint:debt:verbose
 
+## Lint Debt Baseline
+
+The current lint debt snapshot is documented in:
+
+    docs/qa/LINT_DEBT_BASELINE.md
+
+Use it to choose narrow cleanup branches and avoid mixing lint cleanup with gameplay or release-gate changes.
+
 ## Recommended Lint Cleanup Strategy
 
 Handle lint debt in staged passes:
