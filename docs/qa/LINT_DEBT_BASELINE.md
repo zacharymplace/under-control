@@ -31,10 +31,11 @@ It is not the release gate. The current release gate remains:
 | --- | ---: |
 | src/ui/ActionBar.tsx | 19 |
 | src/game/actionScoring.ts | 15 |
-| src/ui/DecisionTimeline.tsx | 12 |
+| src/ui/DecisionTimeline.tsx | 13 |
 | src/game/runReplay.ts | 11 |
 | src/game/personaEngine.ts | 9 |
 | src/ui/GameScreen.tsx | 8 |
+| src/app/playtest-runs/page.tsx | 6 |
 | src/game/counterfactual.ts | 6 |
 | src/app/analytics/page.tsx | 5 |
 | src/game/advisorInterruption.ts | 5 |
@@ -53,7 +54,6 @@ It is not the release gate. The current release gate remains:
 | src/game/playerNarrative.ts | 3 |
 | src/game/telemetry.ts | 3 |
 | src/game/timelineCompression.ts | 3 |
-| src/game/timelineStory.ts | 3 |
 
 ## Usage
 
