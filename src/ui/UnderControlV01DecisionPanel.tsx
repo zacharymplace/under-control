@@ -585,7 +585,6 @@ export function UnderControlV01DecisionPanel() {
         stabilize: effectiveActionCounts.stabilize,
         reckless: game.recklessActions,
         observedBeforeCriticalAction: game.observedBeforeCriticalAction,
-        countSource: effectiveActionCounts.source,
       },
       advisors: game.advisors.map((advisor) => ({
         id: advisor.id,
@@ -950,9 +949,6 @@ export function UnderControlV01DecisionPanel() {
                 <span>OBS {effectiveActionCounts.observe}</span>
                 <span>RER {effectiveActionCounts.reroute}</span>
                 <span>STA {effectiveActionCounts.stabilize}</span>
-              </div>
-              <div style={{ color: "#64748b", fontSize: 10, marginTop: 6 }}>
-                Source: {effectiveActionCounts.source}
               </div>
             </div>
 
