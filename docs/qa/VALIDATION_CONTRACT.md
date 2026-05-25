@@ -67,6 +67,14 @@ Use this command when updating or reviewing the lint baseline:
 
 It compares the documented baseline totals against the current ESLint report. This is a guardrail for lint documentation drift, not a gameplay or release-gate change.
 
+## Lint Debt Refresh Guide
+
+Use this command to print the safe baseline review sequence without editing files:
+
+    npm run lint:debt:guide
+
+It is useful before opening a lint cleanup branch or refreshing `docs/qa/LINT_DEBT_BASELINE.md`.
+
 ## Recommended Lint Cleanup Strategy
 
 Handle lint debt in staged passes:
