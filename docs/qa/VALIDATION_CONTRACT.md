@@ -39,6 +39,14 @@ For normal patches:
   4. Do not mix gameplay changes with broad lint cleanup.
   5. Do not rewrite many files just to satisfy lint without a narrow scope.
 
+## Lint Debt Helper
+
+Use this command for visibility only:
+
+    npm run lint:debt
+
+It runs `npm run lint`, preserves the full ESLint output in a temporary local report, prints a small summary, and exits `0` so it cannot accidentally become the release gate.
+
 ## Recommended Lint Cleanup Strategy
 
 Handle lint debt in staged passes:
