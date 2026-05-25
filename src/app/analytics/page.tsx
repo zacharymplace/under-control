@@ -1,11 +1,27 @@
-async function getRuns() {
+type AnalyticsRun = {
+  state?: string;
+  turn?: number | string | null;
+  avgPressure?: number | string | null;
+  summary?: {
+    avgPressure?: number | string | null;
+  } | null;
+};
+
+type MetricProps = {
+  label: string;
+  value: number;
+};
+
+async function getRuns(): Promise<AnalyticsRun[]> {
   try {
     const res = await fetch("http://localhost:3000/api/analytics", {
       cache: "no-store",
     });
 
     if (!res.ok) return [];
-    return res.json();
+
+    const data: unknown = await res.json();
+    return Array.isArray(data) ? (data as AnalyticsRun[]) : [];
   } catch {
     return [];
   }
@@ -15,15 +31,14 @@ export default async function AnalyticsPage() {
   const runs = await getRuns();
 
   const total = runs.length;
-  const failed = runs.filter((r: any) => r.state === "FAILED").length;
-  const stabilized = runs.filter((r: any) => r.state === "STABILIZED").length;
+  const failed = runs.filter((run) => run.state === "FAILED").length;
+  const stabilized = runs.filter((run) => run.state === "STABILIZED").length;
 
   const avgTurn =
     total === 0
       ? 0
       : Math.round(
-          runs.reduce((sum: number, r: any) => sum + Number(r.turn || 0), 0) /
-            total
+          runs.reduce((sum, run) => sum + Number(run.turn || 0), 0) / total
         );
 
   const avgPressure =
@@ -31,8 +46,8 @@ export default async function AnalyticsPage() {
       ? 0
       : Math.round(
           runs.reduce(
-            (sum: number, r: any) =>
-              sum + Number(r.summary?.avgPressure || r.avgPressure || 0),
+            (sum, run) =>
+              sum + Number(run.summary?.avgPressure || run.avgPressure || 0),
             0
           ) / total
         );
@@ -57,7 +72,7 @@ export default async function AnalyticsPage() {
   );
 }
 
-function Metric({ label, value }: any) {
+function Metric({ label, value }: MetricProps) {
   return (
     <div>
       <div className="uc-label">{label}</div>
