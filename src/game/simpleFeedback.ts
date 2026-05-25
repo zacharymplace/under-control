@@ -1,4 +1,6 @@
 export function getSimpleFeedback(action: string, before: any, after: any) {
+  void after;
+  void before;
   if (action === "REROUTE") {
     return {
       result: "Load reduced, drift increased.",
