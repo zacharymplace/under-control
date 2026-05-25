@@ -12,7 +12,6 @@ import {
   getLockedActions as getConflictLockedActions,
 } from "@/game/conflictSystem";
 import { getLockedActions as getBehaviorLockedActions } from "@/game/lockIn";
-import { getPressureDistortionNote } from "@/game/pressureDistortion";
 import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
 import { getDominantNeedLabel } from "@/game/dominantNeed";
 import { getNeedNeglectPenalty, getNeedNeglectInsight } from "@/game/needNeglect";
@@ -47,8 +46,6 @@ function scoreAction(
   const lateCorrectionPenalty = getLateCorrectionPenalty(action, game);
   const phasePenalty = getPhasePenalty(action, game);
 
-  const decisionWindowPenalty = getDecisionWindowPenalty(action, game);
-  const postCollapseEffectiveness = getPostCollapseEffectiveness(action, game);
 
   let recoveryPenalty = 1;
   if (action !== "STABILIZE" && !isStabilizationComplete(game) && game.drift > 50) {
@@ -501,8 +498,6 @@ const decisiveScores = spreadActionScores({
 
       <div className="uc-action-grid">
         {actions.map((action) => {
-          const isConflictLocked = conflictLocked.includes(action);
-          const isBehaviorLocked = behaviorLocked.includes(action);
           const isLocked =
     collapseLocked.includes(action) ||
     collapseLocked.includes(action) || locked.includes(action);
