@@ -1,4 +1,15 @@
-export function getActionFeedback(action: string, before: any, after: any) {
+type SystemSnapshot = {
+  drift?: number;
+  load?: number;
+  integrity?: number;
+  signalClarity?: number;
+};
+
+export function getActionFeedback(
+  action: string,
+  before: SystemSnapshot,
+  after: SystemSnapshot
+) {
   const parts: string[] = [];
 
   if ((after.drift ?? 0) < (before.drift ?? 0)) {

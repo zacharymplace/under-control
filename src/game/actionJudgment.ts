@@ -1,4 +1,14 @@
-export function getActionJudgment(action: string, before: any, after: any) {
+type SystemSnapshot = {
+  drift?: number;
+  load?: number;
+  integrity?: number;
+};
+
+export function getActionJudgment(
+  action: string,
+  before: SystemSnapshot,
+  after: SystemSnapshot
+) {
   const driftUp = (after.drift ?? 0) > (before.drift ?? 0);
   const loadUp = (after.load ?? 0) > (before.load ?? 0);
   const integrityDown = (after.integrity ?? 0) < (before.integrity ?? 0);
