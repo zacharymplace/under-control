@@ -14,15 +14,18 @@ import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { buildPersonaConflict } from "@/game/personaConflict";
 import { getAdvisorMemoryNote } from "@/game/advisorMemory";
-import { getAdvisorWeight, getAdvisorWeightLabel } from "@/game/advisorWeighting";
-import { getAdvisorTrajectoryNote } from "@/game/advisorTrajectory";
-import { getAdvisorNeedEscalation } from "@/game/advisorNeedEscalation";
-import { getAdvisorCommitmentNote } from "@/game/advisorCommitment";
-import { getAdvisorEscalationPhase } from "@/game/advisorEscalationPhase";
-import { getAdvisorDecisionWindowNote } from "@/game/advisorDecisionWindow";
-import { getAdvisorCollapseTone } from "@/game/advisorCollapseTone";
-import { getAdvisorCertaintyTone } from "@/game/advisorCertainty";
-import { getAdvisorCredibilityLabel } from "@/game/advisorCredibilityLabel";
+import {
+  getAdvisorWeight,
+  getAdvisorWeightLabel,
+} from "@/game/advisorWeighting";
+
+
+
+
+
+
+
+
 
 export function GameScreen({
   game,
@@ -126,15 +129,7 @@ return (
               p.memoryNote || getAdvisorMemoryNote(name, game.advisorMemory);
             const advisorWeight = getAdvisorWeight(name, game.advisorMemory);
             const advisorWeightLabel = getAdvisorWeightLabel(advisorWeight);
-            const trajectoryNote = getAdvisorTrajectoryNote(name, game);
-            const needEscalationNote = getAdvisorNeedEscalation(name, game);
-            const commitmentNote = getAdvisorCommitmentNote(name, game);
-            const escalationPhaseNote = getAdvisorEscalationPhase(name, game);
-            const decisionWindowNote = getAdvisorDecisionWindowNote(name, game);
-            const collapseToneNote = getAdvisorCollapseTone(name, game);
-            const certaintyToneNote = getAdvisorCertaintyTone(name, game);
             const credibilityKey = String(name || "").toUpperCase();
-            const credibilityLabel = getAdvisorCredibilityLabel(game.credibility?.[credibilityKey]);
 
           return (
               <article key={`${name}
