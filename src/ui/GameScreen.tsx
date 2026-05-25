@@ -31,9 +31,6 @@ export function GameScreen({
   game,
   onAction,
   onReset,
-  bestTurn,
-  scenarioId,
-  onScenarioChange,
 }: {
   game: any;
   onAction?: (action: string) => void;
