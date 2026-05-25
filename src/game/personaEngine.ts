@@ -1,5 +1,5 @@
 import { applyProfileBias, getPersonaProfile, profileConfidenceAdjustment, profileVoicePrefix } from "./personaProfile";
-import { applyMoodToText, derivePersonaMood, moodInfluence } from "./personaMood";
+import { applyMoodToText, derivePersonaMood } from "./personaMood";
 function deriveStrategy(trust: number, ignored: number) {
   if (trust <= -2) return "DEFENSIVE";
   if (ignored >= 4) return "ASSERTIVE";

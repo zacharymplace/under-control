@@ -10,9 +10,9 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 272 |
+| Total problems | 258 |
 | Errors | 247 |
-| Warnings | 25 |
+| Warnings | 11 |
 | Lint exit code | 1 |
 
 ## Rule Counts
@@ -20,21 +20,20 @@ It is not the release gate. The current release gate remains:
 | Rule | Count |
 | --- | ---: |
 | @typescript-eslint/no-explicit-any | 247 |
-| @typescript-eslint/no-unused-vars | 25 |
+| @typescript-eslint/no-unused-vars | 11 |
 
 ## Top Affected Files
 
 | File | Issue Count |
 | --- | ---: |
-| src/ui/ActionBar.tsx | 19 |
 | src/game/actionScoring.ts | 15 |
+| src/ui/ActionBar.tsx | 15 |
 | src/ui/DecisionTimeline.tsx | 12 |
-| src/game/runReplay.ts | 11 |
-| src/game/personaEngine.ts | 9 |
-| src/ui/GameScreen.tsx | 8 |
+| src/game/personaEngine.ts | 8 |
+| src/game/runReplay.ts | 8 |
+| src/ui/GameScreen.tsx | 7 |
 | src/game/counterfactual.ts | 6 |
 | src/game/advisorInterruption.ts | 5 |
-| src/game/effectiveWeight.ts | 5 |
 | src/game/outcome.ts | 5 |
 | src/game/personaConfidence.ts | 5 |
 | src/game/runLegibility.ts | 5 |
@@ -44,13 +43,14 @@ It is not the release gate. The current release gate remains:
 | src/game/simpleFeedback.ts | 4 |
 | src/game/advisorCertainty.ts | 3 |
 | src/game/commitment.ts | 3 |
-| src/game/forcedExecution.ts | 3 |
 | src/game/needNeglect.ts | 3 |
 | src/game/playerNarrative.ts | 3 |
 | src/game/telemetry.ts | 3 |
 | src/game/timelineCompression.ts | 3 |
-| src/game/timelineStory.ts | 3 |
 | src/game/trajectoryRisk.ts | 3 |
+| src/ui/Counterfactual.tsx | 3 |
+| src/ui/RunReplay.tsx | 3 |
+| src/ui/RunReport.tsx | 3 |
 
 ## Usage
 
