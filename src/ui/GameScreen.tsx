@@ -129,7 +129,6 @@ return (
               p.memoryNote || getAdvisorMemoryNote(name, game.advisorMemory);
             const advisorWeight = getAdvisorWeight(name, game.advisorMemory);
             const advisorWeightLabel = getAdvisorWeightLabel(advisorWeight);
-            const credibilityKey = String(name || "").toUpperCase();
 
           return (
               <article key={`${name}

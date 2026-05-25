@@ -1,7 +1,6 @@
 export function getTurnStory(entry: any) {
   const loadDelta = entry.after.load - entry.before.load;
   const driftDelta = entry.after.drift - entry.before.drift;
-  const integrityDelta = entry.after.integrity - entry.before.integrity;
   const signalDelta = entry.after.signalClarity - entry.before.signalClarity;
 
   if (entry.action === "OBSERVE") {
