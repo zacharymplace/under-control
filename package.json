@@ -13,7 +13,8 @@
     "agent:preflight": "bash scripts/agent-preflight.sh",
     "release:ready": "npm run check",
     "lint:debt": "bash scripts/lint-debt-report.sh",
-    "lint:debt:verbose": "bash scripts/lint-debt-report.sh --verbose"
+    "lint:debt:verbose": "bash scripts/lint-debt-report.sh --verbose",
+    "lint:debt:baseline": "bash scripts/lint-debt-baseline-check.sh"
   },
   "dependencies": {
     "next": "16.2.4",
