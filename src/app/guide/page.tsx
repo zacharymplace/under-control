@@ -1,3 +1,15 @@
+import type { ReactNode } from "react";
+
+type SectionProps = {
+  title: string;
+  children: ReactNode;
+};
+
+type CardProps = {
+  title: string;
+  body: string;
+};
+
 export default function GuidePage() {
   return (
     <main className="min-h-screen bg-[#0B0D10] px-5 py-6 text-[#E6EAF0]">
@@ -42,7 +54,7 @@ export default function GuidePage() {
   );
 }
 
-function Section({ title, children }: any) {
+function Section({ title, children }: SectionProps) {
   return (
     <section className="mb-8">
       <h2 className="mb-3 text-xs uppercase tracking-widest text-[#8A93A3]">
@@ -53,7 +65,7 @@ function Section({ title, children }: any) {
   );
 }
 
-function Card({ title, body }: { title: string; body: string }) {
+function Card({ title, body }: CardProps) {
   return (
     <div className="rounded-lg border border-[#2A313A] bg-[#12161C] p-4">
       <h3 className="font-bold">{title}</h3>
