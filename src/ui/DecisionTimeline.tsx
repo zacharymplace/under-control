@@ -22,8 +22,6 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
     return risk === "DRIFT CRITICAL" || risk === "LOAD CRITICAL";
   });
 
-  let lastPhase: string | null = null;
-
   return (
     <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -58,9 +56,18 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
           const representative =
             item.type === "group" ? item.entries[item.entries.length - 1] : item.entry;
 
+          const previousItem = index > 0 ? items[index - 1] : null;
+          const previousRepresentative = previousItem
+            ? previousItem.type === "group"
+              ? previousItem.entries[previousItem.entries.length - 1]
+              : previousItem.entry
+            : null;
+
           const phase = getPhase(representative);
-          const showPhaseHeader = phase !== lastPhase;
-          lastPhase = phase;
+          const previousPhase = previousRepresentative
+            ? getPhase(previousRepresentative)
+            : null;
+          const showPhaseHeader = phase !== previousPhase;
 
           if (item.type === "group") {
             return (

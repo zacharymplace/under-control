@@ -10,8 +10,8 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 281 |
-| Errors | 254 |
+| Total problems | 280 |
+| Errors | 253 |
 | Warnings | 27 |
 | Lint exit code | 1 |
 
@@ -22,7 +22,6 @@ It is not the release gate. The current release gate remains:
 | @typescript-eslint/no-explicit-any | 247 |
 | @typescript-eslint/no-unused-vars | 26 |
 | react-hooks/exhaustive-deps | 1 |
-| react-hooks/immutability | 1 |
 | react-hooks/set-state-in-effect | 6 |
 
 ## Top Affected Files
@@ -31,7 +30,7 @@ It is not the release gate. The current release gate remains:
 | --- | ---: |
 | src/ui/ActionBar.tsx | 19 |
 | src/game/actionScoring.ts | 15 |
-| src/ui/DecisionTimeline.tsx | 13 |
+| src/ui/DecisionTimeline.tsx | 12 |
 | src/game/runReplay.ts | 11 |
 | src/game/personaEngine.ts | 9 |
 | src/ui/GameScreen.tsx | 8 |
