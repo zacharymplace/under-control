@@ -3,6 +3,11 @@ set -euo pipefail
 
 REPORT_DIR="${TMPDIR:-/tmp}/under-control-lint-debt"
 REPORT_FILE="$REPORT_DIR/eslint-output.txt"
+VERBOSE="${LINT_DEBT_VERBOSE:-0}"
+
+if [ "${1:-}" = "--verbose" ]; then
+  VERBOSE="1"
+fi
 
 mkdir -p "$REPORT_DIR"
 
@@ -16,9 +21,15 @@ npm run lint >"$REPORT_FILE" 2>&1
 status=$?
 set -e
 
-cat "$REPORT_FILE"
+if [ "$VERBOSE" = "1" ]; then
+  cat "$REPORT_FILE"
+  echo
+else
+  echo "Full ESLint output saved to: $REPORT_FILE"
+  echo "Run with --verbose or npm run lint:debt:verbose to print the full report."
+  echo
+fi
 
-echo
 echo "== lint debt report exit code =="
 echo "$status"
 
