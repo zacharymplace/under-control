@@ -10,17 +10,16 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 235 |
-| Errors | 232 |
-| Warnings | 3 |
+| Total problems | 228 |
+| Errors | 228 |
+| Warnings | 0 |
 | Lint exit code | 1 |
 
 ## Rule Counts
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 232 |
-| @typescript-eslint/no-unused-vars | 3 |
+| @typescript-eslint/no-explicit-any | 228 |
 
 ## Top Affected Files
 
@@ -36,11 +35,9 @@ It is not the release gate. The current release gate remains:
 | src/game/personaConfidence.ts | 5 |
 | src/game/runLegibility.ts | 5 |
 | src/game/advisorCredibility.ts | 4 |
-| src/game/advisorInterruption.ts | 4 |
 | src/game/irreversibility.ts | 4 |
 | src/game/runArc.ts | 4 |
 | src/ui/GameScreen.tsx | 4 |
-| src/game/advisorCertainty.ts | 3 |
 | src/game/commitment.ts | 3 |
 | src/game/needNeglect.ts | 3 |
 | src/game/playerNarrative.ts | 3 |
@@ -51,6 +48,8 @@ It is not the release gate. The current release gate remains:
 | src/ui/RunReplay.tsx | 3 |
 | src/ui/RunReport.tsx | 3 |
 | src/game/advisorConsensus.ts | 2 |
+| src/game/advisorMemory.ts | 2 |
+| src/game/consensusDrift.ts | 2 |
 
 ## Usage
 

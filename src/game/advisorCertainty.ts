@@ -9,8 +9,7 @@ type CollapseCertaintyGameState = {
   credibility?: Record<string, unknown>;
 };
 
-
-export function getCollapseCertaintyLevel(game: any) {
+export function getCollapseCertaintyLevel(game: CollapseCertaintyGameState) {
   const window = getDecisionWindow(game);
 
   if (!game.pointOfNoReturn && window.state !== "COLLAPSED") {
@@ -26,7 +25,7 @@ export function getCollapseCertaintyLevel(game: any) {
   return "concerned";
 }
 
-export function getAdvisorCertaintyTone(name: string, game: any) {
+export function getAdvisorCertaintyTone(name: string, game: CollapseCertaintyGameState) {
   const level = getCollapseCertaintyLevel(game);
   if (level === "none") return null;
 

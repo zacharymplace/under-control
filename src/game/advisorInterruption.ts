@@ -6,7 +6,7 @@ type AdvisorInterruptionGameState = {
     turn?: number | null;
   } | null;
   turn?: number;
-  credibility?: Record<string, unknown>;
+  credibility?: Record<string, number>;
 };
 
 type AdvisorInterruptionCandidate = {
@@ -16,9 +16,11 @@ type AdvisorInterruptionCandidate = {
   [key: string]: unknown;
 };
 
-
-
-export function maybeInterruptAction(action: string, game: any, advisors: any[]) {
+export function maybeInterruptAction(
+  action: string,
+  game: AdvisorInterruptionGameState,
+  advisors: AdvisorInterruptionCandidate[]
+) {
   const window = getDecisionWindow(game);
   if (window.state !== "COLLAPSED") return { action, interrupted: false };
 
