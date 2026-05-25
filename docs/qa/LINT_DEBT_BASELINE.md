@@ -10,9 +10,9 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 295 |
-| Errors | 260 |
-| Warnings | 35 |
+| Total problems | 280 |
+| Errors | 253 |
+| Warnings | 27 |
 | Lint exit code | 1 |
 
 ## Rule Counts
@@ -20,10 +20,8 @@ It is not the release gate. The current release gate remains:
 | Rule | Count |
 | --- | ---: |
 | @typescript-eslint/no-explicit-any | 253 |
-| @typescript-eslint/no-unused-vars | 34 |
-| react-hooks/set-state-in-effect | 6 |
+| @typescript-eslint/no-unused-vars | 26 |
 | react-hooks/exhaustive-deps | 1 |
-| react-hooks/immutability | 1 |
 
 ## Top Affected Files
 
@@ -31,11 +29,10 @@ It is not the release gate. The current release gate remains:
 | --- | ---: |
 | src/ui/ActionBar.tsx | 19 |
 | src/game/actionScoring.ts | 15 |
-| src/ui/GameScreen.tsx | 15 |
-| src/ui/DecisionTimeline.tsx | 13 |
+| src/ui/DecisionTimeline.tsx | 12 |
 | src/game/runReplay.ts | 11 |
 | src/game/personaEngine.ts | 9 |
-| src/app/playtest-runs/page.tsx | 6 |
+| src/ui/GameScreen.tsx | 8 |
 | src/game/counterfactual.ts | 6 |
 | src/app/analytics/page.tsx | 5 |
 | src/game/advisorInterruption.ts | 5 |
@@ -54,6 +51,7 @@ It is not the release gate. The current release gate remains:
 | src/game/playerNarrative.ts | 3 |
 | src/game/telemetry.ts | 3 |
 | src/game/timelineCompression.ts | 3 |
+| src/game/timelineStory.ts | 3 |
 
 ## Usage
 
