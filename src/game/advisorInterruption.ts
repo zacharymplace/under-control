@@ -1,6 +1,22 @@
 import { getDecisionWindow } from "./decisionWindow";
 import { getAdvisorConsensus } from "./advisorConsensus";
 
+type AdvisorInterruptionGameState = {
+  pointOfNoReturn?: {
+    turn?: number | null;
+  } | null;
+  turn?: number;
+  credibility?: Record<string, unknown>;
+};
+
+type AdvisorInterruptionCandidate = {
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  [key: string]: unknown;
+};
+
+
 
 export function maybeInterruptAction(action: string, game: any, advisors: any[]) {
   const window = getDecisionWindow(game);

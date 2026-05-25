@@ -10,9 +10,9 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 232 |
+| Total problems | 235 |
 | Errors | 232 |
-| Warnings | 0 |
+| Warnings | 3 |
 | Lint exit code | 1 |
 
 ## Rule Counts
@@ -20,6 +20,7 @@ It is not the release gate. The current release gate remains:
 | Rule | Count |
 | --- | ---: |
 | @typescript-eslint/no-explicit-any | 232 |
+| @typescript-eslint/no-unused-vars | 3 |
 
 ## Top Affected Files
 
@@ -35,9 +36,11 @@ It is not the release gate. The current release gate remains:
 | src/game/personaConfidence.ts | 5 |
 | src/game/runLegibility.ts | 5 |
 | src/game/advisorCredibility.ts | 4 |
+| src/game/advisorInterruption.ts | 4 |
 | src/game/irreversibility.ts | 4 |
 | src/game/runArc.ts | 4 |
 | src/ui/GameScreen.tsx | 4 |
+| src/game/advisorCertainty.ts | 3 |
 | src/game/commitment.ts | 3 |
 | src/game/needNeglect.ts | 3 |
 | src/game/playerNarrative.ts | 3 |
@@ -47,9 +50,7 @@ It is not the release gate. The current release gate remains:
 | src/ui/Counterfactual.tsx | 3 |
 | src/ui/RunReplay.tsx | 3 |
 | src/ui/RunReport.tsx | 3 |
-| src/game/advisorCertainty.ts | 2 |
 | src/game/advisorConsensus.ts | 2 |
-| src/game/advisorInterruption.ts | 2 |
 
 ## Usage
 

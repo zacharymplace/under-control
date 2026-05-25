@@ -1,5 +1,15 @@
 import { getDecisionWindow } from "./decisionWindow";
 
+type CollapseCertaintyGameState = {
+  pointOfNoReturn?: {
+    turn?: number | null;
+  } | null;
+  turn?: number;
+  personas?: unknown[];
+  credibility?: Record<string, unknown>;
+};
+
+
 export function getCollapseCertaintyLevel(game: any) {
   const window = getDecisionWindow(game);
 
