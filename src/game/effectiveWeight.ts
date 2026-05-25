@@ -1,4 +1,6 @@
-export function normalizeConfidence(value: any) {
+type ConfidenceInput = number | string | null | undefined;
+
+export function normalizeConfidence(value: ConfidenceInput) {
   if (typeof value === "number") return Math.max(0, Math.min(1, value));
 
   const text = String(value || "").toUpperCase();
@@ -16,7 +18,7 @@ export function computeEffectiveWeight({
   credibility,
   trust,
 }: {
-  confidence?: any;
+  confidence?: ConfidenceInput;
   credibility?: number;
   trust?: number;
 }) {

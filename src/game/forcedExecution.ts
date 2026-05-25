@@ -1,7 +1,22 @@
 import { getDecisionWindow } from "./decisionWindow";
-import { getAdvisorConsensus } from "./advisorConsensus";
+import { getAdvisorConsensus, type AdvisorConsensusAdvisor } from "./advisorConsensus";
 
-export function maybeForceAction(action: string, game: any, advisors: any[]) {
+type ForcedExecutionGameState = {
+  pointOfNoReturn?: {
+    turn?: number | null;
+  } | null;
+  turn?: number;
+  credibility?: Record<string, number>;
+  pressure?: string;
+  load?: number;
+  drift?: number;
+};
+
+export function maybeForceAction(
+  action: string,
+  game: ForcedExecutionGameState,
+  advisors: AdvisorConsensusAdvisor[]
+) {
   const window = getDecisionWindow(game);
   if (window.state !== "COLLAPSED") return { action, forced: false };
 
