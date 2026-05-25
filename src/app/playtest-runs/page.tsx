@@ -1,5 +1,9 @@
 "use client";
 
+function deferStateUpdate(update: () => void) {
+  queueMicrotask(update);
+}
+
 import { useEffect, useMemo, useState } from "react";
 
 type RunTelemetry = {
@@ -1258,7 +1262,7 @@ export default function PlaytestRunsPage() {
       const raw = window.localStorage.getItem(RUN_STORAGE_KEY);
 
       if (!raw) {
-        setHasHydratedRuns(true);
+        deferStateUpdate(() => setHasHydratedRuns(true));
         return;
       }
 
@@ -1270,7 +1274,7 @@ export default function PlaytestRunsPage() {
     } catch {
       setError("Saved playtest runs could not be restored. Clear saved runs and re-import JSON files.");
     } finally {
-      setHasHydratedRuns(true);
+      deferStateUpdate(() => setHasHydratedRuns(true));
     }
   }, []);
 
@@ -1280,7 +1284,7 @@ export default function PlaytestRunsPage() {
     try {
       window.localStorage.setItem(RUN_STORAGE_KEY, JSON.stringify(runs));
     } catch {
-      setError("Could not save imported runs locally. Browser storage may be full or unavailable.");
+      deferStateUpdate(() => setError("Could not save imported runs locally. Browser storage may be full or unavailable."));
     }
   }, [hasHydratedRuns, runs]);
 
@@ -1300,7 +1304,7 @@ export default function PlaytestRunsPage() {
       const raw = window.localStorage.getItem(CHANGE_LOG_STORAGE_KEY);
 
       if (!raw) {
-        setHasHydratedChangeLog(true);
+        deferStateUpdate(() => setHasHydratedChangeLog(true));
         return;
       }
 
@@ -1312,7 +1316,7 @@ export default function PlaytestRunsPage() {
     } catch {
       setError("Saved balance change log could not be restored.");
     } finally {
-      setHasHydratedChangeLog(true);
+      deferStateUpdate(() => setHasHydratedChangeLog(true));
     }
   }, []);
 
@@ -1322,7 +1326,7 @@ export default function PlaytestRunsPage() {
     try {
       window.localStorage.setItem(CHANGE_LOG_STORAGE_KEY, JSON.stringify(changeLogEntries));
     } catch {
-      setError("Could not save balance change log locally.");
+      deferStateUpdate(() => setError("Could not save balance change log locally."));
     }
   }, [changeLogEntries, hasHydratedChangeLog]);
 
@@ -1366,7 +1370,7 @@ export default function PlaytestRunsPage() {
       const raw = window.localStorage.getItem(TUNING_PROFILE_STORAGE_KEY);
 
       if (!raw) {
-        setHasHydratedTuningProfiles(true);
+        deferStateUpdate(() => setHasHydratedTuningProfiles(true));
         return;
       }
 
@@ -1378,7 +1382,7 @@ export default function PlaytestRunsPage() {
     } catch {
       setError("Saved scenario tuning profiles could not be restored.");
     } finally {
-      setHasHydratedTuningProfiles(true);
+      deferStateUpdate(() => setHasHydratedTuningProfiles(true));
     }
   }, []);
 
@@ -1388,7 +1392,7 @@ export default function PlaytestRunsPage() {
     try {
       window.localStorage.setItem(TUNING_PROFILE_STORAGE_KEY, JSON.stringify(tuningProfiles));
     } catch {
-      setError("Could not save scenario tuning profiles locally.");
+      deferStateUpdate(() => setError("Could not save scenario tuning profiles locally."));
     }
   }, [hasHydratedTuningProfiles, tuningProfiles]);
 
