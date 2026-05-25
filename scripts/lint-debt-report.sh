@@ -29,11 +29,26 @@ if [ "$status" -eq 0 ]; then
 else
   echo "INFO | lint debt present; see docs/qa/VALIDATION_CONTRACT.md"
   echo
-  echo "Top affected files:"
-  grep -E '^/.*\.(ts|tsx)$' "$REPORT_FILE" \
-    | sed "s#$(pwd)/##" \
-    | sort \
-    | uniq -c \
+  echo "Top affected files by issue count:"
+  awk -v root="$(pwd)/" '
+    /^\/.*\.(ts|tsx)$/ {
+      file=$0
+      sub(root, "", file)
+      next
+    }
+
+    /^[[:space:]]+[0-9]+:[0-9]+[[:space:]]+(error|warning)[[:space:]]+/ {
+      if (file != "") {
+        counts[file]++
+      }
+    }
+
+    END {
+      for (file in counts) {
+        printf "%5d %s\n", counts[file], file
+      }
+    }
+  ' "$REPORT_FILE" \
     | sort -nr \
     | sed -n '1,20p' || true
 
