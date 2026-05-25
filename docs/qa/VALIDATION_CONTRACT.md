@@ -45,7 +45,11 @@ Use this command for visibility only:
 
     npm run lint:debt
 
-It runs `npm run lint`, preserves the full ESLint output in a temporary local report, prints a small summary with top affected files by issue count and rule counts, and exits `0` so it cannot accidentally become the release gate.
+It runs `npm run lint`, preserves the full ESLint output in a temporary local report, prints a concise summary with top affected files by issue count and rule counts, and exits `0` so it cannot accidentally become the release gate.
+
+Use this command only when you need the full raw ESLint output in the terminal:
+
+    npm run lint:debt:verbose
 
 ## Recommended Lint Cleanup Strategy
 
