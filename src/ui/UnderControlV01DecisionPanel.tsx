@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useReducer, useState } from "react";
-import { initialGameState } from "../game/v01/initialState";
 import { createInitialGameState, scenarioCatalog } from "../game/v01/scenarios";
 import { gameReducer } from "../game/v01/reducer";
 import { getActionPreview, formatDelta } from "../game/v01/preview";
