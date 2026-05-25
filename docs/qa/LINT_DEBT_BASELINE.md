@@ -10,9 +10,9 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 274 |
+| Total problems | 273 |
 | Errors | 247 |
-| Warnings | 27 |
+| Warnings | 26 |
 | Lint exit code | 1 |
 
 ## Rule Counts
@@ -21,7 +21,6 @@ It is not the release gate. The current release gate remains:
 | --- | ---: |
 | @typescript-eslint/no-explicit-any | 247 |
 | @typescript-eslint/no-unused-vars | 26 |
-| react-hooks/exhaustive-deps | 1 |
 
 ## Top Affected Files
 

@@ -608,7 +608,7 @@ export function UnderControlV01DecisionPanel() {
       })),
       events: game.events,
     };
-  }, [game, operatorProfile, score, totalActions]);
+  }, [game, operatorProfile, score, totalActions, effectiveActionCounts.observe, effectiveActionCounts.reroute, effectiveActionCounts.stabilize]);
 
   const telemetryFilename =
     "under-control-run-" +
