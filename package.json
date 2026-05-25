@@ -11,7 +11,8 @@
     "bootstrap": "bash scripts/bootstrap.sh",
     "check": "npm run build",
     "agent:preflight": "bash scripts/agent-preflight.sh",
-    "release:ready": "npm run check"
+    "release:ready": "npm run check",
+    "lint:debt": "bash scripts/lint-debt-report.sh"
   },
   "dependencies": {
     "next": "16.2.4",
