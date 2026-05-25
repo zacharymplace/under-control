@@ -1,6 +1,14 @@
 export type DominantNeed = "STABILIZE" | "REROUTE" | "OBSERVE" | null;
 
-export function getDominantNeed(game: any): DominantNeed {
+type DominantNeedGameState = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+};
+
+export function getDominantNeed(game: DominantNeedGameState): DominantNeed {
   const load = game.load ?? 0;
   const drift = game.drift ?? 0;
   const integrity = game.integrity ?? 100;
@@ -13,7 +21,7 @@ export function getDominantNeed(game: any): DominantNeed {
   return null;
 }
 
-export function getDominantNeedLabel(game: any) {
+export function getDominantNeedLabel(game: DominantNeedGameState) {
   const need = getDominantNeed(game);
 
   if (need === "STABILIZE") return "Primary need: stabilize instability";
