@@ -10,8 +10,8 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 280 |
-| Errors | 253 |
+| Total problems | 287 |
+| Errors | 260 |
 | Warnings | 27 |
 | Lint exit code | 1 |
 
@@ -21,7 +21,9 @@ It is not the release gate. The current release gate remains:
 | --- | ---: |
 | @typescript-eslint/no-explicit-any | 253 |
 | @typescript-eslint/no-unused-vars | 26 |
+| react-hooks/set-state-in-effect | 6 |
 | react-hooks/exhaustive-deps | 1 |
+| react-hooks/immutability | 1 |
 
 ## Top Affected Files
 
