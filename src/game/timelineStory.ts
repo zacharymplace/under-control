@@ -1,7 +1,21 @@
-export function getTurnStory(entry: any) {
-  const loadDelta = entry.after.load - entry.before.load;
-  const driftDelta = entry.after.drift - entry.before.drift;
-  const signalDelta = entry.after.signalClarity - entry.before.signalClarity;
+type TimelineSnapshot = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+};
+
+type TimelineEntry = {
+  action?: string;
+  before: TimelineSnapshot;
+  after: TimelineSnapshot;
+};
+
+export function getTurnStory(entry: TimelineEntry) {
+  const loadDelta = (entry.after.load ?? 0) - (entry.before.load ?? 0);
+  const driftDelta = (entry.after.drift ?? 0) - (entry.before.drift ?? 0);
+  const signalDelta =
+    (entry.after.signalClarity ?? 0) - (entry.before.signalClarity ?? 0);
 
   if (entry.action === "OBSERVE") {
     return {
@@ -52,11 +66,11 @@ export function getTurnStory(entry: any) {
   };
 }
 
-export function getTurnRisk(entry: any) {
-  if (entry.after.load >= 95) return "LOAD CRITICAL";
-  if (entry.after.drift >= 55) return "DRIFT CRITICAL";
-  if (entry.after.integrity <= 45) return "INTEGRITY LOW";
-  if (entry.after.load >= 85 || entry.after.drift >= 45) return "WARNING";
+export function getTurnRisk(entry: TimelineEntry) {
+  if ((entry.after.load ?? 0) >= 95) return "LOAD CRITICAL";
+  if ((entry.after.drift ?? 0) >= 55) return "DRIFT CRITICAL";
+  if ((entry.after.integrity ?? 100) <= 45) return "INTEGRITY LOW";
+  if ((entry.after.load ?? 0) >= 85 || (entry.after.drift ?? 0) >= 45) return "WARNING";
   return "CONTROLLED";
 }
 
