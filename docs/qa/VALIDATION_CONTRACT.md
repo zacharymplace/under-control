@@ -75,6 +75,14 @@ Use this command to print the safe baseline review sequence without editing file
 
 It is useful before opening a lint cleanup branch or refreshing `docs/qa/LINT_DEBT_BASELINE.md`.
 
+## PR Cleanup Check
+
+Use this command before opening narrow lint-cleanup PRs:
+
+    npm run pr:cleanup-check
+
+It runs the build gate, release readiness, lint debt summary, baseline check, and lint cleanup guide in one place.
+
 ## Recommended Lint Cleanup Strategy
 
 Handle lint debt in staged passes:

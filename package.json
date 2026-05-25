@@ -15,7 +15,8 @@
     "lint:debt": "bash scripts/lint-debt-report.sh",
     "lint:debt:verbose": "bash scripts/lint-debt-report.sh --verbose",
     "lint:debt:baseline": "bash scripts/lint-debt-baseline-check.sh",
-    "lint:debt:guide": "bash scripts/lint-debt-refresh-guide.sh"
+    "lint:debt:guide": "bash scripts/lint-debt-refresh-guide.sh",
+    "pr:cleanup-check": "bash scripts/pr-cleanup-check.sh"
   },
   "dependencies": {
     "next": "16.2.4",
