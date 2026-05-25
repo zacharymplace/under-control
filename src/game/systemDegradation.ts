@@ -1,8 +1,18 @@
-export function applyIgnoredSystemPenalty(game: any) {
+type IgnoredCounts = Record<string, number | null | undefined>;
+
+type SystemDegradationGameState = {
+  ignoredCounts?: IgnoredCounts;
+  signalClarity?: number;
+  signal?: number;
+  drift: number;
+  [key: string]: unknown;
+};
+
+export function applyIgnoredSystemPenalty<T extends SystemDegradationGameState>(game: T) {
   const ignored = game.ignoredCounts || {};
 
-  const totalIgnored = Object.values(ignored).reduce(
-    (sum: number, v: any) => sum + (v || 0),
+  const totalIgnored = Object.values(ignored).reduce<number>(
+    (sum, value) => sum + Number(value ?? 0),
     0
   );
 

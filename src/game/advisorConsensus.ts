@@ -1,12 +1,36 @@
 import { getAdvisorCredibility, type AdvisorCredibilityMap } from "./advisorCredibility";
 import { computeEffectiveWeight } from "./effectiveWeight";
 
-function getAdvisorAction(advisor: any) {
+export type AdvisorConsensusAdvisor = {
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  confidence?: number | string | null;
+  trust?: number | string | null;
+  weight?: number | string | null;
+  [key: string]: unknown;
+};
+
+function getAdvisorAction(advisor: AdvisorConsensusAdvisor) {
   return advisor.suggests || advisor.action || advisor.suggestion || null;
 }
 
+function toOptionalNumber(value: number | string | null | undefined) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
+function toNumber(value: number | string | null | undefined, fallback: number) {
+  return toOptionalNumber(value) ?? fallback;
+}
+
 export function getAdvisorConsensus(
-  advisors: any[],
+  advisors: AdvisorConsensusAdvisor[],
   credibility: AdvisorCredibilityMap = {}
 ) {
   const counts: Record<string, number> = {};
@@ -17,9 +41,9 @@ export function getAdvisorConsensus(
     if (!action) continue;
 
     const weight = computeEffectiveWeight({
-      confidence: advisor.confidence,
+      confidence: toOptionalNumber(advisor.confidence),
       credibility: getAdvisorCredibility(advisor, credibility),
-      trust: advisor.trust ?? advisor.weight ?? 1,
+      trust: toNumber(advisor.trust ?? advisor.weight, 1),
     });
 
     counts[action] = (counts[action] || 0) + weight;

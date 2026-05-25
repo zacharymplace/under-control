@@ -16,14 +16,26 @@ export function createInitialAdvisorMemory(): AdvisorMemoryMap {
   };
 }
 
-export function normalizeAdvisorMemory(memory: any): AdvisorMemoryMap {
-  return {
-    ...createInitialAdvisorMemory(),
-    ...(memory || {}),
-  };
+export function normalizeAdvisorMemory(
+  memory: Partial<AdvisorMemoryMap> | null | undefined
+): AdvisorMemoryMap {
+  const normalized = createInitialAdvisorMemory();
+
+  if (!memory) return normalized;
+
+  for (const [name, value] of Object.entries(memory)) {
+    if (value) {
+      normalized[name] = value;
+    }
+  }
+
+  return normalized;
 }
 
-export function getAdvisorMemoryNote(name: string, memory: any) {
+export function getAdvisorMemoryNote(
+  name: string,
+  memory: Partial<AdvisorMemoryMap> | null | undefined
+) {
   const m = normalizeAdvisorMemory(memory)[name.toUpperCase()];
   if (!m) return null;
 

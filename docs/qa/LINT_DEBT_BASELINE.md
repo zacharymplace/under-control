@@ -10,8 +10,8 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 228 |
-| Errors | 228 |
+| Total problems | 214 |
+| Errors | 214 |
 | Warnings | 0 |
 | Lint exit code | 1 |
 
@@ -19,7 +19,7 @@ It is not the release gate. The current release gate remains:
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 228 |
+| @typescript-eslint/no-explicit-any | 214 |
 
 ## Top Affected Files
 
@@ -47,9 +47,9 @@ It is not the release gate. The current release gate remains:
 | src/ui/Counterfactual.tsx | 3 |
 | src/ui/RunReplay.tsx | 3 |
 | src/ui/RunReport.tsx | 3 |
-| src/game/advisorConsensus.ts | 2 |
-| src/game/advisorMemory.ts | 2 |
-| src/game/consensusDrift.ts | 2 |
+| src/game/decisionWindow.ts | 2 |
+| src/game/dominantNeed.ts | 2 |
+| src/game/effectiveWeight.ts | 2 |
 
 ## Usage
 
