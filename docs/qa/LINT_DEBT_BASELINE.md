@@ -24,8 +24,6 @@ It is not the release gate. The current release gate remains:
 | react-hooks/exhaustive-deps | 1 |
 | react-hooks/set-state-in-effect | 3 |
 
-
-
 ## Top Affected Files
 
 | File | Issue Count |
@@ -55,8 +53,6 @@ It is not the release gate. The current release gate remains:
 | src/game/telemetry.ts | 3 |
 | src/game/timelineCompression.ts | 3 |
 | src/game/timelineStory.ts | 3 |
-
-
 
 ## Usage
 

@@ -1269,7 +1269,7 @@ export default function PlaytestRunsPage() {
       const parsed = JSON.parse(raw) as ImportedRun[];
 
       if (Array.isArray(parsed)) {
-        setRuns(parsed);
+        deferStateUpdate(() => setRuns(parsed));
       }
     } catch {
       setError("Saved playtest runs could not be restored. Clear saved runs and re-import JSON files.");
@@ -1311,7 +1311,7 @@ export default function PlaytestRunsPage() {
       const parsed = JSON.parse(raw) as BalanceChangeLogEntry[];
 
       if (Array.isArray(parsed)) {
-        setChangeLogEntries(parsed);
+        deferStateUpdate(() => setChangeLogEntries(parsed));
       }
     } catch {
       setError("Saved balance change log could not be restored.");
@@ -1377,7 +1377,7 @@ export default function PlaytestRunsPage() {
       const parsed = JSON.parse(raw) as ScenarioTuningProfile[];
 
       if (Array.isArray(parsed)) {
-        setTuningProfiles(parsed);
+        deferStateUpdate(() => setTuningProfiles(parsed));
       }
     } catch {
       setError("Saved scenario tuning profiles could not be restored.");
