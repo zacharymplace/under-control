@@ -1,6 +1,16 @@
 import { getDecisionWindow } from "./decisionWindow";
 
-export function getAdvisorDecisionWindowNote(name: string, game: any) {
+type AdvisorDecisionWindowGameState = {
+  pressure?: string;
+  load?: number;
+  drift?: number;
+  turn?: number;
+};
+
+export function getAdvisorDecisionWindowNote(
+  name: string,
+  game: AdvisorDecisionWindowGameState
+) {
   const window = getDecisionWindow(game);
   if (window.state === "OPEN") return null;
 
