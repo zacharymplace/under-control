@@ -3,13 +3,43 @@ import { getNeedNeglectInsight } from "./needNeglect";
 import { getCommitmentInsight } from "./commitment";
 import { getPointOfNoReturn, getMissedCommitmentWindow } from "./irreversibility";
 
-export function buildRunReplay(game: any) {
+type RunReplaySnapshot = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+  [key: string]: unknown;
+};
+
+type RunReplayLogEntry = {
+  turn?: number;
+  action?: string;
+  before?: RunReplaySnapshot;
+  after?: RunReplaySnapshot;
+};
+
+type RunReplayPointOfNoReturn = {
+  turn?: number | null;
+};
+
+type RunReplayGameState = RunReplaySnapshot & {
+  state?: string;
+  turn?: number;
+  actionLog?: RunReplayLogEntry[];
+  actionHistory?: string[];
+  ignoredCounts?: Record<string, number | string | null | undefined>;
+  pointOfNoReturn?: RunReplayPointOfNoReturn | null;
+  [key: string]: unknown;
+};
+
+export function buildRunReplay(game: RunReplayGameState) {
   const log = game.actionLog || [];
   if (!log.length) return null;
 
   const recent = log.slice(-5);
 
-  return recent.map((entry: any) => {
+  return recent.map((entry) => {
     const before = entry.before || {};
     const after = entry.after || {};
 
@@ -29,7 +59,13 @@ export function buildRunReplay(game: any) {
       signalDelta,
       before,
       after,
-      summary: summarizeTurn(entry.action, loadDelta, driftDelta, integrityDelta, signalDelta),
+      summary: summarizeTurn(
+        entry.action || "",
+        loadDelta,
+        driftDelta,
+        integrityDelta,
+        signalDelta
+      ),
     };
   });
 }
@@ -65,9 +101,9 @@ function summarizeTurn(
   return "Decision changed system state.";
 }
 
-export function buildFailureExplanation(game: any) {
+export function buildFailureExplanation(game: RunReplayGameState) {
   const log = game.actionLog || [];
-  const final = log.length ? log[log.length - 1].after : game;
+  const final = log.length ? log[log.length - 1].after || {} : game;
   const isSuccess = game.state === "STABILIZED";
 
   const reasons: string[] = [];
@@ -77,23 +113,35 @@ export function buildFailureExplanation(game: any) {
   }
 
   if ((final.load ?? game.load ?? 0) >= 95) {
-    reasons.push(isSuccess ? "Load approached system limits but was managed" : "Load saturated the system");
+    reasons.push(
+      isSuccess
+        ? "Load approached system limits but was managed"
+        : "Load saturated the system"
+    );
   }
 
   if ((final.drift ?? game.drift ?? 0) >= 55) {
-    reasons.push(isSuccess ? "Drift approached recovery limits but remained controllable" : "Drift exceeded recovery capacity");
+    reasons.push(
+      isSuccess
+        ? "Drift approached recovery limits but remained controllable"
+        : "Drift exceeded recovery capacity"
+    );
   }
 
-  const ignoredTotal = Object.values(game.ignoredCounts || {}).reduce(
-    (sum: number, value: any) => sum + Number(value || 0),
+  const ignoredTotal = Object.values(game.ignoredCounts || {}).reduce<number>(
+    (sum, value) => sum + Number(value ?? 0),
     0
   );
 
   if (ignoredTotal >= 6) {
-    reasons.push(isSuccess ? "Critical advisor signals created pressure but were managed" : "Critical advisor signals were repeatedly ignored");
+    reasons.push(
+      isSuccess
+        ? "Critical advisor signals created pressure but were managed"
+        : "Critical advisor signals were repeatedly ignored"
+    );
   }
 
-  const actions = log.map((entry: any) => entry.action);
+  const actions = log.map((entry) => entry.action).filter(Boolean);
   const lastThree = actions.slice(-3);
 
   if (lastThree.length >= 3 && new Set(lastThree).size === 1) {
@@ -127,9 +175,7 @@ export function buildFailureExplanation(game: any) {
 
   if (game.pointOfNoReturn?.turn) {
     const turnsSince = (game.turn ?? 1) - game.pointOfNoReturn.turn;
-    reasons.push(
-      `Point of no return reached on Turn ${game.pointOfNoReturn.turn}.`
-    );
+    reasons.push(`Point of no return reached on Turn ${game.pointOfNoReturn.turn}.`);
     reasons.push("Post-collapse actions were only partially effective.");
     if (turnsSince >= 3) {
       reasons.push("Recovery capacity degraded over time after collapse.");
@@ -147,16 +193,23 @@ export function buildFailureExplanation(game: any) {
   };
 }
 
-function getLikelyCorrectAction(final: any, game?: any) {
+function getLikelyCorrectAction(
+  final: RunReplaySnapshot,
+  game?: RunReplayGameState
+) {
   if (game?.state === "STABILIZED") {
-    const actions = (game.actionLog || []).map((entry: any) => entry.action);
+    const actions = (game.actionLog || [])
+      .map((entry) => entry.action)
+      .filter(Boolean);
+
     const usedReroute = actions.includes("REROUTE");
     const usedStabilize = actions.includes("STABILIZE");
 
     if (usedReroute && usedStabilize) {
       return {
         action: "ADAPTIVE CONTROL",
-        reason: "REROUTE relieved load while STABILIZE restored structure and contained instability.",
+        reason:
+          "REROUTE relieved load while STABILIZE restored structure and contained instability.",
       };
     }
 
