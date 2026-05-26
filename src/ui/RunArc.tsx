@@ -1,4 +1,20 @@
-export function RunArc({ arc }: any) {
+type RunArcValue = {
+  early?: string;
+  middle?: string;
+  late?: string;
+  failureMode?: string;
+  difficulty?: {
+    label?: string;
+    detail?: string;
+  };
+};
+
+type ArcStepProps = {
+  label: string;
+  value?: string | null;
+};
+
+export function RunArc({ arc }: { arc: RunArcValue | null | undefined }) {
   if (!arc) return null;
 
   return (
@@ -33,10 +49,10 @@ export function RunArc({ arc }: any) {
             Run Difficulty
           </div>
           <div className="mt-1 font-bold text-[#E6EAF0]">
-            {arc.difficulty.label}
+            {arc.difficulty?.label}
           </div>
           <div className="mt-1 text-xs text-[#8A93A3]">
-            {arc.difficulty.detail}
+            {arc.difficulty?.detail}
           </div>
         </div>
       </div>
@@ -44,7 +60,7 @@ export function RunArc({ arc }: any) {
   );
 }
 
-function ArcStep({ label, value }: any) {
+function ArcStep({ label, value }: ArcStepProps) {
   return (
     <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
       <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
