@@ -1,4 +1,12 @@
-export function buildPlayerTakeaway({ runArc, failureDriver }: any) {
+type PlayerTakeawayInput = {
+  runArc?: {
+    mid?: string;
+    late?: string;
+  } | null;
+  failureDriver?: string | null;
+};
+
+export function buildPlayerTakeaway({ runArc, failureDriver }: PlayerTakeawayInput) {
   if (!runArc || !failureDriver) return null;
 
   if (runArc.late === "Drift dominance") {

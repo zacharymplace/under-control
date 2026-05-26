@@ -10,8 +10,8 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 174 |
-| Errors | 174 |
+| Total problems | 163 |
+| Errors | 163 |
 | Warnings | 0 |
 | Lint exit code | 1 |
 
@@ -19,7 +19,7 @@ It is not the release gate. The current release gate remains:
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 174 |
+| @typescript-eslint/no-explicit-any | 163 |
 
 ## Top Affected Files
 

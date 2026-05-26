@@ -1,4 +1,13 @@
-export function getRunGrade(game: any) {
+type RunGradeGameState = {
+  state?: string;
+  turn?: number;
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  [key: string]: unknown;
+};
+
+export function getRunGrade(game: RunGradeGameState) {
   const state = game.state;
   const turn = game.turn ?? 1;
   const load = game.load ?? 0;

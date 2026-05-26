@@ -1,4 +1,10 @@
-export function getTimePressureMultiplier(game: any) {
+type TimePressureGameState = {
+  load?: number;
+  pressure?: string;
+  [key: string]: unknown;
+};
+
+export function getTimePressureMultiplier(game: TimePressureGameState) {
   const load = game.load ?? 0;
   const pressure = game.pressure ?? "LOW";
 
