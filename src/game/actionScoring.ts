@@ -1,113 +1,48 @@
-
-// --- Advisor-driven execution risk ---
-export function computeDisagreementRisk(game: any) {
-  const personas = game.personas || [];
-  if (!personas.length) return { risk: 0, consensus: 1 };
-
-  // assume each persona has `suggestion` (ActionName)
-  const counts: Record<string, number> = {};
-  for (const p of personas) {
-    const a = (p.suggestion || p.suggests || "").toString();
-    if (!a) continue;
-    counts[a] = (counts[a] || 0) + 1;
-  }
-
-  const total = Object.values(counts).reduce((a,b)=>a+b, 0) || 1;
-  const max = Math.max(...Object.values(counts), 0);
-  const consensus = max / total;           // 1 = full agreement
-  const disagreement = 1 - consensus;      // 0..1
-
-  // amplify in later phases
-  const phase = (game.turn ?? 1) > 6 ? 1.25 : (game.turn ?? 1) > 3 ? 1.1 : 1.0;
-
-  return {
-    risk: Math.min(1, disagreement * phase),
-    consensus
-  };
-}
-
-export function maybeOverrideAction(selected: ActionName, game: any) {
-  const { risk, consensus } = computeDisagreementRisk(game);
-
-  // do not override when consensus is strong
-  if (consensus >= 0.7) return { action: selected, overridden: false, reason: "" };
-
-  // cap override probability
-  const p = Math.min(0.55, risk);
-
-  if (Math.random() < p) {
-    const personas = game.personas || [];
-    const counts: Record<string, number> = {};
-    for (const p of personas) {
-      const a = (p.suggestion || p.suggests || "").toString();
-      if (!a) continue;
-      counts[a] = (counts[a] || 0) + 1;
-    }
-    // pick majority suggestion
-    const majority = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] as ActionName | undefined;
-    if (majority && majority !== selected) {
-      return { action: majority, overridden: true, reason: "High advisor disagreement caused an override" };
-    }
-  }
-
-  return { action: selected, overridden: false, reason: "" };
-}
-
-export function applyOutcomeVariance(next: any, action: ActionName, game: any) {
-  const { risk } = computeDisagreementRisk(game);
-  if (risk <= 0.2) return next;
-
-  // scale variance by risk
-  const jitter = (base: number) => Math.round(base * (0.5 * risk) * (Math.random() - 0.5) * 2);
-
-  const n = { ...next };
-
-  // small bounded noise on key axes
-  if (typeof n.load === "number") n.load = clampValue(n.load + jitter(6));
-  if (typeof n.drift === "number") n.drift = clampValue(n.drift + jitter(6));
-  if (typeof n.integrity === "number") n.integrity = clampValue(n.integrity + jitter(4));
-  if (typeof n.signalClarity === "number") n.signalClarity = clampValue(n.signalClarity + jitter(6));
-
-  return n;
-}
-
-
-export function getInvalidActions(game: any): ActionName[] {
-  const invalid: ActionName[] = [];
-
-  const load = game.load ?? 0;
-  const drift = game.drift ?? 0;
-  const integrity = game.integrity ?? 100;
-  const signal = game.signalClarity ?? 100;
-
-  // High load → OBSERVE becomes invalid (too passive)
-  if (load > 85) {
-    invalid.push("OBSERVE");
-  }
-
-  // High drift → REROUTE becomes dangerous
-  if (drift > 40) {
-    invalid.push("REROUTE");
-  }
-
-  // Low integrity → anything except STABILIZE is invalid
-  if (integrity < 60) {
-    invalid.push("REROUTE", "OBSERVE");
-  }
-
-  // Low signal → acting is invalid
-  if (signal < 55) {
-    invalid.push("STABILIZE", "REROUTE");
-  }
-
-  return [...new Set(invalid)];
-}
-
+import { getDecisionWindow } from "./decisionWindow";
 import { getDominantNeed } from "./dominantNeed";
 import { getSystemPhase } from "./phase";
-import { getDecisionWindow } from "./decisionWindow";
 
-type ActionName = "STABILIZE" | "REROUTE" | "OBSERVE";
+export type ActionName = "STABILIZE" | "REROUTE" | "OBSERVE";
+
+type AdvisorLike = {
+  suggestion?: string | null;
+  suggests?: string | null;
+  action?: string | null;
+  [key: string]: unknown;
+};
+
+type ActionScoringGameState = {
+  personas?: AdvisorLike[];
+  turn?: number;
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+  [key: string]: unknown;
+};
+
+type ActionOverrideResult = {
+  action: ActionName;
+  overridden: boolean;
+  reason: string;
+};
+
+type DecisiveScoreInput = {
+  action: ActionName;
+  baseScore: number;
+  support: number;
+  game: ActionScoringGameState;
+  advisors: AdvisorLike[];
+};
+
+function advisorSuggestion(advisor: AdvisorLike) {
+  return String(advisor.suggestion || advisor.suggests || advisor.action || "");
+}
+
+function isActionName(value: string): value is ActionName {
+  return value === "STABILIZE" || value === "REROUTE" || value === "OBSERVE";
+}
 
 function clampValue(n: number, min = 0, max = 100) {
   if (!Number.isFinite(n)) return min;
@@ -119,29 +54,156 @@ function clampScore(n: number) {
   return Math.max(0, Number(n.toFixed(2)));
 }
 
-function advisorAlignment(action: ActionName, advisors: any[]) {
-  return advisors.filter((a) => {
-    const suggestion = a.suggests || a.action || a.suggestion;
-    return suggestion === action;
-  }).length;
+// --- Advisor-driven execution risk ---
+export function computeDisagreementRisk(game: ActionScoringGameState) {
+  const personas = game.personas || [];
+  if (!personas.length) return { risk: 0, consensus: 1 };
+
+  const counts: Record<string, number> = {};
+
+  for (const persona of personas) {
+    const action = advisorSuggestion(persona);
+    if (!action) continue;
+    counts[action] = (counts[action] || 0) + 1;
+  }
+
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0) || 1;
+  const max = Math.max(...Object.values(counts), 0);
+  const consensus = max / total;
+  const disagreement = 1 - consensus;
+
+  const turn = game.turn ?? 1;
+  const phase = turn > 6 ? 1.25 : turn > 3 ? 1.1 : 1.0;
+
+  return {
+    risk: Math.min(1, disagreement * phase),
+    consensus,
+  };
 }
 
-function signalWeightedSupport(support: number, game: any) {
+export function maybeOverrideAction(
+  selected: ActionName,
+  game: ActionScoringGameState
+): ActionOverrideResult {
+  const { risk, consensus } = computeDisagreementRisk(game);
+
+  if (consensus >= 0.7) {
+    return { action: selected, overridden: false, reason: "" };
+  }
+
+  const probability = Math.min(0.55, risk);
+
+  if (Math.random() < probability) {
+    const personas = game.personas || [];
+    const counts: Record<string, number> = {};
+
+    for (const persona of personas) {
+      const action = advisorSuggestion(persona);
+      if (!action) continue;
+      counts[action] = (counts[action] || 0) + 1;
+    }
+
+    const majority = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+    if (majority && isActionName(majority) && majority !== selected) {
+      return {
+        action: majority,
+        overridden: true,
+        reason: "High advisor disagreement caused an override",
+      };
+    }
+  }
+
+  return { action: selected, overridden: false, reason: "" };
+}
+
+export function applyOutcomeVariance<T extends ActionScoringGameState>(
+  next: T,
+  _action: ActionName,
+  game: ActionScoringGameState
+): T {
+  const { risk } = computeDisagreementRisk(game);
+  if (risk <= 0.2) return next;
+
+  const jitter = (base: number) =>
+    Math.round(base * (0.5 * risk) * (Math.random() - 0.5) * 2);
+
+  const adjusted = { ...next };
+
+  if (typeof adjusted.load === "number") {
+    adjusted.load = clampValue(adjusted.load + jitter(6));
+  }
+
+  if (typeof adjusted.drift === "number") {
+    adjusted.drift = clampValue(adjusted.drift + jitter(6));
+  }
+
+  if (typeof adjusted.integrity === "number") {
+    adjusted.integrity = clampValue(adjusted.integrity + jitter(4));
+  }
+
+  if (typeof adjusted.signalClarity === "number") {
+    adjusted.signalClarity = clampValue(adjusted.signalClarity + jitter(6));
+  }
+
+  return adjusted;
+}
+
+export function getInvalidActions(game: ActionScoringGameState): ActionName[] {
+  const invalid: ActionName[] = [];
+
+  const load = game.load ?? 0;
+  const drift = game.drift ?? 0;
+  const integrity = game.integrity ?? 100;
+  const signal = game.signalClarity ?? 100;
+
+  if (load > 85) {
+    invalid.push("OBSERVE");
+  }
+
+  if (drift > 40) {
+    invalid.push("REROUTE");
+  }
+
+  if (integrity < 60) {
+    invalid.push("REROUTE", "OBSERVE");
+  }
+
+  if (signal < 55) {
+    invalid.push("STABILIZE", "REROUTE");
+  }
+
+  return [...new Set(invalid)];
+}
+
+function advisorAlignment(action: ActionName, advisors: AdvisorLike[]) {
+  return advisors.filter((advisor) => advisorSuggestion(advisor) === action).length;
+}
+
+function signalWeightedSupport(support: number, game: ActionScoringGameState) {
   const signal = Math.max(0, Math.min(100, game.signalClarity ?? 0));
   return support * (signal / 100);
 }
 
-function needMultiplier(action: ActionName, game: any) {
+function needMultiplier(action: ActionName, game: ActionScoringGameState) {
   const need = getDominantNeed(game);
 
-  if (need === "STABILIZE") return action === "STABILIZE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
-  if (need === "REROUTE") return action === "REROUTE" ? 1.35 : action === "STABILIZE" ? 0.9 : 0.85;
-  if (need === "OBSERVE") return action === "OBSERVE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
+  if (need === "STABILIZE") {
+    return action === "STABILIZE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
+  }
+
+  if (need === "REROUTE") {
+    return action === "REROUTE" ? 1.35 : action === "STABILIZE" ? 0.9 : 0.85;
+  }
+
+  if (need === "OBSERVE") {
+    return action === "OBSERVE" ? 1.45 : action === "REROUTE" ? 0.85 : 0.8;
+  }
 
   return action === "REROUTE" ? 1.05 : action === "OBSERVE" ? 1.12 : 1;
 }
 
-function hardStateAdjustment(action: ActionName, game: any) {
+function hardStateAdjustment(action: ActionName, game: ActionScoringGameState) {
   const load = game.load ?? 0;
   const drift = game.drift ?? 0;
   const integrity = game.integrity ?? 100;
@@ -151,7 +213,7 @@ function hardStateAdjustment(action: ActionName, game: any) {
 
   const invalid = getInvalidActions(game);
   if (invalid.includes(action)) {
-    return 0.05; // effectively unselectable
+    return 0.05;
   }
 
   if (drift > 50 && action === "REROUTE") adjustment -= 0.6;
@@ -166,14 +228,14 @@ function hardStateAdjustment(action: ActionName, game: any) {
   return adjustment;
 }
 
-function phaseMultiplier(game: any) {
+function phaseMultiplier(game: ActionScoringGameState) {
   const phase = getSystemPhase(game);
   if (phase === "late") return 1.25;
   if (phase === "mid") return 1.12;
   return 1;
 }
 
-function decisionWindowMultiplier(game: any) {
+function decisionWindowMultiplier(game: ActionScoringGameState) {
   const window = getDecisionWindow(game);
   if (window.state === "COLLAPSED") return 1.35;
   if (window.state === "NARROWING") return 1.2;
@@ -181,8 +243,7 @@ function decisionWindowMultiplier(game: any) {
   return 1;
 }
 
-
-function getPhasePressureMultiplier(game: any, action: ActionName) {
+function getPhasePressureMultiplier(game: ActionScoringGameState, action: ActionName) {
   const phase = getSystemPhase(game);
   const signal = game.signalClarity ?? 100;
   const integrity = game.integrity ?? 100;
@@ -212,13 +273,7 @@ export function scoreActionDecisively({
   support,
   game,
   advisors,
-}: {
-  action: ActionName;
-  baseScore: number;
-  support: number;
-  game: any;
-  advisors: any[];
-}) {
+}: DecisiveScoreInput) {
   const alignment = advisorAlignment(action, advisors);
   const fragmentedPenalty = alignment === 1 && advisors.length >= 3 ? -0.2 : 0;
   const alignmentBonus = alignment * 0.25;
@@ -249,17 +304,28 @@ export function spreadActionScores<T extends Record<ActionName, number>>(scores:
   if (spread >= 0.25) return scores;
 
   return Object.fromEntries(
-    Object.entries(scores).map(([k, v]) => [k, clampScore(Math.pow(v / max, 1.65) * max)])
+    Object.entries(scores).map(([key, value]) => [
+      key,
+      clampScore(Math.pow(value / max, 1.65) * max),
+    ])
   ) as T;
 }
 
-export function getActionReason(action: ActionName, game: any) {
+export function getActionReason(action: ActionName, game: ActionScoringGameState) {
   const need = getDominantNeed(game);
 
   if (need === action) {
-    if (action === "STABILIZE") return "Structure risk makes stabilization the clearest move";
-    if (action === "REROUTE") return "Load pressure makes reroute the clearest move";
-    if (action === "OBSERVE") return "Low signal makes observation the clearest move";
+    if (action === "STABILIZE") {
+      return "Structure risk makes stabilization the clearest move";
+    }
+
+    if (action === "REROUTE") {
+      return "Load pressure makes reroute the clearest move";
+    }
+
+    if (action === "OBSERVE") {
+      return "Low signal makes observation the clearest move";
+    }
   }
 
   const drift = game.drift ?? 0;
