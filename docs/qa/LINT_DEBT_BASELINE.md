@@ -10,8 +10,8 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 0 |
-| Errors | 0 |
+| Total problems | 174 |
+| Errors | 174 |
 | Warnings | 0 |
 | Lint exit code | 1 |
 
@@ -19,13 +19,37 @@ It is not the release gate. The current release gate remains:
 
 | Rule | Count |
 | --- | ---: |
-
+| @typescript-eslint/no-explicit-any | 174 |
 
 ## Top Affected Files
 
 | File | Issue Count |
 | --- | ---: |
-
+| src/game/actionScoring.ts | 15 |
+| src/ui/DecisionTimeline.tsx | 12 |
+| src/ui/ActionBar.tsx | 11 |
+| src/game/personaEngine.ts | 8 |
+| src/game/runReplay.ts | 8 |
+| src/game/counterfactual.ts | 6 |
+| src/game/outcome.ts | 5 |
+| src/game/personaConfidence.ts | 5 |
+| src/game/runLegibility.ts | 5 |
+| src/game/advisorCredibility.ts | 4 |
+| src/game/irreversibility.ts | 4 |
+| src/game/runArc.ts | 4 |
+| src/ui/GameScreen.tsx | 4 |
+| src/game/commitment.ts | 3 |
+| src/game/needNeglect.ts | 3 |
+| src/game/playerNarrative.ts | 3 |
+| src/game/telemetry.ts | 3 |
+| src/game/timelineCompression.ts | 3 |
+| src/game/trajectoryRisk.ts | 3 |
+| src/ui/Counterfactual.tsx | 3 |
+| src/ui/RunReplay.tsx | 3 |
+| src/ui/RunReport.tsx | 3 |
+| src/ui/MessageFeed.tsx | 2 |
+| src/ui/PlayerProfilePanel.tsx | 2 |
+| src/ui/RunArc.tsx | 2 |
 
 ## Usage
 
