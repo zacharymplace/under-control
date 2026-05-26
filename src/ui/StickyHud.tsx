@@ -2,12 +2,27 @@
 
 import { useEffect, useState } from "react";
 
-function safeValue(value: any, fallback = 0) {
+function safeValue(value: unknown, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
 }
 
-export function StickyHud({ game }: { game: any }) {
+type StickyHudGameState = {
+  state?: string;
+  pressure?: string;
+  load?: number;
+  integrity?: number;
+  signal?: number;
+  signalClarity?: number;
+  drift?: number;
+  turn?: number;
+};
+
+export function StickyHud({
+  game,
+}: {
+  game: StickyHudGameState | null | undefined;
+}) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

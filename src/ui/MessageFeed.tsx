@@ -1,7 +1,19 @@
-export function MessageFeed({ personas }: any) {
+type MessageFeedPersona = {
+  name?: string;
+  role?: string;
+  temperament?: string;
+  trust?: number;
+  mood?: string;
+  strategy?: string;
+  text?: string;
+  action?: string;
+  ignoredCount?: number;
+};
+
+export function MessageFeed({ personas }: { personas: MessageFeedPersona[] }) {
   return (
     <section className="mb-3 space-y-2">
-      {personas.map((p: any, i: number) => {
+      {personas.map((p, i) => {
         const trust = p.trust ?? 0;
         const trustClass =
           trust >= 3
