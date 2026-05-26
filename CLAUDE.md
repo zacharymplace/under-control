@@ -1,97 +1,82 @@
-@AGENTS.md
+# Under Control Claude Instructions
 
-# Claude Operating Rules
+## Project Role
 
-## Project Purpose
+Under Control is a playable systems-arena prototype. Treat this repo as a product/game prototype, not a generic Next.js sandbox.
 
-Under Control is a systems-arena game prototype about pressure, advisor conflict, trust, collapse, recovery, and decision quality under constraint.
+## Current State
 
-Treat this repo as a playable game system with sensitive tuning logic, not a generic Next.js sandbox.
+- Branch: playable-v0.1-systems-arena
+- Zero lint debt is locked.
+- `npm run release:ready` verifies:
+  - build
+  - lint debt
+  - lint baseline
+- Zero-lint checkpoint tag:
+  - lint-zero-20260525
 
-## Default Work Mode
+## Core Rule
 
-Claude should act as a repo-native implementation agent.
+Do not change gameplay semantics unless explicitly asked.
 
-Expected loop:
-
-1. Read CLAUDE.md, AGENTS.md, README.md, package.json, and relevant docs before editing.
-2. Inspect relevant files before editing.
-3. Create the smallest useful patch.
-4. Avoid unrelated cleanup.
-5. Run validation.
-6. Summarize changed files, validation results, risks, and next steps.
-
-## Do Not Change Without Explicit Approval
-
-- Core game loop
-- Game state shape
-- Reducer behavior
-- Advisor/persona logic
-- Scoring or tuning assumptions
-- Collapse, pressure, trust, recovery, or lock-in mechanics
-- Scenario semantics
-- Telemetry/playtest reporting
-- Public route structure
-- Visual identity or UX hierarchy
-
-## Protected Areas
-
-Be especially careful with:
-
-- src/game/types.ts
-- src/game/state.ts
-- src/game/v01/reducer.ts
-- src/game/v01/initialState.ts
-- src/game/v01/scenarios.ts
-- src/game/scenarios.ts
-- src/game/tuning.ts
-- src/game/actionScoring.ts
-- src/game/tickEngine.ts
-- src/game/runAnalytics.ts
-- src/game/telemetry.ts
-- src/ui/GameScreen.tsx
-- src/ui/UnderControlV01.tsx
-- src/ui/UnderControlV01DecisionPanel.tsx
-- src/app/playable-v01/page.tsx
-- src/app/playtest-runs/page.tsx
-- docs
-- package.json
-- next.config.ts
-
-Changes to these areas should be small, justified, and validated.
+For cleanup, typing, docs, and refactors:
+- preserve scoring behavior
+- preserve route behavior
+- preserve scenario behavior
+- preserve UI copy unless asked
+- preserve release gate semantics unless asked
 
 ## Validation Commands
 
-Current release validation:
+Before proposing completion, run:
 
     npm run release:ready
 
-Current repo check:
+For PR cleanup branches, also run:
 
-    npm run check
+    npm run pr:cleanup-check
 
-Agent preflight:
+## Branching
 
-    npm run agent:preflight
+Use narrow branches.
 
-Important: npm run lint is currently a strict audit with many pre-existing violations. Do not treat lint as the release gate until a dedicated lint cleanup project is completed.
+Good branch examples:
+- gameplay/playable-v01-feel-pass
+- ui/decision-feedback-clarity
+- docs/update-agent-instructions
+- refactor/extract-actionbar-types
 
-## Commit Rules
+Bad branch examples:
+- big-cleanup
+- refactor-everything
+- improve-game
 
-- Use a branch for every change.
-- Keep commits small.
-- Do not push without explicit instruction.
-- Do not rewrite Git history unless explicitly instructed.
-- Do not mix unrelated fixes into the same patch.
-- Leave the working tree clean after a completed task when possible.
+## Commit Style
 
-## Product Judgment
+Prefer small commits with direct names:
 
-When uncertain, prefer:
+- Type ActionBar state
+- Improve early-turn feedback copy
+- Add playable v0.1 feel notes
+- Extract advisor display types
 
-- playable clarity over hidden complexity
-- state/reducer ownership over UI-owned rules
-- pressure readability over decorative systems
-- explicit playtest evidence over tuning guesses
-- small validation improvements over broad rewrites
-- boring maintainable code over impressive complexity
+## Do Not
+
+- Do not reintroduce `any`.
+- Do not weaken `release:ready`.
+- Do not mix gameplay changes with lint cleanup.
+- Do not silently change scoring constants.
+- Do not rewrite large files unless asked.
+- Do not convert the project into a generic framework demo.
+
+## Best Next Work
+
+The next useful branch should be gameplay-facing:
+
+    gameplay/playable-v01-feel-pass
+
+Primary target:
+- improve first 3–5 turns
+- make action consequences clearer
+- improve feedback timing
+- preserve current systems architecture
