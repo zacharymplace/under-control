@@ -19,7 +19,7 @@ It is not the release gate. The current release gate remains:
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 174 |
+| @typescript-eslint/no-explicit-any | 175 |
 
 ## Top Affected Files
 
