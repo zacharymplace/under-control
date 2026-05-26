@@ -1,6 +1,16 @@
 import { getDominantNeed } from "./dominantNeed";
 
-export function getNeedNeglectCount(game: any) {
+type NeedNeglectGameState = {
+  actionHistory?: string[];
+  state?: string;
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+};
+
+export function getNeedNeglectCount(game: NeedNeglectGameState) {
   const need = getDominantNeed(game);
   const history = game.actionHistory || [];
 
@@ -16,7 +26,7 @@ export function getNeedNeglectCount(game: any) {
   return count;
 }
 
-export function getNeedNeglectPenalty(game: any) {
+export function getNeedNeglectPenalty(game: NeedNeglectGameState) {
   const count = getNeedNeglectCount(game);
 
   if (count >= 4) return 0.45;
@@ -26,7 +36,7 @@ export function getNeedNeglectPenalty(game: any) {
   return 1;
 }
 
-export function getNeedNeglectInsight(game: any) {
+export function getNeedNeglectInsight(game: NeedNeglectGameState) {
   const need = getDominantNeed(game);
   const count = getNeedNeglectCount(game);
 
