@@ -4,38 +4,58 @@ export type PersonaConflict = {
   lines: string[];
 };
 
-export function buildPersonaConflict(personas: any[], game: any): PersonaConflict | null {
-  const suggestions = personas
-    .map((p) => ({
-      name: (p.name || "").toUpperCase(),
-      role: p.role || "Advisor",
-      suggests: p.suggests || p.action || p.suggestion,
-      mood: p.mood,
-      behaviorNote: p.behaviorNote,
-    }))
-    .filter((p) => p.suggests);
+type PersonaConflictAdvisor = {
+  name?: string;
+  role?: string;
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  mood?: string | null;
+  behaviorNote?: string | null;
+};
 
-  const unique = new Set(suggestions.map((p) => p.suggests));
+type PersonaConflictGameState = {
+  pressure?: string;
+  load?: number;
+  drift?: number;
+};
+
+export function buildPersonaConflict(
+  personas: PersonaConflictAdvisor[],
+  game: PersonaConflictGameState
+): PersonaConflict | null {
+  const suggestions = personas
+    .map((persona) => ({
+      name: (persona.name || "").toUpperCase(),
+      role: persona.role || "Advisor",
+      suggests: persona.suggests || persona.action || persona.suggestion,
+      mood: persona.mood,
+      behaviorNote: persona.behaviorNote,
+    }))
+    .filter((persona) => persona.suggests);
+
+  const unique = new Set(suggestions.map((persona) => persona.suggests));
 
   if (unique.size <= 1) return null;
 
-  const critical = game.pressure === "CRITICAL" || game.load >= 90 || game.drift >= 50;
+  const critical =
+    game.pressure === "CRITICAL" || (game.load ?? 0) >= 90 || (game.drift ?? 0) >= 50;
   const level = unique.size >= 3 || critical ? "CONFLICT" : "TENSION";
 
-  const lines = suggestions.map((p) => {
-    if (p.name === "ELENA") {
-      return `ELENA challenges the read: “Signal supports ${p.suggests}, but this may be getting misread under pressure.”`;
+  const lines = suggestions.map((persona) => {
+    if (persona.name === "ELENA") {
+      return `ELENA challenges the read: “Signal supports ${persona.suggests}, but this may be getting misread under pressure.”`;
     }
 
-    if (p.name === "MARA") {
-      return `MARA pushes structure: “The system cannot absorb more instability. ${p.suggests} is the safer control path.”`;
+    if (persona.name === "MARA") {
+      return `MARA pushes structure: “The system cannot absorb more instability. ${persona.suggests} is the safer control path.”`;
     }
 
-    if (p.name === "ISHAAN") {
-      return `ISHAAN flags downside: “The risk profile is moving faster than the team consensus. ${p.suggests} should be prioritized.”`;
+    if (persona.name === "ISHAAN") {
+      return `ISHAAN flags downside: “The risk profile is moving faster than the team consensus. ${persona.suggests} should be prioritized.”`;
     }
 
-    return `${p.name} argues for ${p.suggests}.`;
+    return `${persona.name} argues for ${persona.suggests}.`;
   });
 
   return {

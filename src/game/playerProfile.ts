@@ -7,7 +7,25 @@ export type PlayerProfile = {
   coachingNote: string;
 };
 
-export function buildPlayerProfile(runs: any[]): PlayerProfile | null {
+type PlayerProfileActionEntry = {
+  action?: string;
+};
+
+type PlayerProfileRun = {
+  turn?: number;
+  summary?: {
+    turns?: number;
+    cause?: string;
+  };
+  actionLog?: PlayerProfileActionEntry[];
+  actions?: string[];
+  failureDriver?: {
+    title?: string;
+  };
+  cause?: string;
+};
+
+export function buildPlayerProfile(runs: PlayerProfileRun[]): PlayerProfile | null {
   if (!runs || runs.length < 2) return null;
 
   const completed = runs.filter(Boolean);
@@ -21,11 +39,13 @@ export function buildPlayerProfile(runs: any[]): PlayerProfile | null {
     totalTurns += Number(run.turn ?? run.summary?.turns ?? 0);
 
     const actions =
-      run.actionLog?.map((x: any) => x.action) ||
+      run.actionLog
+        ?.map((entry) => entry.action)
+        .filter((action): action is string => Boolean(action)) ||
       run.actions ||
       [];
 
-    actions.forEach((action: string) => {
+    actions.forEach((action) => {
       actionCounts[action] = (actionCounts[action] || 0) + 1;
     });
 
