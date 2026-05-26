@@ -1,22 +1,38 @@
 import { getTurnRisk, getTurnStory } from "./timelineStory";
 
+type TimelineSnapshot = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  [key: string]: unknown;
+};
+
+export type CompressedTimelineEntry = {
+  turn?: number;
+  action?: string;
+  before: TimelineSnapshot;
+  after: TimelineSnapshot;
+  [key: string]: unknown;
+};
+
 export type TimelineItem =
   | {
       type: "single";
-      entry: any;
+      entry: CompressedTimelineEntry;
       startTurn: number;
       endTurn: number;
     }
   | {
       type: "group";
-      entries: any[];
+      entries: CompressedTimelineEntry[];
       action: string;
       label: string;
       startTurn: number;
       endTurn: number;
     };
 
-export function compressTimeline(log: any[]): TimelineItem[] {
+export function compressTimeline(log: CompressedTimelineEntry[]): TimelineItem[] {
   if (!log || log.length === 0) return [];
 
   const items: TimelineItem[] = [];
@@ -38,9 +54,9 @@ export function compressTimeline(log: any[]): TimelineItem[] {
       const sameStory = nextStory.label === story.label;
       const notCritical =
         risk === "CONTROLLED" &&
-        next.after.load < 95 &&
-        next.after.drift < 55 &&
-        next.after.integrity > 50;
+        (next.after.load ?? 0) < 95 &&
+        (next.after.drift ?? 0) < 55 &&
+        (next.after.integrity ?? 100) > 50;
 
       if (sameAction && sameStory && notCritical) {
         group.push(next);
@@ -54,17 +70,17 @@ export function compressTimeline(log: any[]): TimelineItem[] {
       items.push({
         type: "group",
         entries: group,
-        action: entry.action,
+        action: entry.action ?? "UNKNOWN",
         label: story.label,
-        startTurn: group[0].turn,
-        endTurn: group[group.length - 1].turn,
+        startTurn: group[0].turn ?? 0,
+        endTurn: group[group.length - 1].turn ?? 0,
       });
     } else {
       items.push({
         type: "single",
         entry,
-        startTurn: entry.turn,
-        endTurn: entry.turn,
+        startTurn: entry.turn ?? 0,
+        endTurn: entry.turn ?? 0,
       });
     }
 
