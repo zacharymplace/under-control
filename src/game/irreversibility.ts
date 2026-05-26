@@ -1,6 +1,16 @@
 import { getDominantNeed } from "./dominantNeed";
 
-export function getPointOfNoReturn(game: any) {
+type IrreversibilityGameState = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  turn?: number;
+  signal?: number;
+  signalClarity?: number;
+  actionHistory?: string[];
+};
+
+export function getPointOfNoReturn(game: IrreversibilityGameState) {
   const load = game.load ?? 0;
   const drift = game.drift ?? 0;
   const integrity = game.integrity ?? 100;
@@ -25,11 +35,11 @@ export function getPointOfNoReturn(game: any) {
   return null;
 }
 
-export function isPastPointOfNoReturn(game: any) {
+export function isPastPointOfNoReturn(game: IrreversibilityGameState) {
   return Boolean(getPointOfNoReturn(game));
 }
 
-export function getLateCorrectionPenalty(action: string, game: any) {
+export function getLateCorrectionPenalty(action: string, game: IrreversibilityGameState) {
   const need = getDominantNeed(game);
   const turn = game.turn ?? 1;
 
@@ -41,14 +51,14 @@ export function getLateCorrectionPenalty(action: string, game: any) {
   return 1;
 }
 
-export function getMissedCommitmentWindow(game: any) {
+export function getMissedCommitmentWindow(game: IrreversibilityGameState) {
   const need = getDominantNeed(game);
   const history = game.actionHistory || [];
 
   if (!need || history.length < 5) return null;
 
   const earlyWindow = history.slice(0, 5);
-  const correctEarly = earlyWindow.filter((a: string) => a === need).length;
+  const correctEarly = earlyWindow.filter((action) => action === need).length;
 
   if (correctEarly <= 1) {
     return `Early commitment window was missed: ${need}.`;

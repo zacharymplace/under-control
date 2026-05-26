@@ -1,4 +1,22 @@
-export function RunReport({ game }: any) {
+type RunReportGameState = {
+  state?: string;
+  turn?: number;
+  load?: number;
+  drift?: number;
+  actionHistory?: string[];
+  summary?: {
+    peakLoad?: number;
+    peakDrift?: number;
+    avgPressure?: number;
+  };
+};
+
+type SmallMetricProps = {
+  label: string;
+  value?: string | number | null;
+};
+
+export function RunReport({ game }: { game: RunReportGameState }) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return null;
 
   const actions = game.actionHistory || [];
@@ -26,7 +44,7 @@ export function RunReport({ game }: any) {
   );
 }
 
-function Metric({ label, value }: any) {
+function Metric({ label, value }: SmallMetricProps) {
   return (
     <div>
       <div className="text-[#8A93A3]">{label}</div>
@@ -35,7 +53,7 @@ function Metric({ label, value }: any) {
   );
 }
 
-function Action({ label, value }: any) {
+function Action({ label, value }: SmallMetricProps) {
   return (
     <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-2 text-center">
       <div className="text-[#8A93A3]">{label}</div>
