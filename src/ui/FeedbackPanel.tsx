@@ -1,4 +1,22 @@
-export function FeedbackPanel({ feedback, summary }: any) {
+type FeedbackValue = {
+  title?: string;
+  effects?: string[];
+  note?: string;
+};
+
+type FeedbackSummary = {
+  avgPressure?: number;
+  peakLoad?: number;
+  peakDrift?: number;
+};
+
+export function FeedbackPanel({
+  feedback,
+  summary,
+}: {
+  feedback: FeedbackValue | null | undefined;
+  summary?: FeedbackSummary | null;
+}) {
   if (!feedback) return null;
 
   return (
@@ -6,7 +24,7 @@ export function FeedbackPanel({ feedback, summary }: any) {
       <h2 className="mb-2 font-bold">{feedback.title}</h2>
 
       <div className="space-y-1 text-sm">
-        {feedback.effects.map((effect: string) => (
+        {(feedback.effects || []).map((effect) => (
           <div key={effect}>{effect}</div>
         ))}
       </div>

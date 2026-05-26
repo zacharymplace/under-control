@@ -1,5 +1,13 @@
 import { AdvisorMemoryMap, normalizeAdvisorMemory } from "./advisorMemory";
 
+type AdvisorMemoryCandidate = {
+  name?: string;
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  [key: string]: unknown;
+};
+
 export function classifyJudgment(judgment: string | null) {
   if (!judgment) return "neutral";
 
@@ -23,7 +31,7 @@ export function updateAdvisorMemory({
   judgment,
 }: {
   memory?: AdvisorMemoryMap;
-  advisors: any[];
+  advisors: AdvisorMemoryCandidate[];
   action: string;
   judgment: string | null;
 }): AdvisorMemoryMap {

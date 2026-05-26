@@ -1,4 +1,16 @@
-export function ActionHint({ load, drift, signal, pressure }: any) {
+type ActionHintProps = {
+  load?: number;
+  drift?: number;
+  signal?: number;
+  pressure?: string;
+};
+
+export function ActionHint({
+  load = 0,
+  drift = 0,
+  signal = 0,
+  pressure,
+}: ActionHintProps) {
   let hint = "";
 
   if (pressure === "CRITICAL" || pressure === "HIGH") {

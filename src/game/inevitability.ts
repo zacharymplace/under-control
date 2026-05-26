@@ -1,4 +1,15 @@
-export function findInevitabilityPoint(log: any[]) {
+type InevitabilitySnapshot = {
+  drift?: number;
+  load?: number;
+  integrity?: number;
+};
+
+type InevitabilityLogEntry = {
+  turn?: number;
+  after: InevitabilitySnapshot;
+};
+
+export function findInevitabilityPoint(log: InevitabilityLogEntry[]) {
   if (!log || log.length < 3) return null;
 
   for (let i = 0; i < log.length; i++) {
@@ -6,14 +17,18 @@ export function findInevitabilityPoint(log: any[]) {
     const next = log[i + 1];
     const after = entry.after;
 
-    const driftSevere = after.drift >= 60;
-    const loadSevere = after.load >= 95;
-    const integrityWeak = after.integrity <= 55;
+    const drift = after.drift ?? 0;
+    const load = after.load ?? 0;
+    const integrity = after.integrity ?? 100;
+
+    const driftSevere = drift >= 60;
+    const loadSevere = load >= 95;
+    const integrityWeak = integrity <= 55;
     const nextWorse =
       next &&
-      (next.after.drift > after.drift ||
-        next.after.load > after.load ||
-        next.after.integrity < after.integrity);
+      ((next.after.drift ?? 0) > drift ||
+        (next.after.load ?? 0) > load ||
+        (next.after.integrity ?? 100) < integrity);
 
     if ((driftSevere && loadSevere) || (driftSevere && integrityWeak && nextWorse)) {
       return {

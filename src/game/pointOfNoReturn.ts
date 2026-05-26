@@ -7,7 +7,17 @@ export type PointOfNoReturn = {
   reason: string;
 };
 
-export function maybeMarkPointOfNoReturn(game: any): PointOfNoReturn | null {
+type PointOfNoReturnGameState = {
+  pointOfNoReturn?: PointOfNoReturn | null;
+  turn?: number;
+  load?: number;
+  drift?: number;
+  pressure?: string;
+};
+
+export function maybeMarkPointOfNoReturn(
+  game: PointOfNoReturnGameState
+): PointOfNoReturn | null {
   if (game.pointOfNoReturn) return game.pointOfNoReturn;
 
   const window = getDecisionWindow(game);

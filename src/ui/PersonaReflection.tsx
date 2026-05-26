@@ -1,4 +1,14 @@
-export default function PersonaReflection({ reflection }: any) {
+type PersonaReflectionValue = {
+  elena?: string;
+  mara?: string;
+  ishaan?: string;
+};
+
+export default function PersonaReflection({
+  reflection,
+}: {
+  reflection: PersonaReflectionValue | null | undefined;
+}) {
   if (!reflection) return null;
 
   return (

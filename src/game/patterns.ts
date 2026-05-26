@@ -12,7 +12,13 @@ export type Pattern = {
   turns: number[];
 };
 
-export function buildPatterns(log: any[]): Pattern[] {
+type PatternLogEntry = {
+  action?: string;
+  drift?: number;
+  integrity?: number;
+};
+
+export function buildPatterns(log: PatternLogEntry[]): Pattern[] {
   if (!log || log.length < 2) return [];
 
   const patterns: Pattern[] = [];
@@ -24,8 +30,8 @@ export function buildPatterns(log: any[]): Pattern[] {
     const prev = log[i - 1];
     const curr = log[i];
 
-    const driftUp = curr.drift > prev.drift;
-    const integrityUp = curr.integrity > prev.integrity;
+    const driftUp = (curr.drift ?? 0) > (prev.drift ?? 0);
+    const integrityUp = (curr.integrity ?? 0) > (prev.integrity ?? 0);
     const action = curr.action;
 
     if (action === "STABILIZE" && integrityUp && driftUp) {
