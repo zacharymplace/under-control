@@ -22,13 +22,17 @@ Any future lint debt should be handled in one of three ways:
 
 Do not mix lint cleanup with gameplay, scoring, route, scenario, or release-gate changes unless the lint issue is directly caused by that same change.
 
-## Current Release Gate
+## Current Release Readiness
 
-The current release gate remains:
+The build gate remains:
 
     npm run check
 
-The lint baseline guard remains available through:
+Release readiness now verifies both the build gate and zero-lint guard:
+
+    npm run release:ready
+
+The lint baseline guard remains available directly through:
 
     npm run lint:debt
     npm run lint:debt:baseline
