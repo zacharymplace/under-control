@@ -8,6 +8,9 @@ type PersonaBehaviorAdvisorMemory = {
 
 type PersonaBehaviorGameState = {
   advisorMemory?: Record<string, PersonaBehaviorAdvisorMemory | undefined>;
+  playerTendency?: {
+    dominantStyle?: string;
+  } | null;
   pressure?: string;
   load?: number;
   drift?: number;

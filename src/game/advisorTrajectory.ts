@@ -1,6 +1,19 @@
 import { getTrajectoryInsight } from "./trajectoryRisk";
 
-export function getAdvisorTrajectoryNote(name: string, game: any) {
+type AdvisorTrajectoryGameState = {
+  actionHistory?: string[];
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+  [key: string]: unknown;
+};
+
+export function getAdvisorTrajectoryNote(
+  name: string,
+  game: AdvisorTrajectoryGameState
+) {
   const insight = getTrajectoryInsight(game);
   if (!insight) return null;
 

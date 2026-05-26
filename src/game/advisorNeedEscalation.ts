@@ -1,7 +1,20 @@
 import { getDominantNeed } from "./dominantNeed";
 import { getNeedNeglectCount } from "./needNeglect";
 
-export function getAdvisorNeedEscalation(name: string, game: any) {
+type AdvisorNeedEscalationGameState = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+  actionHistory?: string[];
+  [key: string]: unknown;
+};
+
+export function getAdvisorNeedEscalation(
+  name: string,
+  game: AdvisorNeedEscalationGameState
+) {
   const need = getDominantNeed(game);
   const count = getNeedNeglectCount(game);
 

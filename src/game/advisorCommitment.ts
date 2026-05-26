@@ -1,7 +1,21 @@
 import { getDominantNeed } from "./dominantNeed";
 import { getCommitmentScore } from "./commitment";
 
-export function getAdvisorCommitmentNote(name: string, game: any) {
+type AdvisorCommitmentGameState = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+  commitment?: string;
+  actionHistory?: string[];
+  [key: string]: unknown;
+};
+
+export function getAdvisorCommitmentNote(
+  name: string,
+  game: AdvisorCommitmentGameState
+) {
   const need = getDominantNeed(game);
   const score = getCommitmentScore(game);
 

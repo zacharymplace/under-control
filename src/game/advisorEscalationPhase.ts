@@ -1,7 +1,22 @@
 import { getPointOfNoReturn } from "./irreversibility";
 import { getNeedNeglectCount } from "./needNeglect";
 
-export function getAdvisorEscalationPhase(name: string, game: any) {
+type AdvisorEscalationPhaseGameState = {
+  pointOfNoReturn?: unknown;
+  actionHistory?: string[];
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+  turn?: number;
+  [key: string]: unknown;
+};
+
+export function getAdvisorEscalationPhase(
+  name: string,
+  game: AdvisorEscalationPhaseGameState
+) {
   const key = name.toUpperCase();
   const pointOfNoReturn = getPointOfNoReturn(game);
   const neglect = getNeedNeglectCount(game);

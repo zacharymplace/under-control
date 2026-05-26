@@ -1,4 +1,13 @@
-export function getAdvisorAnticipation(personaName: string, game: any) {
+type AdvisorAnticipationGameState = {
+  playerTendency?: {
+    dominantStyle?: string;
+  } | null;
+};
+
+export function getAdvisorAnticipation(
+  personaName: string,
+  game: AdvisorAnticipationGameState
+) {
   const name = personaName.toUpperCase();
   const tendency = game.playerTendency;
 
