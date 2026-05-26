@@ -1,5 +1,11 @@
 export type Trust = Record<string, number>;
 
+type TrustPersona = {
+  name: string;
+  action?: string;
+  [key: string]: unknown;
+};
+
 export const initialTrust: Trust = {
   ELENA: 0,
   MARA: 0,
@@ -12,9 +18,9 @@ function clamp(value: number) {
 
 export function updateTrust(
   trust: Trust,
-  personas: any[],
+  personas: TrustPersona[],
   chosenAction: string,
-  evaluatePersona: (persona: any) => "GOOD" | "BAD" | "NEUTRAL"
+  evaluatePersona: (persona: TrustPersona) => "GOOD" | "BAD" | "NEUTRAL"
 ) {
   const next = { ...trust };
 
