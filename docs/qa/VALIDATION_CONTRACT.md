@@ -101,3 +101,6 @@ Each pass should have its own branch, commit, and validation.
 - Release gate: reliable.
 - Lint gate: not yet reliable as a release blocker.
 - Gameplay semantics: should not be changed as part of lint cleanup.
+
+
+The zero-lint baseline should remain clean. If lint debt returns, isolate and document it intentionally.

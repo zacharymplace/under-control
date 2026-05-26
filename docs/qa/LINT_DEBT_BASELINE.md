@@ -2,9 +2,13 @@
 
 This baseline captures the current lint debt surface for visibility and staged cleanup planning.
 
-It is not the release gate. The current release gate remains:
+It is not the release gate. The build gate remains:
 
     npm run check
+
+Release readiness verifies the build gate and this zero-lint baseline:
+
+    npm run release:ready
 
 ## Current Snapshot
 
@@ -37,6 +41,10 @@ Use it as a regression guard:
 4. Do not reintroduce broad lint cleanup into gameplay, scoring, route, scenario, or release-gate changes.
 5. Keep future lint-related changes small, reviewable, and separate from feature work.
 
-The current release gate remains:
+The build gate remains:
 
     npm run check
+
+Release readiness verifies the build gate and this zero-lint baseline:
+
+    npm run release:ready
