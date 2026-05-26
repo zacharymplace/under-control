@@ -1,6 +1,16 @@
 import { getDominantNeed } from "./dominantNeed";
 
-export function getCommitmentScore(game: any) {
+type CommitmentGameState = {
+  actionHistory?: string[];
+  state?: string;
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+};
+
+export function getCommitmentScore(game: CommitmentGameState) {
   const history = game.actionHistory || [];
   const need = getDominantNeed(game);
 
@@ -20,7 +30,7 @@ export function getCommitmentScore(game: any) {
   return 0.7;
 }
 
-export function getCommitmentLabel(game: any) {
+export function getCommitmentLabel(game: CommitmentGameState) {
   const score = getCommitmentScore(game);
 
   if (score >= 1.1) return "Strong commitment";
@@ -30,7 +40,7 @@ export function getCommitmentLabel(game: any) {
   return "Broken commitment";
 }
 
-export function getCommitmentInsight(game: any) {
+export function getCommitmentInsight(game: CommitmentGameState) {
   const history = game.actionHistory || [];
   const need = getDominantNeed(game);
   const score = getCommitmentScore(game);
