@@ -10,22 +10,20 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 11 |
-| Errors | 11 |
+| Total problems | 0 |
+| Errors | 0 |
 | Warnings | 0 |
-| Lint exit code | 1 |
+| Lint exit code | 0 |
 
 ## Rule Counts
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 11 |
 
 ## Top Affected Files
 
 | File | Issue Count |
 | --- | ---: |
-| src/ui/ActionBar.tsx | 11 |
 
 ## Usage
 
