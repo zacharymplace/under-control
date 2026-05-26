@@ -1,19 +1,6 @@
 "use client";
 
-import { simulateAlternatePath } from "@/game/counterfactual";
-
-type CounterfactualLogEntry = {
-  after?: {
-    load?: number;
-    drift?: number;
-  };
-};
-
-type CounterfactualGameState = {
-  state?: string;
-  actionLog?: CounterfactualLogEntry[];
-  [key: string]: unknown;
-};
+import { simulateAlternatePath, type CounterfactualGameState } from "@/game/counterfactual";
 
 type DeltaProps = {
   label: string;

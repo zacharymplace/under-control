@@ -1,8 +1,33 @@
 import { getIgnoredPenalty, getTrustModifier } from "./personaPenalty";
 import { getAdvisorWeight } from "./advisorWeighting";
+import type { AdvisorMemoryMap } from "./advisorMemory";
 import { getPressureDistortion } from "./pressureDistortion";
 
-export function getPersonaConfidence(persona: any, game: any) {
+type PersonaConfidenceAdvisor = {
+  name?: string;
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  [key: string]: unknown;
+};
+
+type PersonaConfidenceGameState = {
+  signalClarity?: number;
+  signal?: number;
+  integrity?: number;
+  drift?: number;
+  load?: number;
+  pressure?: string;
+  trust?: Record<string, number | undefined>;
+  ignoredCounts?: Record<string, number | undefined>;
+  advisorMemory?: AdvisorMemoryMap;
+  personas?: PersonaConfidenceAdvisor[];
+};
+
+export function getPersonaConfidence(
+  persona: PersonaConfidenceAdvisor,
+  game: PersonaConfidenceGameState
+) {
   const name = (persona.name || "").toUpperCase();
   const signal = game.signalClarity ?? game.signal ?? 0;
   const integrity = game.integrity ?? 0;
@@ -34,7 +59,7 @@ export function getPersonaConfidence(persona: any, game: any) {
   );
 }
 
-export function buildWeightedSupport(game: any) {
+export function buildWeightedSupport(game: PersonaConfidenceGameState) {
   const support: Record<string, number> = {
     STABILIZE: 0,
     REROUTE: 0,
@@ -43,7 +68,7 @@ export function buildWeightedSupport(game: any) {
 
   const advisors = game.personas || [];
 
-  advisors.forEach((persona: any) => {
+  advisors.forEach((persona) => {
     const suggestion =
       persona.suggests || persona.action || persona.suggestion || "UNKNOWN";
 
@@ -52,17 +77,15 @@ export function buildWeightedSupport(game: any) {
     support[suggestion] += getPersonaConfidence(persona, game);
   });
 
-  // PRESSURE DISTORTION
   Object.keys(support).forEach((action) => {
     support[action] = Number(
       (support[action] * getPressureDistortion(action, game)).toFixed(2)
     );
   });
 
-  // DOMINANCE MODEL
   const entries = Object.entries(support);
 
-  let dominantAction = null;
+  let dominantAction: string | null = null;
   let maxScore = -Infinity;
 
   for (const [action, value] of entries) {
@@ -72,7 +95,6 @@ export function buildWeightedSupport(game: any) {
     }
   }
 
-  // boost dominant, dampen others
   const result: Record<string, number> = {};
   for (const [action, value] of entries) {
     if (action === dominantAction) {
@@ -85,7 +107,10 @@ export function buildWeightedSupport(game: any) {
   return result;
 }
 
-export function getWeightedSupportMultiplier(action: string, game: any) {
+export function getWeightedSupportMultiplier(
+  action: string,
+  game: PersonaConfidenceGameState
+) {
   const support = buildWeightedSupport(game);
   const values = Object.values(support);
   const max = Math.max(...values);
