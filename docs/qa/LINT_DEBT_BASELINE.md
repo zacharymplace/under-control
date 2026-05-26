@@ -27,14 +27,16 @@ It is not the release gate. The current release gate remains:
 
 ## Usage
 
-Use this baseline to plan lint cleanup in small, scoped patches.
+This baseline now represents a zero-lint-debt state.
 
-Recommended order:
+Use it as a regression guard:
 
-1. UI-only unused variables.
-2. Small app page type fixes.
-3. Stable shared gameplay type cleanup where the domain shape is already clear.
-4. React hook findings in playtest tooling.
-5. Broader any replacement only after the stable types are clearer.
+1. `npm run lint:debt` should remain clean.
+2. `npm run lint:debt:baseline` should continue matching this zero baseline.
+3. New lint debt should be treated as intentional only when documented and isolated.
+4. Do not reintroduce broad lint cleanup into gameplay, scoring, route, scenario, or release-gate changes.
+5. Keep future lint-related changes small, reviewable, and separate from feature work.
 
-Do not combine broad lint cleanup with gameplay, scoring, route, scenario, or release-gate changes.
+The current release gate remains:
+
+    npm run check
