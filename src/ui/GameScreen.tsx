@@ -13,11 +13,85 @@ import { getAlignment } from "@/game/alignment";
 import { getDefaultPersonas } from "@/game/defaultPersonas";
 import { applyPersonaBehavior } from "@/game/personaBehaviorApply";
 import { buildPersonaConflict } from "@/game/personaConflict";
-import { getAdvisorMemoryNote } from "@/game/advisorMemory";
+import { getAdvisorMemoryNote, type AdvisorMemoryMap } from "@/game/advisorMemory";
 import {
   getAdvisorWeight,
   getAdvisorWeightLabel,
 } from "@/game/advisorWeighting";
+
+type GameScreenAdvisor = {
+  name?: string;
+  role?: string;
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  text?: string | null;
+  message?: string | null;
+  mood?: string | null;
+  strategy?: string | null;
+  behaviorNote?: string | null;
+  memoryNote?: string | null;
+  reactionNote?: string | null;
+  [key: string]: unknown;
+};
+
+type GameScreenActionLogEntry = {
+  turn?: number;
+  action?: string;
+  before: {
+    load: number;
+    drift: number;
+    integrity: number;
+    signalClarity?: number;
+    signal?: number;
+    [key: string]: unknown;
+  };
+  after?: {
+    load: number;
+    drift: number;
+    integrity: number;
+    signalClarity?: number;
+    signal?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+type GameScreenState = {
+  state?: string;
+  pressure?: string;
+  turn?: number;
+  load?: number;
+  integrity?: number;
+  signal?: number;
+  signalClarity?: number;
+  drift?: number;
+  personas?: GameScreenAdvisor[];
+  actionLog?: GameScreenActionLogEntry[];
+  trust?: Record<string, number>;
+  ignoredCounts?: Record<string, number>;
+  advisorMemory?: AdvisorMemoryMap;
+  playerTendency?: {
+    dominantStyle?: string;
+    riskProfile?: string;
+    [key: string]: unknown;
+  } | null;
+  forced?: boolean;
+  interrupted?: boolean;
+  simpleFeedback?: {
+    result?: string;
+    meaning?: string;
+  } | null;
+  feedback?: string | null;
+  reactions?: Record<string, string | number | boolean | null | undefined>;
+  [key: string]: unknown;
+};
+
+type MetricProps = {
+  label: string;
+  value?: string | number | null;
+};
+
 
 
 
@@ -32,16 +106,16 @@ export function GameScreen({
   onAction,
   onReset,
 }: {
-  game: any;
+  game: GameScreenState | null | undefined;
   onAction?: (action: string) => void;
   onReset?: () => void;
   bestTurn?: number;
   scenarioId?: string;
-  onScenarioChange?: (scenarioId: any) => void;
+  onScenarioChange?: (scenarioId: string) => void;
 }) {
   if (!game) return null;
 
-  let advisors = game.personas?.length ? game.personas : getDefaultPersonas(game);
+  let advisors: GameScreenAdvisor[] = game.personas?.length ? game.personas : getDefaultPersonas(game);
 advisors = applyPersonaBehavior(advisors, game);
   const alignment = getAlignment({ ...game, personas: advisors });
   const gameOver = game.state === "FAILED" || game.state === "STABILIZED";
@@ -118,7 +192,7 @@ return (
         </section>
 
         <section>
-          {advisors.map((p: any, index: number) => {
+          {advisors.map((p, index) => {
             const name = (p.name || `Advisor ${index + 1}`).toUpperCase();
             const role = p.role || "Advisor";
             const suggestion = p.suggests || p.action || p.suggestion || "UNKNOWN";
@@ -194,7 +268,7 @@ return (
         <RunLegibility game={{ ...game, personas: advisors }} />
         <RunReplay game={{ ...game, personas: advisors }} />
         <PlayerTendency tendency={game.playerTendency} />
-        <Counterfactual game={{ ...game, personas: advisors }} />
+        <Counterfactual game={game} />
 
         {game.forced && (
           <div style={{ color: "#7f1d1d", fontWeight: 900, marginBottom: 8 }}>
@@ -252,7 +326,7 @@ return (
   );
 }
 
-function Metric({ label, value }: any) {
+function Metric({ label, value }: MetricProps) {
 return (
     <div>
       <div className="uc-label">{label}</div>

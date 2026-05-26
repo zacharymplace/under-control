@@ -10,8 +10,8 @@ It is not the release gate. The current release gate remains:
 
 | Metric | Count |
 | --- | ---: |
-| Total problems | 58 |
-| Errors | 58 |
+| Total problems | 54 |
+| Errors | 54 |
 | Warnings | 0 |
 | Lint exit code | 1 |
 
@@ -19,7 +19,7 @@ It is not the release gate. The current release gate remains:
 
 | Rule | Count |
 | --- | ---: |
-| @typescript-eslint/no-explicit-any | 58 |
+| @typescript-eslint/no-explicit-any | 54 |
 
 ## Top Affected Files
 
@@ -30,7 +30,6 @@ It is not the release gate. The current release gate remains:
 | src/ui/ActionBar.tsx | 11 |
 | src/game/personaEngine.ts | 8 |
 | src/game/runReplay.ts | 8 |
-| src/ui/GameScreen.tsx | 4 |
 
 ## Usage
 
