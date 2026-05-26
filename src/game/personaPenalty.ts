@@ -1,4 +1,9 @@
-export function getIgnoredPenalty(name: string, game: any) {
+type PersonaPenaltyGameState = {
+  ignoredCounts?: Record<string, number | undefined>;
+  trust?: Record<string, number | undefined>;
+};
+
+export function getIgnoredPenalty(name: string, game: PersonaPenaltyGameState) {
   const ignored = game.ignoredCounts?.[name] ?? 0;
 
   if (ignored >= 5) return 0.6;
@@ -8,7 +13,7 @@ export function getIgnoredPenalty(name: string, game: any) {
   return 1;
 }
 
-export function getTrustModifier(name: string, game: any) {
+export function getTrustModifier(name: string, game: PersonaPenaltyGameState) {
   const trust = game.trust?.[name] ?? 0;
 
   if (trust >= 4) return 1.25;
