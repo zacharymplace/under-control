@@ -1,19 +1,23 @@
+type LearningFeedbackAdvisor = {
+  id?: string;
+  name?: string;
+};
+
 export function applyLearningFeedback({
   credibility,
   advisors,
   correct,
 }: {
   credibility: Record<string, number>;
-  advisors: any[];
+  advisors: LearningFeedbackAdvisor[];
   correct: boolean;
 }) {
   const next = { ...(credibility || {}) };
 
-  advisors.forEach((a) => {
-    const key = String(a.id || a.name || "").toUpperCase();
+  advisors.forEach((advisor) => {
+    const key = (advisor.id || advisor.name || "").toUpperCase();
     const current = next[key] ?? 1;
 
-    // small, compounding adjustments
     if (correct) {
       next[key] = Math.min(1.5, current + 0.05);
     } else {

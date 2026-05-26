@@ -1,4 +1,13 @@
-export function PlayerTendency({ tendency }: { tendency: any }) {
+type PlayerTendencyValue = {
+  dominantStyle?: string;
+  riskProfile?: string;
+};
+
+export function PlayerTendency({
+  tendency,
+}: {
+  tendency: PlayerTendencyValue | null | undefined;
+}) {
   if (!tendency) {
     return <div>Unformed</div>;
   }

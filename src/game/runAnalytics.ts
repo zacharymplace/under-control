@@ -1,4 +1,17 @@
-export async function logCompletedRun(game: any) {
+type CompletedRunAnalyticsState = {
+  state?: string;
+  turn?: number;
+  pressure?: string;
+  load?: number;
+  integrity?: number;
+  signalClarity?: number;
+  drift?: number;
+  trust?: Record<string, number>;
+  summary?: unknown;
+  actionHistory?: string[];
+};
+
+export async function logCompletedRun(game: CompletedRunAnalyticsState) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return;
 
   const payload = {

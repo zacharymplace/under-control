@@ -4,9 +4,14 @@ export const initialIgnoredCounts: Record<string, number> = {
   ISHAAN: 0,
 };
 
+type PersonaMemoryCandidate = {
+  name: string;
+  action?: string;
+};
+
 export function updateIgnoredCounts(
   ignoredCounts: Record<string, number>,
-  personas: any[],
+  personas: PersonaMemoryCandidate[],
   chosenAction: string
 ) {
   const next = { ...ignoredCounts };

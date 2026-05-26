@@ -4,6 +4,11 @@ export type PersonaBehavior = {
   bias: "OBSERVE" | "STABILIZE" | "REROUTE";
 };
 
+type ThreatLevelGameState = {
+  drift?: number;
+  load?: number;
+};
+
 export const PERSONA_BEHAVIORS: Record<string, PersonaBehavior> = {
   ELENA: {
     name: "ELENA",
@@ -22,8 +27,8 @@ export const PERSONA_BEHAVIORS: Record<string, PersonaBehavior> = {
   },
 };
 
-export function getThreatLevel(game: any) {
-  if (game.drift > 60 || game.load > 90) return "CRITICAL";
-  if (game.drift > 40 || game.load > 75) return "HIGH";
+export function getThreatLevel(game: ThreatLevelGameState) {
+  if ((game.drift ?? 0) > 60 || (game.load ?? 0) > 90) return "CRITICAL";
+  if ((game.drift ?? 0) > 40 || (game.load ?? 0) > 75) return "HIGH";
   return "NORMAL";
 }
