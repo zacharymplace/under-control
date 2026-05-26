@@ -1,4 +1,15 @@
-export function getWeightBreakdown(persona: any, credibility: any) {
+type WeightBreakdownPersona = {
+  name?: string;
+  confidence?: number;
+  [key: string]: unknown;
+};
+
+type WeightBreakdownCredibility = Record<string, number | undefined>;
+
+export function getWeightBreakdown(
+  persona: WeightBreakdownPersona,
+  credibility: WeightBreakdownCredibility | null | undefined
+) {
   const key = String(persona.id || persona.name || "").toUpperCase();
 
   return {

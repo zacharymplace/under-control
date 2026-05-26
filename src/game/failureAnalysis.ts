@@ -1,11 +1,27 @@
-export function analyzeFailure(log: any[], game?: any) {
+type FailureSnapshot = {
+  load?: number;
+  drift?: number;
+};
+
+type FailureLogEntry = {
+  action?: string;
+  before: FailureSnapshot;
+  after: FailureSnapshot;
+};
+
+type FailureGameState = {
+  scenarioId?: string;
+  signalClarity?: number;
+};
+
+export function analyzeFailure(log: FailureLogEntry[], game?: FailureGameState) {
   if (!log || log.length < 3) return null;
 
   const scenarioId = game?.scenarioId;
-  const peakLoad = Math.max(...log.map((x) => x.after?.load ?? 0));
-  const peakDrift = Math.max(...log.map((x) => x.after?.drift ?? 0));
+  const peakLoad = Math.max(...log.map((entry) => entry.after?.load ?? 0));
+  const peakDrift = Math.max(...log.map((entry) => entry.after?.drift ?? 0));
 
-  if (scenarioId === "signal_chaos" && game?.signalClarity < 65) {
+  if (scenarioId === "signal_chaos" && (game?.signalClarity ?? 100) < 65) {
     return {
       label: "Signal Misread",
       insight: "The run stayed noisy long enough for pressure to compound.",
@@ -37,13 +53,13 @@ export function analyzeFailure(log: any[], game?: any) {
     const prev = log[i - 1];
     const curr = log[i];
 
-    if (curr.after.load > prev.after.load) pressureSpikes++;
+    if ((curr.after.load ?? 0) > (prev.after.load ?? 0)) pressureSpikes++;
 
-    if (prev.after.drift > 40 && curr.action !== "STABILIZE") {
+    if ((prev.after.drift ?? 0) > 40 && curr.action !== "STABILIZE") {
       driftIgnored++;
     }
 
-    if (curr.action === "STABILIZE" && curr.before.load > 85) {
+    if (curr.action === "STABILIZE" && (curr.before.load ?? 0) > 85) {
       lateStabilizes++;
     }
   }
