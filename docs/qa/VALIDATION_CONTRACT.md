@@ -98,9 +98,9 @@ Each pass should have its own branch, commit, and validation.
 ## Current Confidence
 
 - Build gate: reliable.
-- Release gate: reliable.
-- Lint gate: not yet reliable as a release blocker.
+- Build gate: reliable.
+- Release readiness: verifies build, lint debt, and lint baseline.
 - Gameplay semantics: should not be changed as part of lint cleanup.
 
 
-The zero-lint baseline should remain clean. If lint debt returns, isolate and document it intentionally.
+The zero-lint baseline should remain clean. If lint debt returns, isolate and document it intentionally before updating the baseline.
