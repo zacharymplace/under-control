@@ -1,4 +1,22 @@
-export function PlayerProfilePanel({ profile }: any) {
+type PlayerProfilePanelValue = {
+  tendency?: string;
+  coachingNote?: string;
+  totalRuns?: number;
+  dominantAction?: string;
+  averageTurn?: number;
+  commonFailure?: string;
+};
+
+type MetricProps = {
+  label: string;
+  value?: string | number | null;
+};
+
+export function PlayerProfilePanel({
+  profile,
+}: {
+  profile: PlayerProfilePanelValue | null | undefined;
+}) {
   if (!profile) return null;
 
   return (
@@ -30,7 +48,7 @@ export function PlayerProfilePanel({ profile }: any) {
   );
 }
 
-function Metric({ label, value }: any) {
+function Metric({ label, value }: MetricProps) {
   return (
     <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
       <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">

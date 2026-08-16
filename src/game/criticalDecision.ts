@@ -1,16 +1,23 @@
+type CriticalDecisionPersona = {
+  name?: string;
+  action?: string;
+  confidence?: number | string;
+  trust?: number;
+};
+
 export function buildCriticalDecision({
   personas,
   turn,
 }: {
-  personas: any[];
+  personas: CriticalDecisionPersona[];
   turn: number | null;
 }) {
   if (!turn || !personas) return null;
 
-  return personas.map((p) => ({
-    name: p.name,
-    suggested: p.action,
-    confidence: p.confidence,
-    trust: p.trust ?? 0,
+  return personas.map((persona) => ({
+    name: persona.name,
+    suggested: persona.action,
+    confidence: persona.confidence,
+    trust: persona.trust ?? 0,
   }));
 }

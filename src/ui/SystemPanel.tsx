@@ -1,4 +1,16 @@
-export function SystemPanel({ game }: any) {
+type SystemPanelGameState = {
+  eventTitle?: string;
+  eventSub?: string;
+  load?: number;
+  integrity?: number;
+  signalClarity?: number;
+  driftVisible?: boolean;
+  drift?: number;
+};
+
+export function SystemPanel({ game }: { game: SystemPanelGameState }) {
+  const signalClarity = game.signalClarity ?? 0;
+
   return (
     <section className="mb-3 rounded-lg border border-[#1F2630] bg-[#12161C] p-4">
       <h1 className="mb-1 font-semibold">{game.eventTitle}</h1>
@@ -9,8 +21,8 @@ export function SystemPanel({ game }: any) {
         <div>Integrity: {game.integrity}</div>
         <div>
           Signal:{" "}
-          <span className={game.signalClarity < 50 ? "text-[#D4A84F]" : ""}>
-            {game.signalClarity} {game.signalClarity < 50 ? "⚠" : ""}
+          <span className={signalClarity < 50 ? "text-[#D4A84F]" : ""}>
+            {signalClarity} {signalClarity < 50 ? "⚠" : ""}
           </span>
         </div>
         {game.driftVisible && <div>Drift: {game.drift} rising</div>}

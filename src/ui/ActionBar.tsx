@@ -1,43 +1,78 @@
 "use client";
 
-import { scoreActionDecisively, spreadActionScores, getActionReason } from "@/game/actionScoring";
-import { getInvalidActions } from "@/game/actionScoring";
+import {
+  scoreActionDecisively,
+  spreadActionScores,
+  getActionReason,
+  getInvalidActions,
+  type ActionName,
+} from "@/game/actionScoring";
 import { getDisagreementPenalty } from "@/game/disagreementScore";
-import {
-  buildWeightedSupport,
-  getWeightedSupportMultiplier,
-} from "@/game/personaConfidence";
-import {
-  getConflictSeverity,
-  getLockedActions as getConflictLockedActions,
-} from "@/game/conflictSystem";
+import { buildWeightedSupport, getWeightedSupportMultiplier } from "@/game/personaConfidence";
+import { getConflictSeverity, getLockedActions as getConflictLockedActions } from "@/game/conflictSystem";
 import { getLockedActions as getBehaviorLockedActions } from "@/game/lockIn";
-import { getPressureDistortionNote } from "@/game/pressureDistortion";
 import { getTrajectoryPenalty, getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
 import { getDominantNeedLabel } from "@/game/dominantNeed";
 import { getNeedNeglectPenalty, getNeedNeglectInsight } from "@/game/needNeglect";
-import { getCommitmentScore, getCommitmentLabel } from "@/game/commitment";
+import { getCommitmentScore } from "@/game/commitment";
 import { getSystemPhase } from "@/game/phase";
 import { getLateCorrectionPenalty, getPointOfNoReturn, getMissedCommitmentWindow } from "@/game/irreversibility";
 import { getPhasePenalty } from "@/game/phasePenalty";
-import { getDecisionWindow, getDecisionWindowPenalty } from "@/game/decisionWindow";
-import { getPostCollapseEffectiveness, getPostCollapseNote } from "@/game/postCollapse";
+import { getDecisionWindow } from "@/game/decisionWindow";
 import { getCollapseLockedActions } from "@/game/collapseLock";
 import { isStabilizationComplete } from "@/game/recoveryCompletion";
 import { getRecoveryProgress, getRecoveryStatus, getCommitmentStatus, getAdvisorTrustTrajectory } from "@/game/runLegibility";
+import type { AdvisorMemoryMap } from "@/game/advisorMemory";
+
+type ActionBarAdvisor = {
+  suggestion?: string | null;
+  suggests?: string | null;
+  action?: string | null;
+  recommendation?: string | null;
+  name?: string;
+  role?: string;
+  [key: string]: unknown;
+};
+
+type ActionBarGameState = {
+  state?: string;
+  turn?: number;
+  pressure?: string;
+  phase?: string;
+  load?: number;
+  drift?: number;
+  instability?: number;
+  integrity?: number;
+  signal?: number;
+  signalClarity?: number;
+  recoveryProgress?: number;
+  actionHistory?: string[];
+  personas?: ActionBarAdvisor[];
+  ignoredCounts?: Record<string, number | undefined>;
+  advisorMemory?: AdvisorMemoryMap;
+  pointOfNoReturn?: {
+    turn?: number;
+  } | null;
+  forced?: boolean;
+  interrupted?: boolean;
+  [key: string]: unknown;
+};
+
 
 function scoreAction(
   action: string,
-  game: any,
+  game: ActionBarGameState,
   suggestions: string[],
   disagreementMultiplier: number
 ) {
   let score = 1;
 
   const signal = game.signalClarity ?? game.signal ?? 0;
+  const drift = game.drift ?? game.instability ?? 0;
+  const load = game.load ?? 0;
 
-  if (game.drift > 50 && action === "STABILIZE") score += 0.5;
-  if (game.load > 80 && action === "REROUTE") score += 0.5;
+  if (drift > 50 && action === "STABILIZE") score += 0.5;
+  if (load > 80 && action === "REROUTE") score += 0.5;
   if (signal < 55 && action === "OBSERVE") score += 0.5;
 
   
@@ -47,11 +82,9 @@ function scoreAction(
   const lateCorrectionPenalty = getLateCorrectionPenalty(action, game);
   const phasePenalty = getPhasePenalty(action, game);
 
-  const decisionWindowPenalty = getDecisionWindowPenalty(action, game);
-  const postCollapseEffectiveness = getPostCollapseEffectiveness(action, game);
 
   let recoveryPenalty = 1;
-  if (action !== "STABILIZE" && !isStabilizationComplete(game) && game.drift > 50) {
+  if (action !== "STABILIZE" && !isStabilizationComplete(game) && drift > 50) {
     recoveryPenalty = 0.7;
   }
 
@@ -68,51 +101,7 @@ function scoreAction(
   ).toFixed(2);
 }
 
-function explainAction(action: string, game: any, isBehaviorLocked: boolean, isConflictLocked: boolean) {
-  if (isBehaviorLocked) return "Behavior lock: repeated pattern is constraining this option";
-  if (isConflictLocked) return "Conflict lock";
-
-  const signal = game.signalClarity ?? game.signal ?? 0;
-
-  if (game.drift > 50 && action === "STABILIZE") return "High drift favors stabilization";
-  if (game.load > 80 && action === "REROUTE") return "High load favors reroute";
-  if (signal < 55 && action === "OBSERVE") return "Low signal favors observation";
-
-  return "No strong signal advantage";
-}
-
-
-function getControlDoctrine(game: any) {
-  const instability = game.drift ?? game.instability ?? 0;
-  const load = game.load ?? 0;
-  const pressure = game.pressure ?? "";
-  const history = game.actionHistory || [];
-  const lastAction = history[history.length - 1];
-
-  if (lastAction === "REROUTE") {
-    return "Doctrine: REROUTE creates hidden instability. STABILIZE next to pay it back.";
-  }
-
-  if ((pressure === "HIGH" || pressure === "CRITICAL") && instability >= 35) {
-    return "Doctrine: pressure is high. Stabilize until instability is clearly safe.";
-  }
-
-  if (instability >= 40) {
-    return "Doctrine: instability is elevated. STABILIZE before releasing more load.";
-  }
-
-  if (instability < 40 && load >= 65) {
-    return "Doctrine: instability is controlled. REROUTE to release load pressure.";
-  }
-
-  return "Doctrine: keep the system balanced. Do not repeat actions without a reason.";
-}
-
-
-
-
-
-function getOnboardingHint(game: any) {
+function getOnboardingHint(game: ActionBarGameState) {
   const turn = game.turn ?? 1;
   const state = game.state ?? "";
   const instability = game.drift ?? game.instability ?? 0;
@@ -181,7 +170,7 @@ function getOnboardingHint(game: any) {
 }
 
 
-function getSignalControlSplit(game: any) {
+function getSignalControlSplit(game: ActionBarGameState) {
   const signal = game.signalClarity ?? game.signal ?? 0;
   const load = game.load ?? 0;
   const instability = game.drift ?? game.instability ?? 0;
@@ -204,20 +193,21 @@ function getSignalControlSplit(game: any) {
 }
 
 
-function getRecommendedControlGuidance(game: any) {
+function getRecommendedControlGuidance(game: ActionBarGameState) {
   const instability = game.drift ?? game.instability ?? 0;
   const pressure = game.pressure ?? "";
-  const phase = game.phase ?? (game.turn >= 12 ? "late" : game.turn >= 6 ? "mid" : "early");
+  const turn = game.turn ?? 1;
+  const phase = game.phase ?? (turn >= 12 ? "late" : turn >= 6 ? "mid" : "early");
   const history = game.actionHistory || [];
   const lastAction = history[history.length - 1];
 
-  const ignoredTotal = Object.values(game.ignoredCounts || {}).reduce(
-    (sum: number, value: any) => sum + Number(value || 0),
+  const ignoredTotal = Object.values(game.ignoredCounts || {}).reduce<number>(
+    (sum, value) => sum + Number(value || 0),
     0
   );
 
   const suggestions = (game.personas || [])
-    .map((p: any) => p.suggestion || p.suggests || p.recommendation)
+    .map((advisor) => advisor.suggestion || advisor.suggests || advisor.recommendation)
     .filter(Boolean);
 
   const uniqueSuggestions = new Set(suggestions);
@@ -314,7 +304,7 @@ function getRecommendedControlGuidance(game: any) {
 }
 
 
-function getConstraintWarning(game: any) {
+function getConstraintWarning(game: ActionBarGameState) {
   if (game.state === "STABILIZED") {
     return {
       type: "RESIDUAL INSTABILITY",
@@ -367,7 +357,7 @@ export function ActionBar({
   onAction,
   disabled = false,
 }: {
-  game: any;
+  game: ActionBarGameState;
   onAction?: (action: string) => void;
   disabled?: boolean;
 }) {
@@ -377,14 +367,17 @@ export function ActionBar({
 
   const invalidActions = getInvalidActions(game);
 
-  const actions = ["STABILIZE", "REROUTE", "OBSERVE"];
+  const actions: ActionName[] = ["STABILIZE", "REROUTE", "OBSERVE"];
 
   const collapseLocked = getCollapseLockedActions(game);
 
 
-  const suggestions = advisors
-    .map((a: any) => a.suggests || a.action || a.suggestion)
-    .filter(Boolean);
+  const suggestions: string[] = advisors
+    .map((advisor) => advisor.suggests || advisor.action || advisor.suggestion)
+    .filter(
+      (suggestion): suggestion is string =>
+        typeof suggestion === "string" && suggestion.length > 0
+    );
 
   const conflictSeverity = getConflictSeverity(suggestions);
   const conflictLocked = getConflictLockedActions(suggestions, conflictSeverity);
@@ -501,14 +494,12 @@ const decisiveScores = spreadActionScores({
 
       <div className="uc-action-grid">
         {actions.map((action) => {
-          const isConflictLocked = conflictLocked.includes(action);
-          const isBehaviorLocked = behaviorLocked.includes(action);
           const isLocked =
     collapseLocked.includes(action) ||
     collapseLocked.includes(action) || locked.includes(action);
           const isDisabled = disabled || isLocked;
 
-          const isInvalid = invalidActions.includes(action as any);
+          const isInvalid = invalidActions.includes(action);
 
           return (
             <button
@@ -527,7 +518,7 @@ const decisiveScores = spreadActionScores({
               <div className="uc-action-score">
                 support: {(weightedSupport[action] ?? 0).toFixed(2)}
               </div>
-              <div className="uc-action-reason">{isInvalid ? "System cannot tolerate this action under current conditions" : getActionReason(action as any, game)}</div>
+              <div className="uc-action-reason">{isInvalid ? "System cannot tolerate this action under current conditions" : getActionReason(action, game)}</div>
             </button>
           );
         })}

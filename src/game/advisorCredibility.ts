@@ -1,6 +1,16 @@
 export type AdvisorCredibilityMap = Record<string, number>;
 
-function advisorKey(advisor: any) {
+type AdvisorCredibilityCandidate = {
+  id?: string | number | null;
+  name?: string | number | null;
+  label?: string | number | null;
+  suggests?: string | null;
+  action?: string | null;
+  suggestion?: string | null;
+  [key: string]: unknown;
+};
+
+function advisorKey(advisor: AdvisorCredibilityCandidate) {
   return String(advisor.id || advisor.name || advisor.label || "").toUpperCase();
 }
 
@@ -8,7 +18,7 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-export function createInitialAdvisorCredibility(advisors: any[]): AdvisorCredibilityMap {
+export function createInitialAdvisorCredibility(advisors: AdvisorCredibilityCandidate[]): AdvisorCredibilityMap {
   const map: AdvisorCredibilityMap = {};
 
   for (const advisor of advisors) {
@@ -19,7 +29,7 @@ export function createInitialAdvisorCredibility(advisors: any[]): AdvisorCredibi
   return map;
 }
 
-export function getAdvisorCredibility(advisor: any, credibility: AdvisorCredibilityMap = {}) {
+export function getAdvisorCredibility(advisor: AdvisorCredibilityCandidate, credibility: AdvisorCredibilityMap = {}) {
   const key = advisorKey(advisor);
   return credibility[key] ?? 0.5;
 }
@@ -31,7 +41,7 @@ export function updateAdvisorCredibility({
   judgment,
 }: {
   previous?: AdvisorCredibilityMap;
-  advisors: any[];
+  advisors: AdvisorCredibilityCandidate[];
   finalAction: string;
   judgment?: string | null;
 }) {

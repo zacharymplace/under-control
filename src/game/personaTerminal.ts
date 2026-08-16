@@ -1,3 +1,12 @@
+type PersonaTerminalPersona = {
+  name: string;
+};
+
+type PersonaTerminalGameState = {
+  integrity?: number;
+  drift?: number;
+};
+
 export function buildPersonaTerminalComments({
   personas,
   trust,
@@ -5,55 +14,33 @@ export function buildPersonaTerminalComments({
   moodMap,
   game,
 }: {
-  personas: any[];
+  personas: PersonaTerminalPersona[];
   trust: Record<string, number>;
   ignoredCounts: Record<string, number>;
   moodMap: Record<string, string>;
-  game: any;
+  game: PersonaTerminalGameState;
 }) {
-  return personas.map((p) => {
-    const t = trust[p.name] ?? 0;
-    const ignored = ignoredCounts[p.name] ?? 0;
-    const mood = moodMap[p.name] ?? "CALM";
+  return personas.map((persona) => {
+    const t = trust[persona.name] ?? 0;
+    const ignored = ignoredCounts[persona.name] ?? 0;
+    const mood = moodMap[persona.name] ?? "CALM";
 
     let text = "";
 
-    // High trust, ignored → frustration
     if (t >= 2 && ignored >= 2) {
       text = "I was flagging this earlier. Acting sooner would have changed the trajectory.";
-    }
-
-    // Low trust → doubt
-    else if (t <= -1) {
+    } else if (t <= -1) {
       text = "The read wasn’t clean enough to justify the decisions made.";
-    }
-
-    // Structural warning
-    else if (p.name === "MARA" && game.integrity < 70) {
-      text = "The structure degraded gradually. Intervention came too late to stabilize.";
-
+    } else if (persona.name === "MARA" && (game.integrity ?? 100) < 70) {
       text = "Structure weakened over time. Stabilizing earlier would have kept recovery viable.";
-    }
-
-    // Risk warning
-    else if (p.name === "ISHAAN" && game.drift > 40) {
-      text = "The downside expanded faster than the system could absorb.";
-
+    } else if (persona.name === "ISHAAN" && (game.drift ?? 0) > 40) {
       text = "Instability compounded faster than it could be corrected.";
-    }
-
-    // Analytical
-    else if (p.name === "ELENA") {
-      text = "The signal looked actionable, but timing confidence wasn’t there.";
-
+    } else if (persona.name === "ELENA") {
       text = "Signal clarity didn’t translate into safe timing.";
-    }
-
-    else {
+    } else {
       text = "The system moved out of a recoverable range before correction.";
     }
 
-    // Mood modifier
     if (mood === "ASSERTIVE") {
       text = text.replace(".", ". You pushed past safer thresholds.");
     }
@@ -63,7 +50,7 @@ export function buildPersonaTerminalComments({
     }
 
     return {
-      name: p.name,
+      name: persona.name,
       text,
       mood,
       trust: t,

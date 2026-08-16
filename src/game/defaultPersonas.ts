@@ -1,6 +1,16 @@
 import { applyReactionTone, getPersonaReaction } from "./personaReaction";
 
-export function getDefaultPersonas(game: any) {
+type DefaultPersonasGameState = {
+  signalClarity?: number;
+  signal?: number;
+  load?: number;
+  integrity?: number;
+  drift?: number;
+  trust?: Record<string, number | undefined>;
+  ignoredCounts?: Record<string, number | undefined>;
+};
+
+export function getDefaultPersonas(game: DefaultPersonasGameState) {
   const signal = game.signalClarity ?? game.signal ?? 0;
   const load = game.load ?? 0;
   const integrity = game.integrity ?? 0;

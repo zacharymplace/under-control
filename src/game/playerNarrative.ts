@@ -1,8 +1,20 @@
-export function buildPlayerNarrative(profile: any, runs: any[]) {
+type PlayerNarrativeProfile = {
+  tendency?: string;
+  dominantAction?: string;
+};
+
+type PlayerNarrativeRun = {
+  state?: string;
+};
+
+export function buildPlayerNarrative(
+  profile: PlayerNarrativeProfile | null | undefined,
+  runs: PlayerNarrativeRun[]
+) {
   if (!profile || !runs || runs.length < 2) return null;
 
   const recent = runs.slice(-5);
-  const failed = recent.filter((run: any) => run.state === "FAILED").length;
+  const failed = recent.filter((run) => run.state === "FAILED").length;
 
   const lines: string[] = [];
 

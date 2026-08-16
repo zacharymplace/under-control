@@ -9,7 +9,19 @@ import {
 import { getDominantNeedLabel } from "@/game/dominantNeed";
 import { getTrajectoryRiskLabel } from "@/game/trajectoryRisk";
 
-export function RunLegibility({ game }: { game: any }) {
+type RunLegibilityGameState = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signal?: number;
+  signalClarity?: number;
+  recoveryProgress?: number;
+  commitment?: string;
+  trust?: Record<string, number>;
+  [key: string]: unknown;
+};
+
+export function RunLegibility({ game }: { game: RunLegibilityGameState }) {
   return (
     <section className="uc-legibility">
       <div>

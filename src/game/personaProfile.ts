@@ -6,6 +6,13 @@ export type PersonaProfile = {
   trustSensitivity: number;
 };
 
+type PersonaProfileGameState = {
+  signalClarity?: number;
+  integrity?: number;
+  drift?: number;
+  load?: number;
+};
+
 export const personaProfiles: Record<string, PersonaProfile> = {
   ELENA: {
     name: "ELENA",
@@ -41,27 +48,36 @@ export function applyProfileBias({
 }: {
   profile: PersonaProfile;
   action: string;
-  game: any;
+  game: PersonaProfileGameState;
 }) {
   if (!profile) return action;
 
-  if (profile.name === "ELENA" && game.signalClarity < 65) return "OBSERVE";
-  if (profile.name === "MARA" && game.integrity < 70) return "STABILIZE";
-  if (profile.name === "ISHAAN" && (game.drift > 35 || game.load > 85)) return "STABILIZE";
+  if (profile.name === "ELENA" && (game.signalClarity ?? 0) < 65) return "OBSERVE";
+  if (profile.name === "MARA" && (game.integrity ?? 100) < 70) return "STABILIZE";
+  if (profile.name === "ISHAAN" && ((game.drift ?? 0) > 35 || (game.load ?? 0) > 85)) {
+    return "STABILIZE";
+  }
 
   return action;
 }
 
-export function profileConfidenceAdjustment(profile: PersonaProfile, game: any) {
+export function profileConfidenceAdjustment(
+  profile: PersonaProfile,
+  game: PersonaProfileGameState
+) {
   if (!profile) return 0;
 
-  if (profile.name === "ELENA" && game.signalClarity >= 70) return 1;
-  if (profile.name === "MARA" && game.integrity <= 65) return 1;
-  if (profile.name === "ISHAAN" && (game.drift >= 45 || game.load >= 90)) return 1;
+  if (profile.name === "ELENA" && (game.signalClarity ?? 0) >= 70) return 1;
+  if (profile.name === "MARA" && (game.integrity ?? 100) <= 65) return 1;
+  if (profile.name === "ISHAAN" && ((game.drift ?? 0) >= 45 || (game.load ?? 0) >= 90)) {
+    return 1;
+  }
 
-  if (profile.name === "ELENA" && game.signalClarity < 45) return -1;
-  if (profile.name === "MARA" && game.integrity > 85) return -1;
-  if (profile.name === "ISHAAN" && game.drift < 20 && game.load < 75) return -1;
+  if (profile.name === "ELENA" && (game.signalClarity ?? 100) < 45) return -1;
+  if (profile.name === "MARA" && (game.integrity ?? 100) > 85) return -1;
+  if (profile.name === "ISHAAN" && (game.drift ?? 0) < 20 && (game.load ?? 0) < 75) {
+    return -1;
+  }
 
   return 0;
 }

@@ -4,25 +4,96 @@ import { compressTimeline } from "@/game/timelineCompression";
 import { formatDelta, getTurnRisk, getTurnStory } from "@/game/timelineStory";
 import { getPhase } from "@/game/timelinePhase";
 
-export function DecisionTimeline({ game, criticalTurn }: any) {
+type DecisionTimelineSnapshot = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+};
+
+type DecisionTimelineEntry = {
+  turn?: number;
+  action?: string;
+  before: DecisionTimelineSnapshot;
+  after: DecisionTimelineSnapshot;
+};
+
+type DecisionTimelineGameState = {
+  state?: string;
+  actionLog?: DecisionTimelineEntry[];
+};
+
+type DecisionTimelineProps = {
+  game: DecisionTimelineGameState;
+  criticalTurn?: number | null;
+};
+
+type DecisionTimelineGroupItem = {
+  type: "group";
+  entries: DecisionTimelineEntry[];
+  action: string;
+  label: string;
+  startTurn: number;
+  endTurn: number;
+};
+
+type DecisionTimelineSingleItem = {
+  type: "single";
+  entry: DecisionTimelineEntry;
+  startTurn: number;
+  endTurn: number;
+};
+
+type DecisionTimelineItem = DecisionTimelineGroupItem | DecisionTimelineSingleItem;
+
+type GroupedTurnProps = {
+  item: DecisionTimelineGroupItem;
+  phase: string;
+};
+
+type PhaseHeaderProps = {
+  phase: string;
+};
+
+type TimelineDotProps = {
+  phase: string;
+  active: boolean;
+};
+
+type RiskBadgeProps = {
+  risk: string;
+};
+
+type DeltaLineProps = {
+  label: string;
+  delta: number;
+  invert?: boolean;
+};
+
+type SummaryCardProps = {
+  label: string;
+  value: string;
+  detail?: string;
+};
+
+export function DecisionTimeline({ game, criticalTurn }: DecisionTimelineProps) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return null;
 
   const log = game.actionLog || [];
   if (!log.length) return null;
 
-  const items = compressTimeline(log);
+  const items = compressTimeline(log) as DecisionTimelineItem[];
   const finalEntry = log[log.length - 1];
 
   const criticalEntry = criticalTurn
-    ? log.find((entry: any) => entry.turn === criticalTurn)
+    ? log.find((entry) => entry.turn === criticalTurn)
     : null;
 
-  const firstCriticalIndex = log.findIndex((entry: any) => {
+  const firstCriticalIndex = log.findIndex((entry) => {
     const risk = getTurnRisk(entry);
     return risk === "DRIFT CRITICAL" || risk === "LOAD CRITICAL";
   });
-
-  let lastPhase: string | null = null;
 
   return (
     <section className="mt-5 rounded-lg border border-[#2A313A] bg-[#12161C] p-5">
@@ -54,13 +125,22 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
       </div>
 
       <div className="relative border-l border-[#2A313A] pl-4">
-        {items.map((item: any, index: number) => {
+        {items.map((item, index) => {
           const representative =
             item.type === "group" ? item.entries[item.entries.length - 1] : item.entry;
 
+          const previousItem = index > 0 ? items[index - 1] : null;
+          const previousRepresentative = previousItem
+            ? previousItem.type === "group"
+              ? previousItem.entries[previousItem.entries.length - 1]
+              : previousItem.entry
+            : null;
+
           const phase = getPhase(representative);
-          const showPhaseHeader = phase !== lastPhase;
-          lastPhase = phase;
+          const previousPhase = previousRepresentative
+            ? getPhase(previousRepresentative)
+            : null;
+          const showPhaseHeader = phase !== previousPhase;
 
           if (item.type === "group") {
             return (
@@ -74,16 +154,17 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
           const entry = item.entry;
           const story = getTurnStory(entry);
           const risk = getTurnRisk(entry);
-          const rawIndex = log.findIndex((e: any) => e.turn === entry.turn);
+          const rawIndex = log.findIndex((candidate) => candidate.turn === entry.turn);
           const isCriticalTurn = entry.turn === criticalTurn;
           const isPeakCritical = rawIndex === firstCriticalIndex;
           const isAfterPeak = firstCriticalIndex >= 0 && rawIndex > firstCriticalIndex;
 
-          const loadDelta = entry.after.load - entry.before.load;
-          const driftDelta = entry.after.drift - entry.before.drift;
-          const integrityDelta = entry.after.integrity - entry.before.integrity;
+          const loadDelta = (entry.after.load ?? 0) - (entry.before.load ?? 0);
+          const driftDelta = (entry.after.drift ?? 0) - (entry.before.drift ?? 0);
+          const integrityDelta = (entry.after.integrity ?? 0) - (entry.before.integrity ?? 0);
           const signalDelta =
-            entry.after.signalClarity - entry.before.signalClarity;
+            (entry.after.signalClarity ?? entry.after.signal ?? 0) -
+            (entry.before.signalClarity ?? entry.before.signal ?? 0);
 
           return (
             <div key={`${entry.turn}-${index}`} className="mb-3">
@@ -178,14 +259,16 @@ export function DecisionTimeline({ game, criticalTurn }: any) {
   );
 }
 
-function GroupedTurn({ item, phase }: any) {
+function GroupedTurn({ item, phase }: GroupedTurnProps) {
   const first = item.entries[0];
   const last = item.entries[item.entries.length - 1];
 
-  const loadDelta = last.after.load - first.before.load;
-  const driftDelta = last.after.drift - first.before.drift;
-  const integrityDelta = last.after.integrity - first.before.integrity;
-  const signalDelta = last.after.signalClarity - first.before.signalClarity;
+  const loadDelta = (last.after.load ?? 0) - (first.before.load ?? 0);
+  const driftDelta = (last.after.drift ?? 0) - (first.before.drift ?? 0);
+  const integrityDelta = (last.after.integrity ?? 0) - (first.before.integrity ?? 0);
+  const signalDelta =
+    (last.after.signalClarity ?? last.after.signal ?? 0) -
+    (first.before.signalClarity ?? first.before.signal ?? 0);
 
   const title =
     item.action === "STABILIZE"
@@ -280,7 +363,7 @@ function cardStyle({
   return "border-[#223027] bg-[#0B0F0C]";
 }
 
-function PhaseHeader({ phase }: any) {
+function PhaseHeader({ phase }: PhaseHeaderProps) {
   const label =
     phase === "STABLE"
       ? "Controlled"
@@ -302,7 +385,7 @@ function PhaseHeader({ phase }: any) {
   );
 }
 
-function TimelineDot({ phase, active }: any) {
+function TimelineDot({ phase, active }: TimelineDotProps) {
   const color =
     phase === "STABLE"
       ? "border-[#4FAF7B]"
@@ -319,7 +402,7 @@ function TimelineDot({ phase, active }: any) {
   );
 }
 
-function RiskBadge({ risk }: any) {
+function RiskBadge({ risk }: RiskBadgeProps) {
   const cls =
     risk === "CONTROLLED"
       ? "border-[#2B5D45] text-[#4FAF7B]"
@@ -334,7 +417,7 @@ function RiskBadge({ risk }: any) {
   );
 }
 
-function DeltaLine({ label, delta, invert = false }: any) {
+function DeltaLine({ label, delta, invert = false }: DeltaLineProps) {
   const isGood = invert ? delta > 0 : delta < 0;
   const isBad = invert ? delta < 0 : delta > 0;
 
@@ -355,7 +438,7 @@ function Divider() {
   return <span className="mx-2 text-[#2A313A]">•</span>;
 }
 
-function SummaryCard({ label, value, detail }: any) {
+function SummaryCard({ label, value, detail }: SummaryCardProps) {
   return (
     <div className="rounded border border-[#2A313A] bg-[#0B0D10] p-3">
       <div className="text-[10px] uppercase tracking-widest text-[#8A93A3]">
@@ -367,11 +450,12 @@ function SummaryCard({ label, value, detail }: any) {
   );
 }
 
-function dominantAction(log: any[]) {
+function dominantAction(log: DecisionTimelineEntry[]) {
   const counts: Record<string, number> = {};
 
   log.forEach((entry) => {
-    counts[entry.action] = (counts[entry.action] || 0) + 1;
+    const action = entry.action || "UNKNOWN";
+    counts[action] = (counts[action] || 0) + 1;
   });
 
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Mixed";

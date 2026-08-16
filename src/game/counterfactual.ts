@@ -1,4 +1,29 @@
-export function simulateAlternatePath(game: any, turnIndex: number, action: string) {
+export type CounterfactualState = {
+  load: number;
+  drift: number;
+  integrity: number;
+  signalClarity?: number;
+  signal?: number;
+  [key: string]: unknown;
+};
+
+export type CounterfactualLogEntry = {
+  turn?: number;
+  action?: string;
+  before: CounterfactualState;
+  after?: CounterfactualState;
+};
+
+export type CounterfactualGameState = {
+  state?: string;
+  actionLog?: CounterfactualLogEntry[];
+};
+
+export function simulateAlternatePath(
+  game: CounterfactualGameState,
+  turnIndex: number,
+  action: string
+) {
   const log = game.actionLog || [];
   if (!log[turnIndex]) return null;
 
@@ -18,7 +43,7 @@ export function simulateAlternatePath(game: any, turnIndex: number, action: stri
   };
 }
 
-function applyAction(state: any, action: string) {
+function applyAction(state: CounterfactualState, action: string) {
   const next = { ...state };
 
   if (action === "STABILIZE") {
@@ -42,7 +67,7 @@ function applyAction(state: any, action: string) {
   return next;
 }
 
-function computeDeltas(before: any, after: any) {
+function computeDeltas(before: CounterfactualState, after: CounterfactualState) {
   return {
     load: (after.load ?? 0) - (before.load ?? 0),
     drift: (after.drift ?? 0) - (before.drift ?? 0),
@@ -52,7 +77,11 @@ function computeDeltas(before: any, after: any) {
   };
 }
 
-function summarizeOutcome(action: string, before: any, after: any) {
+function summarizeOutcome(
+  action: string,
+  before: CounterfactualState,
+  after: CounterfactualState
+) {
   if (action === "REROUTE" && after.load < before.load) {
     return "Load pressure would have been reduced before failure.";
   }

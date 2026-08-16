@@ -3,7 +3,15 @@ export type PersonaReaction = {
   note: string;
 };
 
-export function getPersonaReaction(name: string, game: any): PersonaReaction {
+type PersonaReactionGameState = {
+  trust?: Record<string, number | undefined>;
+  ignoredCounts?: Record<string, number | undefined>;
+};
+
+export function getPersonaReaction(
+  name: string,
+  game: PersonaReactionGameState
+): PersonaReaction {
   const trust = game.trust?.[name] ?? 0;
   const ignored = game.ignoredCounts?.[name] ?? 0;
 

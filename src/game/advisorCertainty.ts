@@ -1,7 +1,15 @@
 import { getDecisionWindow } from "./decisionWindow";
-import { getAdvisorConsensus } from "./advisorConsensus";
 
-export function getCollapseCertaintyLevel(game: any) {
+type CollapseCertaintyGameState = {
+  pointOfNoReturn?: {
+    turn?: number | null;
+  } | null;
+  turn?: number;
+  personas?: unknown[];
+  credibility?: Record<string, unknown>;
+};
+
+export function getCollapseCertaintyLevel(game: CollapseCertaintyGameState) {
   const window = getDecisionWindow(game);
 
   if (!game.pointOfNoReturn && window.state !== "COLLAPSED") {
@@ -17,9 +25,8 @@ export function getCollapseCertaintyLevel(game: any) {
   return "concerned";
 }
 
-export function getAdvisorCertaintyTone(name: string, game: any) {
+export function getAdvisorCertaintyTone(name: string, game: CollapseCertaintyGameState) {
   const level = getCollapseCertaintyLevel(game);
-  const { strength } = getAdvisorConsensus(game.personas || [], game.credibility || {});
   if (level === "none") return null;
 
   const key = name.toUpperCase();

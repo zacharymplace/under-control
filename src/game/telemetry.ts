@@ -1,4 +1,17 @@
-export function initTelemetry() {
+export type TelemetryState = {
+  samples: number;
+  pressureSum: number;
+  peakLoad: number;
+  peakDrift: number;
+};
+
+type TelemetryGameState = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+};
+
+export function initTelemetry(): TelemetryState {
   return {
     samples: 0,
     pressureSum: 0,
@@ -7,24 +20,33 @@ export function initTelemetry() {
   };
 }
 
-export function updateTelemetry(t: any, game: any) {
+export function updateTelemetry(
+  telemetry: TelemetryState,
+  game: TelemetryGameState
+): TelemetryState {
+  const load = game.load ?? 0;
+  const drift = game.drift ?? 0;
+  const integrity = game.integrity ?? 100;
+
   const pressureScore =
-    game.load * 0.5 + game.drift * 1.0 + (100 - game.integrity) * 0.4;
+    load * 0.5 + drift * 1.0 + (100 - integrity) * 0.4;
 
   return {
-    samples: t.samples + 1,
-    pressureSum: t.pressureSum + pressureScore,
-    peakLoad: Math.max(t.peakLoad, game.load),
-    peakDrift: Math.max(t.peakDrift, game.drift),
+    samples: telemetry.samples + 1,
+    pressureSum: telemetry.pressureSum + pressureScore,
+    peakLoad: Math.max(telemetry.peakLoad, load),
+    peakDrift: Math.max(telemetry.peakDrift, drift),
   };
 }
 
-export function summarizeTelemetry(t: any) {
-  const avgPressure = t.samples ? Math.round(t.pressureSum / t.samples) : 0;
+export function summarizeTelemetry(telemetry: TelemetryState) {
+  const avgPressure = telemetry.samples
+    ? Math.round(telemetry.pressureSum / telemetry.samples)
+    : 0;
 
   return {
     avgPressure,
-    peakLoad: t.peakLoad,
-    peakDrift: t.peakDrift,
+    peakLoad: telemetry.peakLoad,
+    peakDrift: telemetry.peakDrift,
   };
 }

@@ -1,6 +1,17 @@
 import { getDecisionWindow } from "./decisionWindow";
 
-export function getAdvisorCollapseTone(name: string, game: any) {
+type AdvisorCollapseToneGameState = {
+  pointOfNoReturn?: unknown;
+  pressure?: string;
+  load?: number;
+  drift?: number;
+  turn?: number;
+};
+
+export function getAdvisorCollapseTone(
+  name: string,
+  game: AdvisorCollapseToneGameState
+) {
   const window = getDecisionWindow(game);
   if (window.state !== "COLLAPSED" && !game.pointOfNoReturn) return null;
 

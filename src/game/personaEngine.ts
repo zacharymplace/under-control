@@ -1,12 +1,57 @@
-import { applyProfileBias, getPersonaProfile, profileConfidenceAdjustment, profileVoicePrefix } from "./personaProfile";
-import { applyMoodToText, derivePersonaMood, moodInfluence } from "./personaMood";
-function deriveStrategy(trust: number, ignored: number) {
+import {
+  applyProfileBias,
+  getPersonaProfile,
+  profileConfidenceAdjustment,
+  profileVoicePrefix,
+} from "./personaProfile";
+import { applyMoodToText, derivePersonaMood } from "./personaMood";
+
+export type PersonaEngineGameState = {
+  scenarioId?: string;
+  signalClarity?: number;
+  signal?: number;
+  integrity?: number;
+  drift?: number;
+  load?: number;
+  turn?: number;
+  trust?: Record<string, number | undefined>;
+  ignoredCounts?: Record<string, number | undefined>;
+  [key: string]: unknown;
+};
+
+type PersonaStrategy = "DEFENSIVE" | "ASSERTIVE" | "ADAPTIVE";
+type PersonaAction = "STABILIZE" | "REROUTE" | "OBSERVE";
+
+type PersonaConfig = {
+  name: "ELENA" | "MARA" | "ISHAAN";
+  role: string;
+  decide: (game: PersonaEngineGameState, strategy: PersonaStrategy) => PersonaAction;
+  text: (game: PersonaEngineGameState) => string;
+};
+
+function signalOf(game: PersonaEngineGameState) {
+  return game.signalClarity ?? game.signal ?? 0;
+}
+
+function integrityOf(game: PersonaEngineGameState) {
+  return game.integrity ?? 0;
+}
+
+function driftOf(game: PersonaEngineGameState) {
+  return game.drift ?? 0;
+}
+
+function loadOf(game: PersonaEngineGameState) {
+  return game.load ?? 0;
+}
+
+function deriveStrategy(trust: number, ignored: number): PersonaStrategy {
   if (trust <= -2) return "DEFENSIVE";
   if (ignored >= 4) return "ASSERTIVE";
   return "ADAPTIVE";
 }
 
-function scenarioBias(game: any, name: string) {
+function scenarioBias(game: PersonaEngineGameState, name: string) {
   const id = game.scenarioId;
 
   if (id === "signal_chaos" && name === "ELENA") return 1;
@@ -17,54 +62,56 @@ function scenarioBias(game: any, name: string) {
   return 0;
 }
 
-export function getPersonaRecommendations(game: any) {
+export function getPersonaRecommendations(game: PersonaEngineGameState) {
   const trust = game.trust || {};
   const ignored = game.ignoredCounts || {};
 
-  const base = [
+  const base: PersonaConfig[] = [
     {
       name: "ELENA",
       role: "SIGNAL",
-      decide: (g: any, strategy: string) => {
+      decide: (g, strategy) => {
         if (strategy === "DEFENSIVE") return "OBSERVE";
-        return g.signalClarity < 60 ? "OBSERVE" : "REROUTE";
+        return signalOf(g) < 60 ? "OBSERVE" : "REROUTE";
       },
-      text: (g: any) =>
-        g.signalClarity < 60
+      text: (g) =>
+        signalOf(g) < 60
           ? "We need better signal clarity."
           : "Signal is stable enough to act.",
     },
     {
       name: "MARA",
       role: "INFRASTRUCTURE",
-      decide: (g: any, strategy: string) => {
+      decide: (g, strategy) => {
         if (strategy === "ASSERTIVE") return "STABILIZE";
-        return g.integrity < 55 || g.drift > 35 ? "STABILIZE" : "REROUTE";
+        return integrityOf(g) < 55 || driftOf(g) > 35
+          ? "STABILIZE"
+          : "REROUTE";
       },
-      text: (g: any) =>
-        g.integrity < 55 || g.drift > 35
+      text: (g) =>
+        integrityOf(g) < 55 || driftOf(g) > 35
           ? "Integrity is at risk."
           : "We can redirect load safely.",
     },
     {
       name: "ISHAAN",
       role: "RISK",
-      decide: (g: any, strategy: string) => {
+      decide: (g, strategy) => {
         if (strategy === "ASSERTIVE") return "STABILIZE";
-        return g.drift > 30 || g.load > 85 ? "STABILIZE" : "OBSERVE";
+        return driftOf(g) > 30 || loadOf(g) > 85 ? "STABILIZE" : "OBSERVE";
       },
-      text: (g: any) =>
-        g.drift > 30 || g.load > 85
+      text: (g) =>
+        driftOf(g) > 30 || loadOf(g) > 85
           ? "Instability is increasing."
           : "No immediate threat detected.",
     },
   ];
 
-  return base.map((p) => {
-    const profile = getPersonaProfile(p.name);
-    const t = trust[p.name] ?? 0;
-    const i = ignored[p.name] ?? 0;
-    const bias = scenarioBias(game, p.name);
+  return base.map((persona) => {
+    const profile = getPersonaProfile(persona.name);
+    const t = trust[persona.name] ?? 0;
+    const i = ignored[persona.name] ?? 0;
+    const bias = scenarioBias(game, persona.name);
     const mood = derivePersonaMood({
       trust: t,
       ignored: i,
@@ -72,10 +119,10 @@ export function getPersonaRecommendations(game: any) {
     });
 
     const strategy = deriveStrategy(t, i);
-    const rawAction = p.decide(game, strategy);
+    const rawAction = persona.decide(game, strategy);
     const action = applyProfileBias({ profile, action: rawAction, game });
 
-    let text = p.text(game);
+    let text = persona.text(game);
     let confidence = "NEUTRAL";
 
     const confidenceAdjustment = profileConfidenceAdjustment(profile, game);
@@ -91,13 +138,13 @@ export function getPersonaRecommendations(game: any) {
       baseText: `${profileVoicePrefix(profile)} ${text}`,
       mood,
       action,
-      name: p.name,
+      name: persona.name,
       turn: game.turn,
     });
 
     return {
-      name: p.name,
-      role: p.role,
+      name: persona.name,
+      role: persona.role,
       action,
       text,
       trust: t,

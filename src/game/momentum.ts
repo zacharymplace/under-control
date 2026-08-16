@@ -1,4 +1,14 @@
-export function detectMomentum(log: any[]) {
+type MomentumSnapshot = {
+  integrity?: number;
+  load?: number;
+  drift?: number;
+};
+
+type MomentumLogEntry = {
+  after: MomentumSnapshot;
+};
+
+export function detectMomentum(log: MomentumLogEntry[]) {
   if (!log || log.length < 3) return null;
 
   let trend = 0;
@@ -8,9 +18,9 @@ export function detectMomentum(log: any[]) {
     const curr = log[i].after;
 
     const delta =
-      (curr.integrity - prev.integrity) -
-      (curr.load - prev.load) -
-      (curr.drift - prev.drift);
+      ((curr.integrity ?? 0) - (prev.integrity ?? 0)) -
+      ((curr.load ?? 0) - (prev.load ?? 0)) -
+      ((curr.drift ?? 0) - (prev.drift ?? 0));
 
     trend += delta;
   }

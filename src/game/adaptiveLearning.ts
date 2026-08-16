@@ -1,13 +1,18 @@
-export function deriveAdaptiveModifiers(runs: any[]) {
+type AdaptiveLearningRun = {
+  correct?: boolean;
+  confidence?: number;
+};
+
+export function deriveAdaptiveModifiers(runs: AdaptiveLearningRun[]) {
   if (!runs || runs.length === 0) return null;
 
   const recent = runs.slice(-20);
 
   const accuracy =
-    recent.filter(r => r.correct).length / recent.length;
+    recent.filter((run) => run.correct).length / recent.length;
 
   const avgConfidence =
-    recent.reduce((a, r) => a + (r.confidence || 0), 0) / recent.length;
+    recent.reduce((total, run) => total + (run.confidence || 0), 0) / recent.length;
 
   const failureRate = 1 - accuracy;
 

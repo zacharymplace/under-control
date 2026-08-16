@@ -1,0 +1,2861 @@
+"use client";
+
+function deferStateUpdate(update: () => void) {
+  queueMicrotask(update);
+}
+
+import { useEffect, useMemo, useState } from "react";
+
+type RunTelemetry = {
+  schemaVersion?: string;
+  exportedAt?: string;
+  route?: string;
+  scenario?: {
+    id?: string;
+    label?: string;
+  };
+  status?: string;
+  cycleReached?: number;
+  cyclesSurvived?: number;
+  maxCycles?: number;
+  score?: number;
+  operatorProfile?: {
+    name?: string;
+    summary?: string;
+  };
+  finalState?: {
+    integrity?: number;
+    pressure?: number;
+    cascadeRisk?: number;
+    cascadeBreaches?: number;
+    energy?: number;
+  };
+  actions?: {
+    total?: number;
+    observe?: number;
+    reroute?: number;
+    stabilize?: number;
+    reckless?: number;
+    observedBeforeCriticalAction?: number;
+  };
+  advisors?: Array<{
+    id?: string;
+    name?: string;
+    trust?: number;
+    confidence?: number;
+    state?: string;
+  }>;
+  nodes?: Array<{
+    id?: string;
+    label?: string;
+    state?: string;
+    pressure?: number;
+    volatility?: number;
+    integrity?: number;
+  }>;
+  events?: Array<{
+    cycle?: number;
+    tone?: string;
+    message?: string;
+  }>;
+};
+
+type ImportedRun = {
+  id: string;
+  filename: string;
+  importedAt: string;
+  note?: string;
+  telemetry: RunTelemetry;
+};
+
+type BalanceChangeLogEntry = {
+  id: string;
+  createdAt: string;
+  scenario: string;
+  severity: "note" | "watch" | "tune" | "urgent";
+  title: string;
+  note: string;
+};
+
+type ScenarioTuningAdjustment = {
+  scenario: string;
+  change: string;
+};
+
+type ScenarioTuningProfile = {
+  id: string;
+  name: string;
+  version: string;
+  createdAt: string;
+  summary: string;
+  adjustments: ScenarioTuningAdjustment[];
+};
+
+type ScenarioSummary = {
+  key: string;
+  label: string;
+  totalRuns: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  avgCycles: number;
+  avgScore: number;
+  avgIntegrity: number;
+  avgCascade: number;
+  avgActions: number;
+  avgObserve: number;
+  avgReroute: number;
+  avgStabilize: number;
+  avgTrust: number;
+  avgReckless: number;
+  zeroActionRuns: number;
+  dominantAction: string;
+  recommendation: string;
+  recommendationSeverity: "watch" | "tune" | "urgent";
+};
+
+const RUN_STORAGE_KEY = "under-control.playtest-runs.v0.1";
+const CHANGE_LOG_STORAGE_KEY = "under-control.balance-change-log.v0.1";
+const TUNING_PROFILE_STORAGE_KEY = "under-control.tuning-profiles.v0.1";
+
+const filterPresets = [
+  {
+    id: "all",
+    label: "All Runs",
+    scenario: "all",
+    status: "all",
+    confidence: "all",
+  },
+  {
+    id: "valid",
+    label: "Valid Runs Only",
+    scenario: "all",
+    status: "all",
+    confidence: "exclude_low",
+  },
+  {
+    id: "loss",
+    label: "Loss Review",
+    scenario: "all",
+    status: "lost",
+    confidence: "exclude_low",
+  },
+  {
+    id: "win",
+    label: "Win Review",
+    scenario: "all",
+    status: "won",
+    confidence: "exclude_low",
+  },
+  {
+    id: "scenario_tuning",
+    label: "Scenario Tuning",
+    scenario: "all",
+    status: "all",
+    confidence: "exclude_low",
+  },
+] as const;
+
+
+function recommendScenarioBalance(input: {
+  label: string;
+  totalRuns: number;
+  winRate: number;
+  avgCycles: number;
+  avgCascade: number;
+  avgIntegrity: number;
+  avgActions: number;
+  avgReckless: number;
+  zeroActionRuns: number;
+  dominantAction: string;
+}) {
+  const {
+    label,
+    totalRuns,
+    winRate,
+    avgCycles,
+    avgCascade,
+    avgIntegrity,
+    avgActions,
+    avgReckless,
+    zeroActionRuns,
+    dominantAction,
+  } = input;
+
+  if (zeroActionRuns > 0) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Low-confidence sample: this scenario includes zero-action/no-action telemetry. Import fresh committed-action runs before tuning.",
+    };
+  }
+
+  if (totalRuns < 3) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Collect at least 3 runs before making balance changes for this scenario.",
+    };
+  }
+
+  if (winRate < 25 && avgCycles < 7) {
+    return {
+      severity: "urgent" as const,
+      recommendation:
+        "Too punishing early. Reduce starting cascade pressure, critical-node pressure growth, or ignored-critical penalties.",
+    };
+  }
+
+  if (winRate < 35 && avgCascade >= 80) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Losses are cascade-heavy. Add stronger cascade relief, earlier warnings, or soften late-cycle cascade penalties.",
+    };
+  }
+
+  if (winRate > 75 && avgIntegrity > 55) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Likely too forgiving. Increase late-cycle pressure drift or require cleaner stabilization for a win.",
+    };
+  }
+
+  if (avgActions < 5 && avgCycles < 8) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Players may not understand when to intervene. Strengthen priority prompts, guided moves, or first-run onboarding.",
+    };
+  }
+
+  if (avgReckless >= 2) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Reckless interventions are common. Improve observe affordances or make hidden-risk warnings more visible.",
+    };
+  }
+
+  if (dominantAction === "OBSERVE" && winRate < 45) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Observation may be delaying recovery. Consider clearer timing cues for when to transition from observe to action.",
+    };
+  }
+
+  if (dominantAction === "REROUTE" && avgCascade > 70) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Rerouting may be transferring too much unresolved load. Review load-transfer values and connected-node penalties.",
+    };
+  }
+
+  if (dominantAction === "STABILIZE" && winRate < 45) {
+    return {
+      severity: "watch" as const,
+      recommendation:
+        "Direct repair is not converting into recovery. Review stabilize strength, cooldown, and hidden-risk penalties.",
+    };
+  }
+
+  if (label === "Critical Cascade" && winRate < 40) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Critical Cascade is doing its job, but may need one extra recovery lever: lower starting cascade or improve early Risk guidance.",
+    };
+  }
+
+  if (label === "Recovery Window" && winRate < 55) {
+    return {
+      severity: "tune" as const,
+      recommendation:
+        "Recovery Window should teach success. Reduce initial pressure or make the first priority more explicit.",
+    };
+  }
+
+  return {
+    severity: "watch" as const,
+    recommendation:
+      "Scenario appears near target range. Keep collecting runs before adjusting.",
+  };
+}
+
+function summarizeByScenario(runs: ImportedRun[]): ScenarioSummary[] {
+  const groups = new Map<string, ImportedRun[]>();
+
+  for (const run of runs) {
+    const scenarioId = run.telemetry.scenario?.id ?? "unknown";
+    const scenarioLabel = run.telemetry.scenario?.label ?? "Unknown Scenario";
+    const key = scenarioId + "::" + scenarioLabel;
+    const current = groups.get(key) ?? [];
+
+    current.push(run);
+    groups.set(key, current);
+  }
+
+  return Array.from(groups.entries())
+    .map(([key, groupRuns]) => {
+      const first = groupRuns[0]?.telemetry;
+      const label = first?.scenario?.label ?? "Unknown Scenario";
+      const totalRuns = groupRuns.length;
+      const wins = groupRuns.filter((run) => run.telemetry.status === "won").length;
+      const losses = groupRuns.filter((run) => run.telemetry.status === "lost").length;
+
+      const winRate = totalRuns > 0 ? Math.round((wins / totalRuns) * 100) : 0;
+      const avgCycles = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.cyclesSurvived), 0) /
+          totalRuns
+      );
+      const avgScore = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.score), 0) / totalRuns
+      );
+      const avgIntegrity = Math.round(
+        groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.finalState?.integrity),
+          0
+        ) / totalRuns
+      );
+      const avgCascade = Math.round(
+        groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.finalState?.cascadeRisk),
+          0
+        ) / totalRuns
+      );
+      const avgActions = Math.round(
+        groupRuns.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) / totalRuns
+      );
+      const avgObserve = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.observe), 0) /
+          totalRuns
+      );
+      const avgReroute = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.reroute), 0) /
+          totalRuns
+      );
+      const avgStabilize = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.stabilize), 0) /
+          totalRuns
+      );
+      const avgTrust = Math.round(
+        groupRuns.reduce((sum, run) => sum + averageTrust(run.telemetry), 0) / totalRuns
+      );
+      const avgReckless = Math.round(
+        groupRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.actions?.reckless), 0) /
+          totalRuns
+      );
+      const zeroActionRuns = groupRuns.filter((run) => actionTotal(run.telemetry) === 0).length;
+
+      const actionTotals = {
+        OBSERVE: groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.actions?.observe),
+          0
+        ),
+        REROUTE: groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.actions?.reroute),
+          0
+        ),
+        STABILIZE: groupRuns.reduce(
+          (sum, run) => sum + safeNumber(run.telemetry.actions?.stabilize),
+          0
+        ),
+      };
+
+      const dominantAction = Object.entries(actionTotals).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "NONE";
+
+      const recommendation = recommendScenarioBalance({
+        label,
+        totalRuns,
+        winRate,
+        avgCycles,
+        avgCascade,
+        avgIntegrity,
+        avgActions,
+        avgReckless,
+        zeroActionRuns,
+        dominantAction,
+      });
+
+      return {
+        key,
+        label,
+        totalRuns,
+        wins,
+        losses,
+        winRate,
+        avgCycles,
+        avgScore,
+        avgIntegrity,
+        avgCascade,
+        avgActions,
+        avgObserve,
+        avgReroute,
+        avgStabilize,
+        avgTrust,
+        avgReckless,
+        zeroActionRuns,
+        dominantAction,
+        recommendation: recommendation.recommendation,
+        recommendationSeverity: recommendation.severity,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function safeNumber(value: unknown, fallback = 0) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function statusColor(status: string | undefined) {
+  if (status === "won") return "#86efac";
+  if (status === "lost") return "#fb7185";
+  return "#fbbf24";
+}
+
+function averageTrust(run: RunTelemetry) {
+  const advisors = run.advisors ?? [];
+  if (advisors.length === 0) return 0;
+
+  return Math.round(
+    advisors.reduce((sum, advisor) => sum + safeNumber(advisor.trust), 0) / advisors.length
+  );
+}
+
+function actionTotal(run: RunTelemetry) {
+  return safeNumber(run.actions?.total);
+}
+
+function mostUsedAction(run: RunTelemetry) {
+  const ranked = [
+    ["OBSERVE", safeNumber(run.actions?.observe)] as const,
+    ["REROUTE", safeNumber(run.actions?.reroute)] as const,
+    ["STABILIZE", safeNumber(run.actions?.stabilize)] as const,
+  ].sort((a, b) => b[1] - a[1]);
+
+  return ranked[0][1] > 0 ? ranked[0][0] : "NONE";
+}
+
+function criticalNodeCount(run: RunTelemetry) {
+  return (run.nodes ?? []).filter((node) => node.state === "critical").length;
+}
+
+type DatasetHealth = {
+  totalRuns: number;
+  visibleRuns: number;
+  validRuns: number;
+  lowConfidenceRuns: number;
+  scenariosCovered: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  avgActions: number;
+  avgCycles: number;
+  avgScore: number;
+};
+
+function getDatasetHealth(allRuns: ImportedRun[], visibleRuns: ImportedRun[]): DatasetHealth {
+  const validRuns = allRuns.filter((run) => actionTotal(run.telemetry) > 0);
+  const lowConfidenceRuns = allRuns.length - validRuns.length;
+  const wins = visibleRuns.filter((run) => run.telemetry.status === "won").length;
+  const losses = visibleRuns.filter((run) => run.telemetry.status === "lost").length;
+  const scenariosCovered = new Set(
+    allRuns.map((run) => run.telemetry.scenario?.id ?? "unknown")
+  ).size;
+
+  return {
+    totalRuns: allRuns.length,
+    visibleRuns: visibleRuns.length,
+    validRuns: validRuns.length,
+    lowConfidenceRuns,
+    scenariosCovered,
+    wins,
+    losses,
+    winRate: visibleRuns.length > 0 ? Math.round((wins / visibleRuns.length) * 100) : 0,
+    avgActions:
+      visibleRuns.length > 0
+        ? Math.round(
+            visibleRuns.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) /
+              visibleRuns.length
+          )
+        : 0,
+    avgCycles:
+      visibleRuns.length > 0
+        ? Math.round(
+            visibleRuns.reduce(
+              (sum, run) => sum + safeNumber(run.telemetry.cyclesSurvived),
+              0
+            ) / visibleRuns.length
+          )
+        : 0,
+    avgScore:
+      visibleRuns.length > 0
+        ? Math.round(
+            visibleRuns.reduce((sum, run) => sum + safeNumber(run.telemetry.score), 0) /
+              visibleRuns.length
+          )
+        : 0,
+  };
+}
+
+function analyze(runs: ImportedRun[]) {
+  if (runs.length === 0) {
+    return ["No runs loaded yet. Export JSON from /playable-v01, then import it here."];
+  }
+
+  const wins = runs.filter((run) => run.telemetry.status === "won").length;
+  const losses = runs.filter((run) => run.telemetry.status === "lost").length;
+
+  const avgCycles = Math.round(
+    runs.reduce((sum, run) => sum + safeNumber(run.telemetry.cyclesSurvived), 0) / runs.length
+  );
+
+  const avgScore = Math.round(
+    runs.reduce((sum, run) => sum + safeNumber(run.telemetry.score), 0) / runs.length
+  );
+
+  const avgCascade = Math.round(
+    runs.reduce((sum, run) => sum + safeNumber(run.telemetry.finalState?.cascadeRisk), 0) /
+      runs.length
+  );
+
+  const avgActions = Math.round(
+    runs.reduce((sum, run) => sum + actionTotal(run.telemetry), 0) / runs.length
+  );
+
+  const notes = [
+    `${runs.length} run${runs.length === 1 ? "" : "s"} loaded: ${wins} won, ${losses} lost.`,
+    `Average cycles survived: ${avgCycles}. Average score: ${avgScore}.`,
+    `Average committed actions: ${avgActions}. Average final cascade: ${avgCascade}%.`,
+  ];
+
+  if (runs.length >= 3 && losses / runs.length > 0.7) {
+    notes.push("Balance note: loss rate is high. Consider softening critical growth or cascade penalties.");
+  }
+
+  if (runs.length >= 3 && wins / runs.length > 0.7) {
+    notes.push("Balance note: win rate is high. Consider increasing late-cycle pressure.");
+  }
+
+  return notes;
+}
+
+function downloadJson(filename: string, payload: unknown) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value: unknown) {
+  if (value === null || value === undefined) return "";
+
+  const text = String(value);
+  const escaped = text.replace(/"/g, '""');
+
+  if (/[",\n\r]/.test(escaped)) {
+    return `"${escaped}"`;
+  }
+
+  return escaped;
+}
+
+function toCsv(rows: Array<Record<string, unknown>>) {
+  if (rows.length === 0) return "";
+
+  const headers = Object.keys(rows[0]);
+  const headerRow = headers.map(csvCell).join(",");
+  const bodyRows = rows.map((row) => headers.map((header) => csvCell(row[header])).join(","));
+
+  return [headerRow, ...bodyRows].join("\n");
+}
+
+function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
+  const csv = toCsv(rows);
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.1 }}>
+        {label}
+      </div>
+      <div style={{ color: "#f8fafc", fontSize: 14, marginTop: 3 }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MiniBar({
+  value,
+  max,
+  tone,
+}: {
+  value: number;
+  max: number;
+  tone: "score" | "integrity" | "cascade";
+}) {
+  const pct = max <= 0 ? 0 : Math.max(0, Math.min(100, Math.round((value / max) * 100)));
+  const fill =
+    tone === "cascade"
+      ? "#fb7185"
+      : tone === "integrity"
+        ? "#86efac"
+        : "#67e8f9";
+
+  return (
+    <div
+      title={String(value)}
+      style={{
+        width: 92,
+        height: 9,
+        borderRadius: 999,
+        background: "rgba(148,163,184,0.16)",
+        overflow: "hidden",
+        border: "1px solid rgba(148,163,184,0.12)",
+      }}
+    >
+      <div
+        style={{
+          width: pct + "%",
+          height: "100%",
+          background: fill,
+          boxShadow: "0 0 10px " + fill + "88",
+        }}
+      />
+    </div>
+  );
+}
+
+function TrendTable({ runs }: { runs: ImportedRun[] }) {
+  if (runs.length === 0) {
+    return (
+      <div style={{ color: "#94a3b8", fontSize: 13 }}>
+        Import runs to see trend rows.
+      </div>
+    );
+  }
+
+  const orderedRuns = [...runs].sort((a, b) => {
+    return new Date(a.importedAt).getTime() - new Date(b.importedAt).getTime();
+  });
+
+  const maxTrendScore = Math.max(
+    1,
+    ...orderedRuns.map((run) => safeNumber(run.telemetry.score))
+  );
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          minWidth: 1240,
+          color: "#cbd5e1",
+          fontSize: 12,
+        }}
+      >
+        <thead>
+          <tr>
+            {[
+              "#",
+              "Imported",
+              "Scenario",
+              "Status",
+              "Score",
+              "Score Bar",
+              "Cycles",
+              "Integrity",
+              "Integrity Bar",
+              "Cascade",
+              "Cascade Bar",
+              "Actions",
+              "OBS",
+              "RER",
+              "STA",
+              "Profile",
+              "Note",
+            ].map((header) => (
+              <th
+                key={header}
+                style={{
+                  textAlign: "left",
+                  padding: "9px 8px",
+                  borderBottom: "1px solid rgba(148,163,184,0.24)",
+                  color: "#94a3b8",
+                  fontSize: 10,
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {orderedRuns.map((run, index) => {
+            const telemetry = run.telemetry;
+            const status = telemetry.status ?? "unknown";
+            const scenario = telemetry.scenario?.label ?? "Unknown Scenario";
+            const profile = telemetry.operatorProfile?.name ?? "Unclassified";
+            const importedAt = new Date(run.importedAt);
+            const importedLabel = Number.isNaN(importedAt.getTime())
+              ? "Unknown"
+              : importedAt.toLocaleString();
+
+            return (
+              <tr key={run.id}>
+                <td style={trendCellStyle}>{index + 1}</td>
+                <td style={trendCellStyle}>{importedLabel}</td>
+                <td style={trendCellStyle}>{scenario}</td>
+                <td
+                  style={{
+                    ...trendCellStyle,
+                    color: statusColor(status),
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  }}
+                >
+                  {status}
+                </td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.score)}</td>
+                <td style={trendCellStyle}>
+                  <MiniBar value={safeNumber(telemetry.score)} max={maxTrendScore} tone="score" />
+                </td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.cyclesSurvived)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.finalState?.integrity)}%</td>
+                <td style={trendCellStyle}>
+                  <MiniBar value={safeNumber(telemetry.finalState?.integrity)} max={100} tone="integrity" />
+                </td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.finalState?.cascadeRisk)}%</td>
+                <td style={trendCellStyle}>
+                  <MiniBar value={safeNumber(telemetry.finalState?.cascadeRisk)} max={100} tone="cascade" />
+                </td>
+                <td style={trendCellStyle}>{actionTotal(telemetry)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.actions?.observe)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.actions?.reroute)}</td>
+                <td style={trendCellStyle}>{safeNumber(telemetry.actions?.stabilize)}</td>
+                <td style={trendCellStyle}>{profile}</td>
+                <td style={{ ...trendCellStyle, whiteSpace: "normal", minWidth: 220 }}>
+                  {run.note ?? ""}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const trendCellStyle: React.CSSProperties = {
+  padding: "9px 8px",
+  borderBottom: "1px solid rgba(148,163,184,0.12)",
+  verticalAlign: "top",
+  whiteSpace: "nowrap",
+};
+
+function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
+  const enoughScenarios = health.scenariosCovered >= 3;
+  const enoughValidRuns = health.validRuns >= 5;
+  const lowConfidenceRatio =
+    health.totalRuns > 0 ? Math.round((health.lowConfidenceRuns / health.totalRuns) * 100) : 0;
+
+  return (
+    <section
+      style={{
+        border: "1px solid rgba(103,232,249,0.26)",
+        background: "rgba(8,47,73,0.14)",
+        borderRadius: 20,
+        padding: 16,
+        display: "grid",
+        gap: 14,
+      }}
+    >
+      <div>
+        <div
+          style={{
+            color: "#67e8f9",
+            fontSize: 12,
+            letterSpacing: 1.5,
+            textTransform: "uppercase",
+          }}
+        >
+          Dataset Health
+        </div>
+        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+          Snapshot of the currently loaded review dataset. Win rate and averages follow active filters.
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+          gap: 12,
+        }}
+      >
+        <Metric label="Visible Runs" value={health.visibleRuns} />
+        <Metric label="Total Runs" value={health.totalRuns} />
+        <Metric label="Valid Runs" value={health.validRuns} />
+        <Metric label="Low Confidence" value={health.lowConfidenceRuns} />
+        <Metric label="Scenarios" value={health.scenariosCovered} />
+        <Metric label="Win Rate" value={health.winRate + "%"} />
+        <Metric label="Avg Actions" value={health.avgActions} />
+        <Metric label="Avg Cycles" value={health.avgCycles} />
+        <Metric label="Avg Score" value={health.avgScore} />
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gap: 7,
+          color: "#cbd5e1",
+          fontSize: 12,
+          lineHeight: 1.45,
+        }}
+      >
+        <div>
+          <span style={{ color: enoughValidRuns ? "#86efac" : "#fde68a" }}>
+            {enoughValidRuns ? "Good" : "Watch"}:
+          </span>{" "}
+          {enoughValidRuns
+            ? "Enough valid runs exist for early tuning reads."
+            : "Collect at least 5 valid committed-action runs before making firm tuning calls."}
+        </div>
+
+        <div>
+          <span style={{ color: enoughScenarios ? "#86efac" : "#fde68a" }}>
+            {enoughScenarios ? "Good" : "Watch"}:
+          </span>{" "}
+          {enoughScenarios
+            ? "Multiple scenarios are represented."
+            : "Run more scenarios to avoid overfitting balance decisions."}
+        </div>
+
+        {health.lowConfidenceRuns > 0 && (
+          <div>
+            <span style={{ color: "#fb7185" }}>Data hygiene:</span> Low-confidence runs are{" "}
+            {lowConfidenceRatio}% of the loaded dataset. Use DELETE LOW-CONFIDENCE when ready.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
+  const winRate = summary.winRate;
+  const balanceTone =
+    summary.recommendationSeverity === "urgent"
+      ? "Urgent tuning"
+      : summary.recommendationSeverity === "tune"
+        ? "Tune candidate"
+        : "Watch";
+
+  return (
+    <article
+      style={{
+        border: "1px solid rgba(251,191,36,0.28)",
+        background: "rgba(120,53,15,0.14)",
+        borderRadius: 18,
+        padding: 14,
+        display: "grid",
+        gap: 12,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div
+            style={{
+              color: "#fde68a",
+              fontSize: 11,
+              letterSpacing: 1.4,
+              textTransform: "uppercase",
+            }}
+          >
+            Scenario
+          </div>
+          <div style={{ color: "#f8fafc", fontSize: 17, marginTop: 4 }}>
+            {summary.label}
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 4 }}>
+            {summary.totalRuns} run{summary.totalRuns === 1 ? "" : "s"} · {summary.wins}W /{" "}
+            {summary.losses}L · {winRate}% win rate
+          </div>
+        </div>
+
+        <div
+          style={{
+            color:
+              summary.recommendationSeverity === "urgent"
+                ? "#fb7185"
+                : summary.recommendationSeverity === "tune"
+                  ? "#fde68a"
+                  : "#67e8f9",
+            fontSize: 11,
+            letterSpacing: 1.1,
+            textAlign: "right",
+            textTransform: "uppercase",
+          }}
+        >
+          {balanceTone}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 10,
+        }}
+      >
+        <Metric label="Avg Cycles" value={summary.avgCycles} />
+        <Metric label="Avg Score" value={summary.avgScore} />
+        <Metric label="Avg Actions" value={summary.avgActions} />
+        <Metric label="Avg OBS" value={summary.avgObserve} />
+        <Metric label="Avg RER" value={summary.avgReroute} />
+        <Metric label="Avg STA" value={summary.avgStabilize} />
+        <Metric label="Avg Integrity" value={summary.avgIntegrity + "%"} />
+        <Metric label="Avg Cascade" value={summary.avgCascade + "%"} />
+        <Metric label="Avg Trust" value={summary.avgTrust + "%"} />
+        <Metric label="Avg Reckless" value={summary.avgReckless} />
+        <Metric label="Zero-Action Runs" value={summary.zeroActionRuns} />
+        <Metric label="Dominant Action" value={summary.dominantAction} />
+      </div>
+
+      <div
+        style={{
+          borderTop: "1px solid rgba(148,163,184,0.18)",
+          paddingTop: 10,
+          color: "#cbd5e1",
+          fontSize: 12,
+          lineHeight: 1.45,
+        }}
+      >
+        <div
+          style={{
+            color:
+              summary.recommendationSeverity === "urgent"
+                ? "#fb7185"
+                : summary.recommendationSeverity === "tune"
+                  ? "#fde68a"
+                  : "#67e8f9",
+            fontSize: 10,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+            marginBottom: 5,
+          }}
+        >
+          Tuning Recommendation
+        </div>
+        {summary.recommendation}
+      </div>
+    </article>
+  );
+}
+
+function RunCard({
+  run,
+  onNoteChange,
+  onDelete,
+}: {
+  run: ImportedRun;
+  onNoteChange: (runId: string, note: string) => void;
+  onDelete: (runId: string) => void;
+}) {
+  const telemetry = run.telemetry;
+  const scenario = telemetry.scenario?.label ?? "Unknown Scenario";
+  const profile = telemetry.operatorProfile?.name ?? "Unclassified";
+  const status = telemetry.status ?? "unknown";
+
+  return (
+    <article
+      style={{
+        border: "1px solid rgba(148,163,184,0.24)",
+        background: "rgba(15,23,42,0.74)",
+        borderRadius: 18,
+        padding: 14,
+        display: "grid",
+        gap: 12,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div
+            style={{
+              color: statusColor(status),
+              fontSize: 11,
+              letterSpacing: 1.6,
+              textTransform: "uppercase",
+            }}
+          >
+            {status}
+          </div>
+          <div style={{ color: "#f8fafc", fontSize: 17, marginTop: 4 }}>
+            {profile}
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>
+            {scenario} · {run.filename}
+          </div>
+        </div>
+
+        <div style={{ textAlign: "right", display: "grid", gap: 8, justifyItems: "end" }}>
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>
+              SCORE
+            </div>
+            <div style={{ color: "#f8fafc", fontSize: 20 }}>
+              {safeNumber(telemetry.score)}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm(
+                "Delete this imported run from the local review lab?"
+              );
+
+              if (confirmed) {
+                onDelete(run.id);
+              }
+            }}
+            style={{
+              border: "1px solid rgba(251,113,133,0.38)",
+              background: "rgba(127,29,29,0.22)",
+              color: "#fecdd3",
+              borderRadius: 10,
+              padding: "7px 9px",
+              cursor: "pointer",
+              fontSize: 10,
+              letterSpacing: 1.1,
+            }}
+          >
+            DELETE
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 10,
+        }}
+      >
+        <Metric label="Cycles" value={safeNumber(telemetry.cyclesSurvived)} />
+        <Metric label="Integrity" value={safeNumber(telemetry.finalState?.integrity) + "%"} />
+        <Metric label="Cascade" value={safeNumber(telemetry.finalState?.cascadeRisk) + "%"} />
+        <Metric label="Trust" value={averageTrust(telemetry) + "%"} />
+        <Metric label="Actions" value={actionTotal(telemetry)} />
+        <Metric label="Main Action" value={mostUsedAction(telemetry)} />
+        <Metric label="Reckless" value={safeNumber(telemetry.actions?.reckless)} />
+        <Metric label="Critical Nodes" value={criticalNodeCount(telemetry)} />
+      </div>
+
+      {actionTotal(telemetry) === 0 && (
+        <div
+          style={{
+            border: "1px solid rgba(251,191,36,0.34)",
+            background: "rgba(120,53,15,0.18)",
+            borderRadius: 12,
+            padding: 10,
+            color: "#fde68a",
+            fontSize: 12,
+            lineHeight: 1.4,
+          }}
+        >
+          Low-confidence telemetry: no committed actions recorded. Use this run cautiously for balance tuning.
+        </div>
+      )}
+
+      <div
+        style={{
+          border: "1px solid rgba(103,232,249,0.2)",
+          background: "rgba(8,47,73,0.14)",
+          borderRadius: 12,
+          padding: 10,
+          display: "grid",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            color: "#67e8f9",
+            fontSize: 10,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          Action Breakdown
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 8,
+          }}
+        >
+          <Metric label="Observe" value={safeNumber(telemetry.actions?.observe)} />
+          <Metric label="Reroute" value={safeNumber(telemetry.actions?.reroute)} />
+          <Metric label="Stabilize" value={safeNumber(telemetry.actions?.stabilize)} />
+        </div>
+      </div>
+
+      <div
+        style={{
+          border: "1px solid rgba(148,163,184,0.18)",
+          background: "rgba(2,6,23,0.34)",
+          borderRadius: 12,
+          padding: 10,
+          display: "grid",
+          gap: 7,
+        }}
+      >
+        <label
+          htmlFor={"run-note-" + run.id}
+          style={{
+            color: "#67e8f9",
+            fontSize: 10,
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          Run Note
+        </label>
+        <textarea
+          id={"run-note-" + run.id}
+          value={run.note ?? ""}
+          onChange={(event) => onNoteChange(run.id, event.currentTarget.value)}
+          placeholder="Add playtest observation..."
+          rows={3}
+          style={{
+            width: "100%",
+            resize: "vertical",
+            border: "1px solid rgba(148,163,184,0.24)",
+            background: "rgba(15,23,42,0.82)",
+            color: "#e2e8f0",
+            borderRadius: 10,
+            padding: 9,
+            fontSize: 12,
+            lineHeight: 1.4,
+            fontFamily: "inherit",
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          borderTop: "1px solid rgba(148,163,184,0.18)",
+          paddingTop: 10,
+          color: "#94a3b8",
+          fontSize: 12,
+          lineHeight: 1.45,
+        }}
+      >
+        {telemetry.operatorProfile?.summary ?? "No profile summary available."}
+      </div>
+    </article>
+  );
+}
+
+function isRunTelemetry(value: unknown): value is RunTelemetry {
+  if (!value || typeof value !== "object") return false;
+
+  const telemetry = value as RunTelemetry & {
+    schemaVersion?: string;
+    importedRuns?: unknown;
+    scenarioSummaries?: unknown;
+    trendRows?: unknown;
+  };
+
+  if (telemetry.schemaVersion === "under-control.playtest-review.v0.1") {
+    return false;
+  }
+
+  if (
+    "importedRuns" in telemetry ||
+    "scenarioSummaries" in telemetry ||
+    "trendRows" in telemetry
+  ) {
+    return false;
+  }
+
+  const hasRunShape =
+    typeof telemetry.status === "string" ||
+    typeof telemetry.score === "number" ||
+    typeof telemetry.cyclesSurvived === "number" ||
+    typeof telemetry.cycleReached === "number";
+
+  const hasTelemetrySections =
+    typeof telemetry.finalState === "object" ||
+    typeof telemetry.actions === "object" ||
+    Array.isArray(telemetry.events) ||
+    Array.isArray(telemetry.nodes);
+
+  return hasRunShape && hasTelemetrySections;
+}
+
+export default function PlaytestRunsPage() {
+  const [runs, setRuns] = useState<ImportedRun[]>([]);
+  const [hasHydratedRuns, setHasHydratedRuns] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [scenarioFilter, setScenarioFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [confidenceFilter, setConfidenceFilter] = useState("all");
+  const [activePresetId, setActivePresetId] = useState("all");
+  const [changeLogEntries, setChangeLogEntries] = useState<BalanceChangeLogEntry[]>([]);
+  const [hasHydratedChangeLog, setHasHydratedChangeLog] = useState(false);
+  const [changeLogDraft, setChangeLogDraft] = useState({
+    scenario: "General",
+    severity: "note" as BalanceChangeLogEntry["severity"],
+    title: "",
+    note: "",
+  });
+  const [tuningProfiles, setTuningProfiles] = useState<ScenarioTuningProfile[]>([]);
+  const [hasHydratedTuningProfiles, setHasHydratedTuningProfiles] = useState(false);
+  const [tuningProfileDraft, setTuningProfileDraft] = useState({
+    name: "",
+    version: "v0.1.1",
+    summary: "",
+    adjustmentsText: "",
+  });
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(RUN_STORAGE_KEY);
+
+      if (!raw) {
+        deferStateUpdate(() => setHasHydratedRuns(true));
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as ImportedRun[];
+
+      if (Array.isArray(parsed)) {
+        deferStateUpdate(() => setRuns(parsed));
+      }
+    } catch {
+      deferStateUpdate(() => setError("Saved playtest runs could not be restored. Clear saved runs and re-import JSON files."));
+    } finally {
+      deferStateUpdate(() => setHasHydratedRuns(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedRuns) return;
+
+    try {
+      window.localStorage.setItem(RUN_STORAGE_KEY, JSON.stringify(runs));
+    } catch {
+      deferStateUpdate(() => setError("Could not save imported runs locally. Browser storage may be full or unavailable."));
+    }
+  }, [hasHydratedRuns, runs]);
+
+  function applyFilterPreset(presetId: string) {
+    const preset = filterPresets.find((item) => item.id === presetId);
+
+    if (!preset) return;
+
+    setActivePresetId(preset.id);
+    setScenarioFilter(preset.scenario);
+    setStatusFilter(preset.status);
+    setConfidenceFilter(preset.confidence);
+  }
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CHANGE_LOG_STORAGE_KEY);
+
+      if (!raw) {
+        deferStateUpdate(() => setHasHydratedChangeLog(true));
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as BalanceChangeLogEntry[];
+
+      if (Array.isArray(parsed)) {
+        deferStateUpdate(() => setChangeLogEntries(parsed));
+      }
+    } catch {
+      deferStateUpdate(() => setError("Saved balance change log could not be restored."));
+    } finally {
+      deferStateUpdate(() => setHasHydratedChangeLog(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedChangeLog) return;
+
+    try {
+      window.localStorage.setItem(CHANGE_LOG_STORAGE_KEY, JSON.stringify(changeLogEntries));
+    } catch {
+      deferStateUpdate(() => setError("Could not save balance change log locally."));
+    }
+  }, [changeLogEntries, hasHydratedChangeLog]);
+
+  function addBalanceChangeLogEntry() {
+    const title = changeLogDraft.title.trim();
+    const note = changeLogDraft.note.trim();
+
+    if (!title && !note) {
+      setError("Add a title or note before saving a balance change.");
+      return;
+    }
+
+    const entry: BalanceChangeLogEntry = {
+      id: "balance-change-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+      createdAt: new Date().toISOString(),
+      scenario: changeLogDraft.scenario,
+      severity: changeLogDraft.severity,
+      title: title || "Untitled tuning note",
+      note,
+    };
+
+    setChangeLogEntries((current) => [entry, ...current]);
+    setChangeLogDraft({
+      scenario: "General",
+      severity: "note",
+      title: "",
+      note: "",
+    });
+    setMessage("Saved balance change log entry.");
+    setError(null);
+  }
+
+  function deleteBalanceChangeLogEntry(entryId: string) {
+    setChangeLogEntries((current) => current.filter((entry) => entry.id !== entryId));
+    setMessage("Deleted balance change log entry.");
+    setError(null);
+  }
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(TUNING_PROFILE_STORAGE_KEY);
+
+      if (!raw) {
+        deferStateUpdate(() => setHasHydratedTuningProfiles(true));
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as ScenarioTuningProfile[];
+
+      if (Array.isArray(parsed)) {
+        deferStateUpdate(() => setTuningProfiles(parsed));
+      }
+    } catch {
+      deferStateUpdate(() => setError("Saved scenario tuning profiles could not be restored."));
+    } finally {
+      deferStateUpdate(() => setHasHydratedTuningProfiles(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedTuningProfiles) return;
+
+    try {
+      window.localStorage.setItem(TUNING_PROFILE_STORAGE_KEY, JSON.stringify(tuningProfiles));
+    } catch {
+      deferStateUpdate(() => setError("Could not save scenario tuning profiles locally."));
+    }
+  }, [hasHydratedTuningProfiles, tuningProfiles]);
+
+  function parseTuningAdjustments(text: string): ScenarioTuningAdjustment[] {
+    return text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [scenarioPart, ...changeParts] = line.split(":");
+        const scenario = scenarioPart?.trim() || "General";
+        const change = changeParts.join(":").trim() || line;
+
+        return {
+          scenario,
+          change,
+        };
+      });
+  }
+
+  function createScenarioTuningProfile() {
+    const name = tuningProfileDraft.name.trim();
+    const version = tuningProfileDraft.version.trim() || "v0.1.1";
+    const summary = tuningProfileDraft.summary.trim();
+    const adjustments = parseTuningAdjustments(tuningProfileDraft.adjustmentsText);
+
+    if (!name && !summary && adjustments.length === 0) {
+      setError("Add a profile name, summary, or at least one scenario adjustment before saving.");
+      return;
+    }
+
+    const profile: ScenarioTuningProfile = {
+      id: "tuning-profile-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+      name: name || "Untitled tuning profile",
+      version,
+      createdAt: new Date().toISOString(),
+      summary,
+      adjustments,
+    };
+
+    setTuningProfiles((current) => [profile, ...current]);
+    setTuningProfileDraft({
+      name: "",
+      version,
+      summary: "",
+      adjustmentsText: "",
+    });
+    setMessage("Saved scenario tuning profile.");
+    setError(null);
+  }
+
+  function deleteScenarioTuningProfile(profileId: string) {
+    const confirmed = window.confirm("Delete this scenario tuning profile?");
+
+    if (!confirmed) return;
+
+    setTuningProfiles((current) => current.filter((profile) => profile.id !== profileId));
+    setMessage("Deleted scenario tuning profile.");
+    setError(null);
+  }
+
+  function exportScenarioTuningProfile(profile: ScenarioTuningProfile) {
+    downloadJson(
+      "under-control-tuning-profile-" +
+        profile.version.replace(/[^a-zA-Z0-9._-]/g, "-") +
+        "-" +
+        profile.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 42) +
+        ".json",
+      {
+        schemaVersion: "under-control.scenario-tuning-profile.v0.1",
+        exportedAt: new Date().toISOString(),
+        profile,
+      }
+    );
+  }
+
+  function isScenarioTuningProfilePayload(value: unknown): value is {
+    schemaVersion?: string;
+    profile?: ScenarioTuningProfile;
+  } {
+    if (!value || typeof value !== "object") return false;
+
+    const payload = value as {
+      schemaVersion?: string;
+      profile?: ScenarioTuningProfile;
+    };
+
+    if (payload.schemaVersion !== "under-control.scenario-tuning-profile.v0.1") {
+      return false;
+    }
+
+    if (!payload.profile || typeof payload.profile !== "object") return false;
+    if (typeof payload.profile.name !== "string") return false;
+    if (typeof payload.profile.version !== "string") return false;
+
+    return true;
+  }
+
+  async function importScenarioTuningProfiles(files: FileList | File[]) {
+    setError(null);
+    setMessage(null);
+
+    const fileArray = Array.from(files).filter((file) => file.name.endsWith(".json"));
+
+    if (fileArray.length === 0) {
+      setError("No JSON files selected for tuning profile import.");
+      return;
+    }
+
+    const imported: ScenarioTuningProfile[] = [];
+    const failed: string[] = [];
+
+    for (const file of fileArray) {
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        if (!isScenarioTuningProfilePayload(parsed) || !parsed.profile) {
+          throw new Error("Not a scenario tuning profile export.");
+        }
+
+        imported.push({
+          ...parsed.profile,
+          id:
+            parsed.profile.id ||
+            "tuning-profile-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+        });
+      } catch {
+        failed.push(file.name);
+      }
+    }
+
+    if (imported.length > 0) {
+      setTuningProfiles((current) => [...imported, ...current]);
+      setMessage(`Imported ${imported.length} tuning profile${imported.length === 1 ? "" : "s"}.`);
+    }
+
+    if (failed.length > 0) {
+      setError(`Could not import tuning profile file${failed.length === 1 ? "" : "s"}: ${failed.join(", ")}.`);
+    }
+  }
+
+  const scenarioOptions = useMemo(() => {
+    const options = new Map<string, string>();
+
+    for (const run of runs) {
+      const id = run.telemetry.scenario?.id ?? "unknown";
+      const label = run.telemetry.scenario?.label ?? "Unknown Scenario";
+      options.set(id, label);
+    }
+
+    return Array.from(options.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [runs]);
+
+  const filteredRuns = useMemo(() => {
+    return runs.filter((run) => {
+      const scenarioId = run.telemetry.scenario?.id ?? "unknown";
+      const status = run.telemetry.status ?? "unknown";
+      const lowConfidence = actionTotal(run.telemetry) === 0;
+
+      if (scenarioFilter !== "all" && scenarioId !== scenarioFilter) return false;
+      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (confidenceFilter === "exclude_low" && lowConfidence) return false;
+      if (confidenceFilter === "only_low" && !lowConfidence) return false;
+
+      return true;
+    });
+  }, [confidenceFilter, runs, scenarioFilter, statusFilter]);
+
+  const sortedRuns = useMemo(() => {
+    return [...filteredRuns].sort(
+      (a, b) => safeNumber(b.telemetry.score) - safeNumber(a.telemetry.score)
+    );
+  }, [filteredRuns]);
+
+  const scenarioSummaries = useMemo(() => summarizeByScenario(sortedRuns), [sortedRuns]);
+
+  const lowConfidenceRunCount = useMemo(() => {
+    return runs.filter((run) => actionTotal(run.telemetry) === 0).length;
+  }, [runs]);
+
+  const notes = useMemo(() => analyze(sortedRuns), [sortedRuns]);
+
+  const datasetHealth = useMemo(() => getDatasetHealth(runs, sortedRuns), [runs, sortedRuns]);
+
+  const reviewExportPayload = useMemo(() => {
+    return {
+      schemaVersion: "under-control.playtest-review.v0.1",
+      exportedAt: new Date().toISOString(),
+      route: "/playtest-runs",
+      runCount: sortedRuns.length,
+      totalImportedRunCount: runs.length,
+      filters: {
+        preset: activePresetId,
+        scenario: scenarioFilter,
+        status: statusFilter,
+        confidence: confidenceFilter,
+      },
+      datasetHealth,
+      balanceChangeLog: changeLogEntries,
+      scenarioTuningProfiles: tuningProfiles,
+      balanceNotes: notes,
+      scenarioSummaries,
+      scenarioRecommendations: scenarioSummaries.map((summary) => ({
+        scenario: summary.label,
+        severity: summary.recommendationSeverity,
+        recommendation: summary.recommendation,
+        winRate: summary.winRate,
+        avgCycles: summary.avgCycles,
+        avgCascade: summary.avgCascade,
+        avgActions: summary.avgActions,
+        avgObserve: summary.avgObserve,
+        avgReroute: summary.avgReroute,
+        avgStabilize: summary.avgStabilize,
+        zeroActionRuns: summary.zeroActionRuns,
+        dominantAction: summary.dominantAction,
+      })),
+      trendRows: [...sortedRuns]
+        .sort((a, b) => new Date(a.importedAt).getTime() - new Date(b.importedAt).getTime())
+        .map((run, index) => ({
+          order: index + 1,
+          filename: run.filename,
+          importedAt: run.importedAt,
+          note: run.note ?? "",
+          scenario: run.telemetry.scenario?.label ?? "Unknown Scenario",
+          status: run.telemetry.status ?? "unknown",
+          score: safeNumber(run.telemetry.score),
+          cyclesSurvived: safeNumber(run.telemetry.cyclesSurvived),
+          integrity: safeNumber(run.telemetry.finalState?.integrity),
+          cascadeRisk: safeNumber(run.telemetry.finalState?.cascadeRisk),
+          actionsTotal: actionTotal(run.telemetry),
+          observe: safeNumber(run.telemetry.actions?.observe),
+          reroute: safeNumber(run.telemetry.actions?.reroute),
+          stabilize: safeNumber(run.telemetry.actions?.stabilize),
+          profile: run.telemetry.operatorProfile?.name ?? "Unclassified",
+        })),
+      importedRuns: sortedRuns.map((run) => ({
+        id: run.id,
+        filename: run.filename,
+        importedAt: run.importedAt,
+        note: run.note ?? "",
+        status: run.telemetry.status ?? "unknown",
+        scenario: run.telemetry.scenario ?? null,
+        score: safeNumber(run.telemetry.score),
+        cyclesSurvived: safeNumber(run.telemetry.cyclesSurvived),
+        operatorProfile: run.telemetry.operatorProfile ?? null,
+        finalState: run.telemetry.finalState ?? null,
+        actions: run.telemetry.actions ?? null,
+        averageAdvisorTrust: averageTrust(run.telemetry),
+        criticalNodeCount: criticalNodeCount(run.telemetry),
+        mostUsedAction: mostUsedAction(run.telemetry),
+      })),
+    };
+  }, [
+    activePresetId,
+    confidenceFilter,
+    changeLogEntries,
+    datasetHealth,
+    notes,
+    runs.length,
+    scenarioFilter,
+    scenarioSummaries,
+    sortedRuns,
+    statusFilter,
+    tuningProfiles,
+  ]);
+
+  const reviewExportFilename =
+    "under-control-playtest-review-" +
+    new Date().toISOString().replace(/[:.]/g, "-") +
+    ".json";
+
+  const runCsvRows = useMemo(() => {
+    return sortedRuns.map((run) => {
+      const telemetry = run.telemetry;
+
+      return {
+        filename: run.filename,
+        importedAt: run.importedAt,
+        note: run.note ?? "",
+        exportedAt: telemetry.exportedAt ?? "",
+        status: telemetry.status ?? "unknown",
+        scenarioId: telemetry.scenario?.id ?? "unknown",
+        scenarioLabel: telemetry.scenario?.label ?? "Unknown Scenario",
+        score: safeNumber(telemetry.score),
+        cyclesSurvived: safeNumber(telemetry.cyclesSurvived),
+        cycleReached: safeNumber(telemetry.cycleReached),
+        maxCycles: safeNumber(telemetry.maxCycles),
+        integrity: safeNumber(telemetry.finalState?.integrity),
+        pressure: safeNumber(telemetry.finalState?.pressure),
+        cascadeRisk: safeNumber(telemetry.finalState?.cascadeRisk),
+        cascadeBreaches: safeNumber(telemetry.finalState?.cascadeBreaches),
+        actionsTotal: actionTotal(telemetry),
+        observe: safeNumber(telemetry.actions?.observe),
+        reroute: safeNumber(telemetry.actions?.reroute),
+        stabilize: safeNumber(telemetry.actions?.stabilize),
+        reckless: safeNumber(telemetry.actions?.reckless),
+        observedBeforeCriticalAction: safeNumber(telemetry.actions?.observedBeforeCriticalAction),
+        averageAdvisorTrust: averageTrust(telemetry),
+        criticalNodeCount: criticalNodeCount(telemetry),
+        mostUsedAction: mostUsedAction(telemetry),
+        lowConfidence: actionTotal(telemetry) === 0,
+        operatorProfile: telemetry.operatorProfile?.name ?? "Unclassified",
+        operatorProfileSummary: telemetry.operatorProfile?.summary ?? "",
+      };
+    });
+  }, [sortedRuns]);
+
+  const scenarioCsvRows = useMemo(() => {
+    return scenarioSummaries.map((summary) => ({
+      scenario: summary.label,
+      totalRuns: summary.totalRuns,
+      wins: summary.wins,
+      losses: summary.losses,
+      winRate: summary.winRate,
+      avgCycles: summary.avgCycles,
+      avgScore: summary.avgScore,
+      avgIntegrity: summary.avgIntegrity,
+      avgCascade: summary.avgCascade,
+      avgActions: summary.avgActions,
+      avgObserve: summary.avgObserve,
+      avgReroute: summary.avgReroute,
+      avgStabilize: summary.avgStabilize,
+      avgTrust: summary.avgTrust,
+      avgReckless: summary.avgReckless,
+      zeroActionRuns: summary.zeroActionRuns,
+      dominantAction: summary.dominantAction,
+      recommendationSeverity: summary.recommendationSeverity,
+      recommendation: summary.recommendation,
+    }));
+  }, [scenarioSummaries]);
+
+  const csvTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const runCsvFilename = "under-control-runs-" + csvTimestamp + ".csv";
+  const scenarioCsvFilename = "under-control-scenarios-" + csvTimestamp + ".csv";
+
+  function updateRunNote(runId: string, note: string) {
+    setRuns((current) =>
+      current.map((run) => {
+        if (run.id !== runId) return run;
+
+        return {
+          ...run,
+          note,
+        };
+      })
+    );
+  }
+
+  function deleteImportedRun(runId: string) {
+    setRuns((current) => current.filter((run) => run.id !== runId));
+    setMessage("Deleted imported run.");
+    setError(null);
+  }
+
+  function deleteLowConfidenceRuns() {
+    const lowConfidenceCount = runs.filter((run) => actionTotal(run.telemetry) === 0).length;
+
+    if (lowConfidenceCount === 0) {
+      setMessage("No low-confidence runs to delete.");
+      setError(null);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${lowConfidenceCount} low-confidence run${lowConfidenceCount === 1 ? "" : "s"} with zero committed actions?`
+    );
+
+    if (!confirmed) return;
+
+    setRuns((current) => current.filter((run) => actionTotal(run.telemetry) > 0));
+    setMessage(
+      `Deleted ${lowConfidenceCount} low-confidence run${lowConfidenceCount === 1 ? "" : "s"}.`
+    );
+    setError(null);
+  }
+
+  async function importFiles(files: FileList | File[]) {
+    setError(null);
+    setMessage(null);
+
+    const fileArray = Array.from(files).filter((file) => file.name.endsWith(".json"));
+
+    if (fileArray.length === 0) {
+      setError("No JSON files selected. Export a run from /playable-v01 first.");
+      return;
+    }
+
+    const imported: ImportedRun[] = [];
+    const failed: string[] = [];
+
+    for (const file of fileArray) {
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        if (!isRunTelemetry(parsed)) {
+          throw new Error("Not an Under Control run telemetry export.");
+        }
+
+        const telemetry = parsed as RunTelemetry;
+
+        imported.push({
+          id: file.name + "-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+          filename: file.name,
+          importedAt: new Date().toISOString(),
+          note: "",
+          telemetry,
+        });
+      } catch {
+        failed.push(file.name);
+      }
+    }
+
+    if (imported.length > 0) {
+      setRuns((current) => [...imported, ...current]);
+      setMessage(`Imported ${imported.length} run${imported.length === 1 ? "" : "s"}.`);
+    }
+
+    if (failed.length > 0) {
+      setError(
+        `Could not import: ${failed.join(", ")}. Only individual run JSON exports from /playable-v01 are accepted here; review JSON files should be archived separately.`
+      );
+    }
+  }
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at 50% 20%, rgba(14,116,144,0.12), transparent 32%), #020617",
+        color: "#f8fafc",
+        padding: 22,
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      }}
+    >
+      <section style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 16 }}>
+        <header
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(2,6,23,0.72)",
+            borderRadius: 20,
+            padding: 18,
+            display: "grid",
+            gridTemplateColumns: "1fr auto",
+            gap: 16,
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 24, letterSpacing: 4 }}>
+              PLAYTEST RUNS
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
+              Import exported Under Control run JSON files and compare balance patterns.
+            </div>
+            <div style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
+              Export from <strong>/playable-v01</strong>, then import the downloaded JSON here.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <a
+              href="/playable-v01"
+              style={{
+                border: "1px solid rgba(251,191,36,0.42)",
+                background: "rgba(120,53,15,0.26)",
+                color: "#fde68a",
+                borderRadius: 14,
+                padding: "12px 14px",
+                textDecoration: "none",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              OPEN PLAYABLE
+            </a>
+
+            <label
+              style={{
+                border: "1px solid rgba(103,232,249,0.5)",
+                background: "rgba(8,47,73,0.45)",
+                color: "#cffafe",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: "pointer",
+                letterSpacing: 1.3,
+                fontSize: 12,
+              }}
+            >
+              IMPORT RUN JSON
+              <input
+                type="file"
+                accept="application/json,.json"
+                multiple
+                onChange={(event) => {
+                  if (event.currentTarget.files) {
+                    importFiles(event.currentTarget.files);
+                    event.currentTarget.value = "";
+                  }
+                }}
+                style={{
+                  position: "absolute",
+                  width: 1,
+                  height: 1,
+                  opacity: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => downloadJson(reviewExportFilename, reviewExportPayload)}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(251,191,36,0.44)",
+                background: "rgba(120,53,15,0.28)",
+                color: runs.length === 0 ? "#64748b" : "#fde68a",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              EXPORT REVIEW JSON
+            </button>
+
+            <button
+              type="button"
+              onClick={() => downloadCsv(runCsvFilename, runCsvRows)}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(103,232,249,0.44)",
+                background: "rgba(8,47,73,0.34)",
+                color: runs.length === 0 ? "#64748b" : "#cffafe",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              EXPORT RUNS CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={() => downloadCsv(scenarioCsvFilename, scenarioCsvRows)}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(103,232,249,0.44)",
+                background: "rgba(8,47,73,0.34)",
+                color: runs.length === 0 ? "#64748b" : "#cffafe",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              EXPORT SCENARIOS CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={deleteLowConfidenceRuns}
+              disabled={lowConfidenceRunCount === 0}
+              style={{
+                border: "1px solid rgba(251,191,36,0.36)",
+                background: "rgba(120,53,15,0.22)",
+                color: lowConfidenceRunCount === 0 ? "#64748b" : "#fde68a",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: lowConfidenceRunCount === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              DELETE LOW-CONFIDENCE ({lowConfidenceRunCount})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRuns([]);
+                setMessage("Cleared imported runs from this browser.");
+                setError(null);
+                window.localStorage.removeItem(RUN_STORAGE_KEY);
+              }}
+              disabled={runs.length === 0}
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(15,23,42,0.6)",
+                color: runs.length === 0 ? "#64748b" : "#cbd5e1",
+                borderRadius: 14,
+                padding: "12px 14px",
+                cursor: runs.length === 0 ? "not-allowed" : "pointer",
+                letterSpacing: 1.2,
+                fontSize: 12,
+              }}
+            >
+              CLEAR
+            </button>
+          </div>
+        </header>
+
+        <section
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragActive(true);
+          }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragActive(false);
+            importFiles(event.dataTransfer.files);
+          }}
+          style={{
+            border:
+              "1px dashed " +
+              (dragActive ? "rgba(103,232,249,0.9)" : "rgba(103,232,249,0.38)"),
+            background: dragActive ? "rgba(8,47,73,0.42)" : "rgba(8,47,73,0.18)",
+            borderRadius: 20,
+            padding: 18,
+            color: "#cbd5e1",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          Drag individual run JSON files here, or click <strong>IMPORT RUN JSON</strong>. Loaded runs:{" "}
+          <strong>{runs.length}</strong>. Imported runs persist in this browser. Low-confidence runs: <strong>{lowConfidenceRunCount}</strong>. Review JSON exports are not accepted as runs.
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(15,23,42,0.52)",
+            borderRadius: 20,
+            padding: 14,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr auto",
+            gap: 12,
+            alignItems: "end",
+          }}
+        >
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                color: "#94a3b8",
+                fontSize: 10,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginRight: 4,
+              }}
+            >
+              Presets
+            </span>
+
+            {filterPresets.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => applyFilterPreset(preset.id)}
+                style={{
+                  border:
+                    "1px solid " +
+                    (activePresetId === preset.id
+                      ? "rgba(251,191,36,0.58)"
+                      : "rgba(148,163,184,0.24)"),
+                  background:
+                    activePresetId === preset.id
+                      ? "rgba(120,53,15,0.32)"
+                      : "rgba(15,23,42,0.62)",
+                  color: activePresetId === preset.id ? "#fde68a" : "#cbd5e1",
+                  borderRadius: 999,
+                  padding: "7px 10px",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  letterSpacing: 1.05,
+                }}
+              >
+                {preset.label}
+              </button>
+            ))}
+
+            {activePresetId === "custom" && (
+              <span
+                style={{
+                  color: "#67e8f9",
+                  fontSize: 11,
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                }}
+              >
+                Custom
+              </span>
+            )}
+          </div>
+
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+              SCENARIO
+            </div>
+            <select
+              value={scenarioFilter}
+              onChange={(event) => {
+                setScenarioFilter(event.currentTarget.value);
+                setActivePresetId("custom");
+              }}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.82)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="all">All scenarios</option>
+              {scenarioOptions.map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+              STATUS
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.currentTarget.value);
+                setActivePresetId("custom");
+              }}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.82)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="all">All statuses</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div>
+            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+              CONFIDENCE
+            </div>
+            <select
+              value={confidenceFilter}
+              onChange={(event) => {
+                setConfidenceFilter(event.currentTarget.value);
+                setActivePresetId("custom");
+              }}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.82)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="all">All runs</option>
+              <option value="exclude_low">Exclude low-confidence</option>
+              <option value="only_low">Only low-confidence</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setScenarioFilter("all");
+              setStatusFilter("all");
+              setConfidenceFilter("all");
+              setActivePresetId("all");
+            }}
+            style={{
+              border: "1px solid rgba(148,163,184,0.28)",
+              background: "rgba(15,23,42,0.6)",
+              color: "#cbd5e1",
+              borderRadius: 12,
+              padding: "10px 12px",
+              cursor: "pointer",
+              letterSpacing: 1.1,
+              fontSize: 12,
+            }}
+          >
+            RESET FILTERS
+          </button>
+
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              color: "#64748b",
+              fontSize: 12,
+            }}
+          >
+            Showing <strong style={{ color: "#cbd5e1" }}>{sortedRuns.length}</strong> of{" "}
+            <strong style={{ color: "#cbd5e1" }}>{runs.length}</strong> imported runs.
+          </div>
+        </section>
+
+        <DatasetHealthPanel health={datasetHealth} />
+
+        {message && (
+          <section
+            style={{
+              border: "1px solid rgba(134,239,172,0.36)",
+              background: "rgba(20,83,45,0.22)",
+              borderRadius: 16,
+              padding: 14,
+              color: "#bbf7d0",
+              fontSize: 13,
+            }}
+          >
+            {message}
+          </section>
+        )}
+
+        {error && (
+          <section
+            style={{
+              border: "1px solid rgba(251,113,133,0.45)",
+              background: "rgba(127,29,29,0.22)",
+              borderRadius: 16,
+              padding: 14,
+              color: "#fecdd3",
+              fontSize: 13,
+            }}
+          >
+            {error}
+          </section>
+        )}
+
+        <section
+          style={{
+            border: "1px solid rgba(251,191,36,0.32)",
+            background: "rgba(120,53,15,0.14)",
+            borderRadius: 20,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              color: "#fde68a",
+              fontSize: 12,
+              letterSpacing: 1.5,
+              textTransform: "uppercase",
+              marginBottom: 10,
+            }}
+          >
+            Balance Notes
+          </div>
+
+          <div style={{ display: "grid", gap: 8 }}>
+            {notes.map((note) => (
+              <div key={note} style={{ color: "#e2e8f0", fontSize: 13 }}>
+                {note}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(103,232,249,0.26)",
+            background: "rgba(8,47,73,0.12)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#67e8f9",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Scenario Tuning Profiles
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Save named balance passes and import/export tuning intent separately from run data.
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 140px auto",
+              gap: 10,
+              alignItems: "start",
+            }}
+          >
+            <input
+              value={tuningProfileDraft.name}
+              onChange={(event) =>
+                setTuningProfileDraft((draft) => ({ ...draft, name: event.currentTarget.value }))
+              }
+              placeholder="Profile name, e.g. Softer Critical Cascade"
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            />
+
+            <input
+              value={tuningProfileDraft.version}
+              onChange={(event) =>
+                setTuningProfileDraft((draft) => ({ ...draft, version: event.currentTarget.value }))
+              }
+              placeholder="v0.1.1"
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={createScenarioTuningProfile}
+                style={{
+                  border: "1px solid rgba(103,232,249,0.48)",
+                  background: "rgba(8,47,73,0.34)",
+                  color: "#cffafe",
+                  borderRadius: 12,
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  letterSpacing: 1.1,
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                SAVE PROFILE
+              </button>
+
+              <label
+                style={{
+                  border: "1px solid rgba(251,191,36,0.4)",
+                  background: "rgba(120,53,15,0.24)",
+                  color: "#fde68a",
+                  borderRadius: 12,
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  letterSpacing: 1.1,
+                  fontSize: 12,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                IMPORT PROFILE
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  multiple
+                  onChange={(event) => {
+                    if (event.currentTarget.files) {
+                      importScenarioTuningProfiles(event.currentTarget.files);
+                      event.currentTarget.value = "";
+                    }
+                  }}
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <textarea
+            value={tuningProfileDraft.summary}
+            onChange={(event) =>
+              setTuningProfileDraft((draft) => ({ ...draft, summary: event.currentTarget.value }))
+            }
+            placeholder="Profile summary: what this balance pass is trying to test..."
+            rows={2}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(2,6,23,0.72)",
+              color: "#e2e8f0",
+              borderRadius: 12,
+              padding: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+
+          <textarea
+            value={tuningProfileDraft.adjustmentsText}
+            onChange={(event) =>
+              setTuningProfileDraft((draft) => ({
+                ...draft,
+                adjustmentsText: event.currentTarget.value,
+              }))
+            }
+            placeholder={"Scenario adjustments, one per line. Example:\nCritical Cascade: reduce starting cascade by 6\nHidden Dependency: strengthen observe prompt\nRecovery Window: no change"}
+            rows={4}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(2,6,23,0.72)",
+              color: "#e2e8f0",
+              borderRadius: 12,
+              padding: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+
+          {tuningProfiles.length === 0 ? (
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+              No tuning profiles saved yet.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {tuningProfiles.map((profile) => (
+                <article
+                  key={profile.id}
+                  style={{
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    background: "rgba(15,23,42,0.52)",
+                    borderRadius: 14,
+                    padding: 12,
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div
+                        style={{
+                          color: "#67e8f9",
+                          fontSize: 10,
+                          letterSpacing: 1.2,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {profile.version} · {new Date(profile.createdAt).toLocaleString()}
+                      </div>
+                      <div style={{ color: "#f8fafc", fontSize: 15, marginTop: 4 }}>
+                        {profile.name}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, alignSelf: "start" }}>
+                      <button
+                        type="button"
+                        onClick={() => exportScenarioTuningProfile(profile)}
+                        style={{
+                          border: "1px solid rgba(103,232,249,0.36)",
+                          background: "rgba(8,47,73,0.24)",
+                          color: "#cffafe",
+                          borderRadius: 10,
+                          padding: "7px 9px",
+                          cursor: "pointer",
+                          fontSize: 10,
+                          letterSpacing: 1.1,
+                        }}
+                      >
+                        EXPORT
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteScenarioTuningProfile(profile.id)}
+                        style={{
+                          border: "1px solid rgba(251,113,133,0.34)",
+                          background: "rgba(127,29,29,0.18)",
+                          color: "#fecdd3",
+                          borderRadius: 10,
+                          padding: "7px 9px",
+                          cursor: "pointer",
+                          fontSize: 10,
+                          letterSpacing: 1.1,
+                        }}
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  </div>
+
+                  {profile.summary && (
+                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
+                      {profile.summary}
+                    </div>
+                  )}
+
+                  {profile.adjustments.length > 0 && (
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {profile.adjustments.map((adjustment, index) => (
+                        <div
+                          key={profile.id + "-" + index}
+                          style={{
+                            borderLeft: "2px solid rgba(103,232,249,0.44)",
+                            paddingLeft: 9,
+                            color: "#cbd5e1",
+                            fontSize: 12,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          <strong style={{ color: "#f8fafc" }}>{adjustment.scenario}:</strong>{" "}
+                          {adjustment.change}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(251,191,36,0.32)",
+            background: "rgba(120,53,15,0.12)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#fde68a",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Balance Change Log
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Local tuning notebook for balance decisions, playtest observations, and scenario adjustments.
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 150px 150px auto",
+              gap: 10,
+              alignItems: "start",
+            }}
+          >
+            <input
+              value={changeLogDraft.title}
+              onChange={(event) =>
+                setChangeLogDraft((draft) => ({ ...draft, title: event.currentTarget.value }))
+              }
+              placeholder="Change title / observation"
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            />
+
+            <select
+              value={changeLogDraft.scenario}
+              onChange={(event) =>
+                setChangeLogDraft((draft) => ({ ...draft, scenario: event.currentTarget.value }))
+              }
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="General">General</option>
+              {scenarioOptions.map(([id, label]) => (
+                <option key={id} value={label}>
+                  {label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={changeLogDraft.severity}
+              onChange={(event) =>
+                setChangeLogDraft((draft) => ({
+                  ...draft,
+                  severity: event.currentTarget.value as BalanceChangeLogEntry["severity"],
+                }))
+              }
+              style={{
+                border: "1px solid rgba(148,163,184,0.28)",
+                background: "rgba(2,6,23,0.72)",
+                color: "#e2e8f0",
+                borderRadius: 12,
+                padding: "10px 11px",
+                fontSize: 12,
+              }}
+            >
+              <option value="note">Note</option>
+              <option value="watch">Watch</option>
+              <option value="tune">Tune</option>
+              <option value="urgent">Urgent</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={addBalanceChangeLogEntry}
+              style={{
+                border: "1px solid rgba(251,191,36,0.48)",
+                background: "rgba(120,53,15,0.28)",
+                color: "#fde68a",
+                borderRadius: 12,
+                padding: "10px 12px",
+                cursor: "pointer",
+                letterSpacing: 1.1,
+                fontSize: 12,
+              }}
+            >
+              ADD NOTE
+            </button>
+          </div>
+
+          <textarea
+            value={changeLogDraft.note}
+            onChange={(event) =>
+              setChangeLogDraft((draft) => ({ ...draft, note: event.currentTarget.value }))
+            }
+            placeholder="Describe what changed, why, and what to watch in the next runs..."
+            rows={3}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              border: "1px solid rgba(148,163,184,0.24)",
+              background: "rgba(2,6,23,0.72)",
+              color: "#e2e8f0",
+              borderRadius: 12,
+              padding: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+
+          {changeLogEntries.length === 0 ? (
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+              No balance notes yet.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {changeLogEntries.map((entry) => (
+                <article
+                  key={entry.id}
+                  style={{
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    background: "rgba(15,23,42,0.52)",
+                    borderRadius: 14,
+                    padding: 12,
+                    display: "grid",
+                    gap: 7,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div
+                        style={{
+                          color:
+                            entry.severity === "urgent"
+                              ? "#fb7185"
+                              : entry.severity === "tune"
+                                ? "#fde68a"
+                                : entry.severity === "watch"
+                                  ? "#67e8f9"
+                                  : "#94a3b8",
+                          fontSize: 10,
+                          letterSpacing: 1.2,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {entry.severity} · {entry.scenario}
+                      </div>
+                      <div style={{ color: "#f8fafc", fontSize: 14, marginTop: 4 }}>
+                        {entry.title}
+                      </div>
+                      <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => deleteBalanceChangeLogEntry(entry.id)}
+                      style={{
+                        border: "1px solid rgba(251,113,133,0.34)",
+                        background: "rgba(127,29,29,0.18)",
+                        color: "#fecdd3",
+                        borderRadius: 10,
+                        padding: "7px 9px",
+                        cursor: "pointer",
+                        fontSize: 10,
+                        letterSpacing: 1.1,
+                        alignSelf: "start",
+                      }}
+                    >
+                      DELETE
+                    </button>
+                  </div>
+
+                  {entry.note && (
+                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
+                      {entry.note}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(103,232,249,0.24)",
+            background: "rgba(8,47,73,0.12)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#67e8f9",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Scenario Comparison
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Grouped run outcomes by seeded scenario.
+            </div>
+          </div>
+
+          {scenarioSummaries.length === 0 ? (
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+              Import runs from different scenarios to compare balance.
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+                gap: 12,
+              }}
+            >
+              {scenarioSummaries.map((summary) => (
+                <ScenarioSummaryCard summary={summary} key={summary.key} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section
+          style={{
+            border: "1px solid rgba(148,163,184,0.22)",
+            background: "rgba(15,23,42,0.44)",
+            borderRadius: 20,
+            padding: 16,
+            display: "grid",
+            gap: 12,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#cbd5e1",
+                fontSize: 12,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              Trend View
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+              Runs shown in import order, filtered by the active review filters.
+            </div>
+            <div style={{ color: "#64748b", fontSize: 11, marginTop: 5 }}>
+              Mini bars: score is relative to loaded runs; integrity and cascade are scaled to 100%.
+            </div>
+          </div>
+
+          <TrendTable runs={sortedRuns} />
+        </section>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+            gap: 14,
+          }}
+        >
+          {sortedRuns.map((run) => (
+            <RunCard
+              run={run}
+              key={run.id}
+              onNoteChange={updateRunNote}
+              onDelete={deleteImportedRun}
+            />
+          ))}
+        </section>
+      </section>
+    </main>
+  );
+}

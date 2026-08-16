@@ -1,4 +1,11 @@
-export function getRecoveryObligation(game: any) {
+type RecoveryObligationGameState = {
+  recoveryProgress?: number;
+  load?: number;
+  drift?: number;
+  [key: string]: unknown;
+};
+
+export function getRecoveryObligation(game: RecoveryObligationGameState) {
   const recovery = game.recoveryProgress ?? 0;
   const load = game.load ?? 0;
 
@@ -9,7 +16,9 @@ export function getRecoveryObligation(game: any) {
   return null;
 }
 
-export function applyRecoveryObligationPenalty(game: any) {
+export function applyRecoveryObligationPenalty<T extends RecoveryObligationGameState>(
+  game: T
+) {
   const obligation = getRecoveryObligation(game);
 
   if (!obligation) return game;

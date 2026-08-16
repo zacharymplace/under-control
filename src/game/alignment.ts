@@ -1,5 +1,13 @@
-export function getAlignment(game: any) {
-  const suggestions = (game.personas || []).map((p: any) => p.suggests);
+type AdvisorSuggestion = {
+  suggests?: string | null;
+};
+
+type AlignmentGameState = {
+  personas?: AdvisorSuggestion[];
+};
+
+export function getAlignment(game: AlignmentGameState) {
+  const suggestions = (game.personas || []).map((persona) => persona.suggests);
 
   const unique = new Set(suggestions);
 

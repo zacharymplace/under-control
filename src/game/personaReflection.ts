@@ -1,14 +1,26 @@
+type PersonaReflectionPersona = {
+  name: string;
+  role?: string;
+  temperament?: string;
+};
+
+type PersonaReflectionInput = {
+  trust?: Record<string, number | undefined>;
+  ignoredCounts?: Record<string, number | undefined>;
+  personas?: PersonaReflectionPersona[];
+};
+
 export function buildPersonaReflection({
   trust = {},
   ignoredCounts = {},
   personas = [],
-}: any) {
-  return personas.map((p: any) => {
-    const name = p.name;
+}: PersonaReflectionInput) {
+  return personas.map((persona) => {
+    const name = persona.name;
     const t = trust[name] ?? 0;
     const ignored = ignoredCounts[name] ?? 0;
-    const role = p.role || "Advisor";
-    const temperament = p.temperament || "Adaptive";
+    const role = persona.role || "Advisor";
+    const temperament = persona.temperament || "Adaptive";
 
     let text = `${name} had mixed impact depending on timing and context.`;
 
@@ -33,7 +45,11 @@ export function buildPersonaReflection({
           : "ISHAAN framed the downside, but the risk signal needed stronger action discipline.";
     }
 
-    if (ignored >= 3 && !text.toLowerCase().includes("ignored") && !text.toLowerCase().includes("disregard")) {
+    if (
+      ignored >= 3 &&
+      !text.toLowerCase().includes("ignored") &&
+      !text.toLowerCase().includes("disregard")
+    ) {
       text += " Frequently ignored.";
     }
 

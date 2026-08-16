@@ -1,4 +1,33 @@
-export function buildRunArc(game: any, failureDriver: any) {
+type RunArcSnapshot = {
+  load?: number;
+  drift?: number;
+  signalClarity?: number;
+  integrity?: number;
+};
+
+type RunArcEntry = {
+  after: RunArcSnapshot;
+};
+
+type RunArcGameState = {
+  actionLog?: RunArcEntry[];
+  summary?: {
+    peakLoad?: number;
+    peakDrift?: number;
+    avgPressure?: number;
+  };
+  load?: number;
+  drift?: number;
+};
+
+type FailureDriverLike = {
+  title?: string;
+} | null | undefined;
+
+export function buildRunArc(
+  game: RunArcGameState,
+  failureDriver: FailureDriverLike
+) {
   const log = game.actionLog || [];
   if (!log.length) return null;
 
@@ -18,13 +47,13 @@ export function buildRunArc(game: any, failureDriver: any) {
   };
 }
 
-function summarizePhase(entries: any[], phase: "EARLY" | "MID" | "LATE") {
+function summarizePhase(entries: RunArcEntry[], phase: "EARLY" | "MID" | "LATE") {
   if (!entries.length) return "No signal";
 
-  const avgLoad = avg(entries.map((e) => e.after.load));
-  const avgDrift = avg(entries.map((e) => e.after.drift));
-  const avgSignal = avg(entries.map((e) => e.after.signalClarity));
-  const avgIntegrity = avg(entries.map((e) => e.after.integrity));
+  const avgLoad = avg(entries.map((entry) => entry.after.load ?? 0));
+  const avgDrift = avg(entries.map((entry) => entry.after.drift ?? 0));
+  const avgSignal = avg(entries.map((entry) => entry.after.signalClarity ?? 0));
+  const avgIntegrity = avg(entries.map((entry) => entry.after.integrity ?? 0));
 
   if (phase === "EARLY") {
     if (avgSignal >= 70 && avgDrift >= 35) {
@@ -73,7 +102,7 @@ function summarizePhase(entries: any[], phase: "EARLY" | "MID" | "LATE") {
   return "Mixed state";
 }
 
-function classifyDifficulty(game: any) {
+function classifyDifficulty(game: RunArcGameState) {
   const summary = game.summary || {};
   const peakLoad = summary.peakLoad ?? game.load ?? 0;
   const peakDrift = summary.peakDrift ?? game.drift ?? 0;

@@ -1,14 +1,24 @@
 import { getDominantNeed } from "./dominantNeed";
-export function getTrajectoryPenalty(game: any) {
+
+type TrajectoryRiskGameState = {
+  actionHistory?: string[];
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+  signal?: number;
+};
+
+export function getTrajectoryPenalty(game: TrajectoryRiskGameState) {
   const history = game.actionHistory || [];
   if (history.length < 3) return 1;
 
   const last3 = history.slice(-3);
 
   const uniqueCount = new Set(last3).size;
-  const rerouteCount = last3.filter((a: string) => a === "REROUTE").length;
-  const observeCount = last3.filter((a: string) => a === "OBSERVE").length;
-  const stabilizeCount = last3.filter((a: string) => a === "STABILIZE").length;
+  const rerouteCount = last3.filter((action) => action === "REROUTE").length;
+  const observeCount = last3.filter((action) => action === "OBSERVE").length;
+  const stabilizeCount = last3.filter((action) => action === "STABILIZE").length;
 
   let penalty = 1;
 
@@ -25,7 +35,7 @@ export function getTrajectoryPenalty(game: any) {
   return Number(Math.max(0.55, penalty).toFixed(2));
 }
 
-export function getTrajectoryRiskLabel(game: any) {
+export function getTrajectoryRiskLabel(game: TrajectoryRiskGameState) {
   const penalty = getTrajectoryPenalty(game);
 
   if (penalty <= 0.65) return "Severe trajectory risk";
@@ -35,19 +45,19 @@ export function getTrajectoryRiskLabel(game: any) {
   return "Coherent trajectory";
 }
 
-export function getTrajectoryInsight(game: any) {
+export function getTrajectoryInsight(game: TrajectoryRiskGameState) {
   const history = game.actionHistory || [];
   if (history.length < 3) return null;
 
   const last3 = history.slice(-3);
   const uniqueCount = new Set(last3).size;
-  const rerouteCount = last3.filter((a: string) => a === "REROUTE").length;
-  const observeCount = last3.filter((a: string) => a === "OBSERVE").length;
-  const stabilizeCount = last3.filter((a: string) => a === "STABILIZE").length;
+  const rerouteCount = last3.filter((action) => action === "REROUTE").length;
+  const observeCount = last3.filter((action) => action === "OBSERVE").length;
+  const stabilizeCount = last3.filter((action) => action === "STABILIZE").length;
 
   const dominantNeed = getDominantNeed(game);
   const alignedCount = dominantNeed
-    ? last3.filter((a: string) => a === dominantNeed).length
+    ? last3.filter((action) => action === dominantNeed).length
     : 0;
 
   if (dominantNeed && alignedCount === 0) {

@@ -1,4 +1,13 @@
-export function PlayerNarrativePanel({ narrative }: any) {
+type PlayerNarrative = {
+  title?: string;
+  lines?: string[];
+};
+
+export function PlayerNarrativePanel({
+  narrative,
+}: {
+  narrative: PlayerNarrative | null | undefined;
+}) {
   if (!narrative) return null;
 
   return (
@@ -15,8 +24,8 @@ export function PlayerNarrativePanel({ narrative }: any) {
       <div className="text-xl font-bold text-[#E6EAF0]">{narrative.title}</div>
 
       <div className="mt-3 space-y-2 text-sm text-[#8A93A3]">
-        {narrative.lines.map((line: string, index: number) => (
-          <div key={index}>{line}</div>
+        {(narrative.lines || []).map((line, index) => (
+          <div key={`${line}-${index}`}>{line}</div>
         ))}
       </div>
     </section>

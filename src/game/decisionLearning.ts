@@ -1,6 +1,5 @@
 export function classifyOutcome({
   correct,
-  confidence,
   weight,
 }: {
   correct: boolean;

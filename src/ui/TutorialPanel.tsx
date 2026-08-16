@@ -1,9 +1,23 @@
-export function TutorialPanel({ game }: any) {
+type TutorialStep = {
+  turn?: number;
+  title?: string;
+  body?: string;
+};
+
+type TutorialPanelGameState = {
+  state?: string;
+  turn?: number;
+  tutorialSteps?: TutorialStep[];
+  scenarioOpening?: string;
+  modeLabel?: string;
+};
+
+export function TutorialPanel({ game }: { game: TutorialPanelGameState }) {
   const terminal = game.state === "FAILED" || game.state === "STABILIZED";
   if (terminal) return null;
 
   const steps = game.tutorialSteps || [];
-  const step = steps.find((s: any) => s.turn === game.turn);
+  const step = steps.find((candidate) => candidate.turn === game.turn);
 
   if (!step && !game.scenarioOpening) return null;
 

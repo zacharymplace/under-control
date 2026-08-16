@@ -1,4 +1,12 @@
-export function getDecisionWindow(game: any) {
+type DecisionWindowGameState = {
+  pressure?: string;
+  load?: number;
+  drift?: number;
+  turn?: number;
+  primaryNeed?: string | null;
+};
+
+export function getDecisionWindow(game: DecisionWindowGameState) {
   const pressure = game.pressure ?? "LOW";
   const load = game.load ?? 0;
   const drift = game.drift ?? 0;
@@ -39,7 +47,10 @@ export function getDecisionWindow(game: any) {
   };
 }
 
-export function getDecisionWindowPenalty(action: string, game: any) {
+export function getDecisionWindowPenalty(
+  action: string,
+  game: DecisionWindowGameState
+) {
   const window = getDecisionWindow(game);
   const dominantNeed = game.primaryNeed || null;
 

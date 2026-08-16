@@ -1,8 +1,14 @@
 "use client";
 
-import { simulateAlternatePath } from "@/game/counterfactual";
+import { simulateAlternatePath, type CounterfactualGameState } from "@/game/counterfactual";
 
-export function Counterfactual({ game }: { game: any }) {
+type DeltaProps = {
+  label: string;
+  value?: number;
+  invert?: boolean;
+};
+
+export function Counterfactual({ game }: { game: CounterfactualGameState }) {
   if (game.state !== "FAILED") return null;
 
   const log = game.actionLog || [];
@@ -10,7 +16,7 @@ export function Counterfactual({ game }: { game: any }) {
 
   // Pick turning point (same logic as replay)
   const breakIndex = log.findIndex(
-    (e: any) => e.after?.load >= 95 || e.after?.drift >= 55
+    (entry) => (entry.after?.load ?? 0) >= 95 || (entry.after?.drift ?? 0) >= 55
   );
 
   const idx = breakIndex >= 0 ? breakIndex : log.length - 2;
@@ -40,7 +46,7 @@ export function Counterfactual({ game }: { game: any }) {
   );
 }
 
-function Delta({ label, value, invert = false }: any) {
+function Delta({ label, value = 0, invert = false }: DeltaProps) {
   const good = invert ? value > 0 : value < 0;
   const bad = invert ? value < 0 : value > 0;
 

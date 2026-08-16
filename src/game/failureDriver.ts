@@ -1,13 +1,28 @@
-export function getPrimaryFailureDriver(game: any) {
+type FailureDriverSnapshot = {
+  drift?: number;
+  load?: number;
+  integrity?: number;
+};
+
+type FailureDriverLogEntry = {
+  action?: string;
+  after?: FailureDriverSnapshot;
+};
+
+type FailureDriverGameState = FailureDriverSnapshot & {
+  actionLog?: FailureDriverLogEntry[];
+};
+
+export function getPrimaryFailureDriver(game: FailureDriverGameState) {
   const log = game.actionLog || [];
   if (!log.length) return null;
 
   const last = log.slice(-4);
-  const actions = last.map((x: any) => x.action);
+  const actions = last.map((entry) => entry.action);
   const final = log[log.length - 1]?.after || game;
 
-  if (final.drift >= 60) {
-    const reroutes = actions.filter((a: string) => a === "REROUTE").length;
+  if ((final.drift ?? 0) >= 60) {
+    const reroutes = actions.filter((action) => action === "REROUTE").length;
 
     if (reroutes >= 2) {
       return {
@@ -25,8 +40,8 @@ export function getPrimaryFailureDriver(game: any) {
     };
   }
 
-  if (final.load >= 100) {
-    const stabilizes = actions.filter((a: string) => a === "STABILIZE").length;
+  if ((final.load ?? 0) >= 100) {
+    const stabilizes = actions.filter((action) => action === "STABILIZE").length;
 
     if (stabilizes >= 2) {
       return {
@@ -44,7 +59,7 @@ export function getPrimaryFailureDriver(game: any) {
     };
   }
 
-  if (final.integrity <= 45) {
+  if ((final.integrity ?? 100) <= 45) {
     return {
       title: "Integrity degraded below recovery range",
       detail: "The system could no longer absorb stress safely.",

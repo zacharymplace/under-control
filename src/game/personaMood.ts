@@ -1,6 +1,10 @@
 export type Mood = "CONFIDENT" | "FRUSTRATED" | "DISENGAGED" | "NEUTRAL";
 export type PersonaMood = "CALM" | "ASSERTIVE" | "DEFENSIVE" | "ERRATIC";
 
+type PersonaMoodGameState = {
+  drift?: number;
+};
+
 export function getMood(trust: number, ignored: number): Mood {
   if (trust >= 3 && ignored <= 1) return "CONFIDENT";
   if (trust <= -2 && ignored >= 3) return "FRUSTRATED";
@@ -15,9 +19,9 @@ export function derivePersonaMood({
 }: {
   trust: number;
   ignored: number;
-  game: any;
+  game: PersonaMoodGameState;
 }): PersonaMood {
-  if (game?.drift >= 65) return "ERRATIC";
+  if ((game?.drift ?? 0) >= 65) return "ERRATIC";
   if (trust <= -2) return "DEFENSIVE";
   if (ignored >= 4) return "ASSERTIVE";
   return "CALM";

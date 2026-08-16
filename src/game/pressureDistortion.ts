@@ -1,4 +1,15 @@
-export function getPressureDistortion(action: string, game: any) {
+type PressureDistortionGameState = {
+  pressure?: string;
+  load?: number;
+  drift?: number;
+  signalClarity?: number;
+  signal?: number;
+};
+
+export function getPressureDistortion(
+  action: string,
+  game: PressureDistortionGameState
+) {
   const pressure = game.pressure;
   const load = game.load ?? 0;
   const drift = game.drift ?? 0;
@@ -6,16 +17,17 @@ export function getPressureDistortion(action: string, game: any) {
 
   if (pressure !== "CRITICAL") return 1;
 
-  // Under critical pressure, the system amplifies tempting but imperfect reads.
   if (load >= 90 && action === "REROUTE") return 1.18;
   if (drift >= 55 && action === "STABILIZE") return 1.18;
   if (signal >= 80 && action === "OBSERVE") return 1.1;
 
-  // Actions that do not match the visible pressure get slightly suppressed.
   return 0.92;
 }
 
-export function getPressureDistortionNote(action: string, game: any) {
+export function getPressureDistortionNote(
+  action: string,
+  game: PressureDistortionGameState
+) {
   if (game.pressure !== "CRITICAL") return null;
 
   const load = game.load ?? 0;

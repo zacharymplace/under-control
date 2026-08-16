@@ -1,4 +1,16 @@
-export function findLastRecoverableMoment(log: any[]) {
+type RecoverableMomentSnapshot = {
+  load?: number;
+  drift?: number;
+  integrity?: number;
+  signalClarity?: number;
+};
+
+type RecoverableMomentLogEntry = {
+  turn?: number;
+  after: RecoverableMomentSnapshot;
+};
+
+export function findLastRecoverableMoment(log: RecoverableMomentLogEntry[]) {
   if (!log || log.length < 3) return null;
 
   let candidate = null;
@@ -6,20 +18,25 @@ export function findLastRecoverableMoment(log: any[]) {
   for (const entry of log) {
     const after = entry.after;
 
+    const load = after.load ?? 0;
+    const drift = after.drift ?? 0;
+    const integrity = after.integrity ?? 100;
+    const signalClarity = after.signalClarity ?? 100;
+
     const stillRecoverable =
-      after.load < 95 &&
-      after.drift < 60 &&
-      after.integrity > 55;
+      load < 95 &&
+      drift < 60 &&
+      integrity > 55;
 
     const needsCorrection =
-      after.load >= 80 || after.drift >= 45 || after.integrity <= 65;
+      load >= 80 || drift >= 45 || integrity <= 65;
 
     if (stillRecoverable && needsCorrection) {
       let recommendedAction = "STABILIZE";
 
-      if (after.load >= 85 && after.drift < 55) recommendedAction = "REROUTE";
-      if (after.drift >= 45) recommendedAction = "STABILIZE";
-      if (after.signalClarity < 60) recommendedAction = "OBSERVE";
+      if (load >= 85 && drift < 55) recommendedAction = "REROUTE";
+      if (drift >= 45) recommendedAction = "STABILIZE";
+      if (signalClarity < 60) recommendedAction = "OBSERVE";
 
       candidate = {
         turn: entry.turn,

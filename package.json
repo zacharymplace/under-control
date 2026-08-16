@@ -6,7 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "healthcheck": "bash scripts/healthcheck.sh",
+    "bootstrap": "bash scripts/bootstrap.sh",
+    "check": "npm run build",
+    "agent:preflight": "bash scripts/agent-preflight.sh",
+    "release:ready": "npm run check && npm run lint:debt && npm run lint:debt:baseline",
+    "lint:debt": "bash scripts/lint-debt-report.sh",
+    "lint:debt:verbose": "bash scripts/lint-debt-report.sh --verbose",
+    "lint:debt:baseline": "bash scripts/lint-debt-baseline-check.sh",
+    "lint:debt:guide": "bash scripts/lint-debt-refresh-guide.sh",
+    "pr:cleanup-check": "bash scripts/pr-cleanup-check.sh"
   },
   "dependencies": {
     "next": "16.2.4",

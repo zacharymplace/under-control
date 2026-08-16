@@ -1,9 +1,14 @@
-export function classifyRun(game: any) {
+type RunArchetypeGameState = {
+  actionHistory?: string[];
+  [key: string]: unknown;
+};
+
+export function classifyRun(game: RunArchetypeGameState) {
   const actions = game.actionHistory || [];
   if (!actions.length) return "Unclassified";
 
   const count = (action: string) =>
-    actions.filter((a: string) => a === action).length;
+    actions.filter((candidate) => candidate === action).length;
 
   const reroute = count("REROUTE");
   const stabilize = count("STABILIZE");

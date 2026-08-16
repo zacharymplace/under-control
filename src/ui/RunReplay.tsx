@@ -2,7 +2,28 @@
 
 import { buildFailureExplanation, buildRunReplay } from "@/game/runReplay";
 
-export function RunReplay({ game }: { game: any }) {
+type RunReplayGameState = {
+  state?: string;
+  [key: string]: unknown;
+};
+
+type RunReplayEntry = {
+  turn?: number;
+  action?: string;
+  summary?: string;
+  loadDelta?: number;
+  driftDelta?: number;
+  integrityDelta?: number;
+  signalDelta?: number;
+};
+
+type DeltaProps = {
+  label: string;
+  value?: number;
+  invert?: boolean;
+};
+
+export function RunReplay({ game }: { game: RunReplayGameState }) {
   if (game.state !== "FAILED" && game.state !== "STABILIZED") return null;
 
   const replay = buildRunReplay(game);
@@ -40,7 +61,7 @@ export function RunReplay({ game }: { game: any }) {
       </div>
 
       <div className="uc-replay-list">
-        {replay.map((entry: any) => (
+        {replay.map((entry: RunReplayEntry) => (
           <article key={entry.turn} className="uc-replay-item">
             <div className="uc-replay-row">
               <div>
@@ -63,7 +84,7 @@ export function RunReplay({ game }: { game: any }) {
   );
 }
 
-function Delta({ label, value, invert = false }: any) {
+function Delta({ label, value = 0, invert = false }: DeltaProps) {
   const good = invert ? value > 0 : value < 0;
   const bad = invert ? value < 0 : value > 0;
 
