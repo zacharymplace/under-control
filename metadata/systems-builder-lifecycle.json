@@ -1,0 +1,67 @@
+{
+  "schema_version": "systems-builder-lifecycle-v1",
+  "system_id": "under-control",
+  "display_name": "Under Control",
+  "phase": "operate",
+  "condition": "held",
+  "source": {
+    "repository": "zacharymplace/under-control",
+    "path": ".",
+    "branch": "main",
+    "commit": "ed42857"
+  },
+  "evidence": [
+    {
+      "kind": "validation",
+      "reference": "npm run release:ready",
+      "result": "pass"
+    },
+    {
+      "kind": "cleanup-validation",
+      "reference": "npm run pr:cleanup-check",
+      "result": "pass"
+    },
+    {
+      "kind": "quality",
+      "reference": "docs/qa/LINT_ZERO_MILESTONE.md",
+      "result": "pass"
+    },
+    {
+      "kind": "playable-objective",
+      "reference": "docs/PLAYABLE_V01_FEEL_PASS_BRIEF.md",
+      "result": "completed"
+    },
+    {
+      "kind": "workflow",
+      "reference": "docs/playable-v01-workflow.md",
+      "result": "informational"
+    }
+  ],
+  "last_verified_at": "2026-08-21T03:05:00Z",
+  "next_action": {
+    "description": "Hold Under Control as the validated playable v0.1 systems-pressure decision prototype. Resume development only when a concrete new gameplay, scoring, scenario, playtest, or deployment objective is explicitly approved.",
+    "command": "npm run release:ready"
+  },
+  "blockers": [
+    "No current bounded playable-v0.1 implementation objective remains open.",
+    "Gameplay scoring changes, scenario-model changes, architecture changes, release-gate changes, and major UI-flow changes require explicit new scope.",
+    "Future playtesting, additional scenarios, telemetry analysis, and gameplay expansion are not implicit completion gates."
+  ],
+  "capabilities": [
+    "playable-systems-pressure-simulation",
+    "turn-based-control-decisions",
+    "action-scoring",
+    "state-aware-action-feedback",
+    "operator-profiling",
+    "advisor-behavior-modeling",
+    "scenario-runtime",
+    "decision-timeline",
+    "counterfactual-analysis",
+    "run-replay",
+    "run-telemetry",
+    "failure-analysis",
+    "player-takeaway-generation",
+    "release-readiness-validation",
+    "zero-lint-quality-gate"
+  ]
+}
