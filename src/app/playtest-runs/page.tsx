@@ -411,9 +411,9 @@ function safeNumber(value: unknown, fallback = 0) {
 }
 
 function statusColor(status: string | undefined) {
-  if (status === "won") return "#86efac";
-  if (status === "lost") return "#fb7185";
-  return "#fbbf24";
+  if (status === "won") return "var(--ink)";
+  if (status === "lost") return "var(--ink)";
+  return "var(--ink)";
 }
 
 function averageTrust(run: RunTelemetry) {
@@ -604,10 +604,10 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.1 }}>
+      <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.1 }}>
         {label}
       </div>
-      <div style={{ color: "#f8fafc", fontSize: 14, marginTop: 3 }}>
+      <div style={{ color: "var(--ink)", fontSize: 14, marginTop: 3 }}>
         {value}
       </div>
     </div>
@@ -626,10 +626,10 @@ function MiniBar({
   const pct = max <= 0 ? 0 : Math.max(0, Math.min(100, Math.round((value / max) * 100)));
   const fill =
     tone === "cascade"
-      ? "#fb7185"
+      ? "var(--spot)"
       : tone === "integrity"
-        ? "#86efac"
-        : "#67e8f9";
+        ? "var(--ink)"
+        : "var(--data)";
 
   return (
     <div
@@ -637,10 +637,10 @@ function MiniBar({
       style={{
         width: 92,
         height: 9,
-        borderRadius: 999,
-        background: "rgba(148,163,184,0.16)",
+        borderRadius: 0,
+        background: "var(--paper-3)",
         overflow: "hidden",
-        border: "1px solid rgba(148,163,184,0.12)",
+        border: "1px solid var(--rule-strong)",
       }}
     >
       <div
@@ -648,7 +648,7 @@ function MiniBar({
           width: pct + "%",
           height: "100%",
           background: fill,
-          boxShadow: "0 0 10px " + fill + "88",
+          boxShadow: "none",
         }}
       />
     </div>
@@ -658,7 +658,7 @@ function MiniBar({
 function TrendTable({ runs }: { runs: ImportedRun[] }) {
   if (runs.length === 0) {
     return (
-      <div style={{ color: "#94a3b8", fontSize: 13 }}>
+      <div style={{ color: "var(--ink-muted)", fontSize: 13 }}>
         Import runs to see trend rows.
       </div>
     );
@@ -680,7 +680,7 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
           width: "100%",
           borderCollapse: "collapse",
           minWidth: 1240,
-          color: "#cbd5e1",
+          color: "var(--ink-2)",
           fontSize: 12,
         }}
       >
@@ -710,8 +710,8 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
                 style={{
                   textAlign: "left",
                   padding: "9px 8px",
-                  borderBottom: "1px solid rgba(148,163,184,0.24)",
-                  color: "#94a3b8",
+                  borderBottom: "1px solid var(--rule-strong)",
+                  color: "var(--ink-muted)",
                   fontSize: 10,
                   letterSpacing: 1.1,
                   textTransform: "uppercase",
@@ -782,7 +782,7 @@ function TrendTable({ runs }: { runs: ImportedRun[] }) {
 
 const trendCellStyle: React.CSSProperties = {
   padding: "9px 8px",
-  borderBottom: "1px solid rgba(148,163,184,0.12)",
+  borderBottom: "1px solid var(--rule-strong)",
   verticalAlign: "top",
   whiteSpace: "nowrap",
 };
@@ -796,9 +796,9 @@ function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
   return (
     <section
       style={{
-        border: "1px solid rgba(103,232,249,0.26)",
-        background: "rgba(8,47,73,0.14)",
-        borderRadius: 20,
+        border: "1px solid var(--data)",
+        background: "var(--data-tint)",
+        borderRadius: 0,
         padding: 16,
         display: "grid",
         gap: 14,
@@ -807,7 +807,7 @@ function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
       <div>
         <div
           style={{
-            color: "#67e8f9",
+            color: "var(--data)",
             fontSize: 12,
             letterSpacing: 1.5,
             textTransform: "uppercase",
@@ -815,7 +815,7 @@ function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
         >
           Dataset Health
         </div>
-        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+        <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 5 }}>
           Snapshot of the currently loaded review dataset. Win rate and averages follow active filters.
         </div>
       </div>
@@ -842,13 +842,13 @@ function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
         style={{
           display: "grid",
           gap: 7,
-          color: "#cbd5e1",
+          color: "var(--ink-2)",
           fontSize: 12,
           lineHeight: 1.45,
         }}
       >
         <div>
-          <span style={{ color: enoughValidRuns ? "#86efac" : "#fde68a" }}>
+          <span style={{ color: enoughValidRuns ? "var(--ink)" : "var(--ink)" }}>
             {enoughValidRuns ? "Good" : "Watch"}:
           </span>{" "}
           {enoughValidRuns
@@ -857,7 +857,7 @@ function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
         </div>
 
         <div>
-          <span style={{ color: enoughScenarios ? "#86efac" : "#fde68a" }}>
+          <span style={{ color: enoughScenarios ? "var(--ink)" : "var(--ink)" }}>
             {enoughScenarios ? "Good" : "Watch"}:
           </span>{" "}
           {enoughScenarios
@@ -867,7 +867,7 @@ function DatasetHealthPanel({ health }: { health: DatasetHealth }) {
 
         {health.lowConfidenceRuns > 0 && (
           <div>
-            <span style={{ color: "#fb7185" }}>Data hygiene:</span> Low-confidence runs are{" "}
+            <span style={{ color: "var(--ink)" }}>Data hygiene:</span> Low-confidence runs are{" "}
             {lowConfidenceRatio}% of the loaded dataset. Use DELETE LOW-CONFIDENCE when ready.
           </div>
         )}
@@ -888,9 +888,9 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
   return (
     <article
       style={{
-        border: "1px solid rgba(251,191,36,0.28)",
-        background: "rgba(120,53,15,0.14)",
-        borderRadius: 18,
+        border: "1px solid var(--spot)",
+        background: "var(--spot-tint)",
+        borderRadius: 0,
         padding: 14,
         display: "grid",
         gap: 12,
@@ -900,7 +900,7 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
         <div>
           <div
             style={{
-              color: "#fde68a",
+              color: "var(--ink)",
               fontSize: 11,
               letterSpacing: 1.4,
               textTransform: "uppercase",
@@ -908,10 +908,10 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
           >
             Scenario
           </div>
-          <div style={{ color: "#f8fafc", fontSize: 17, marginTop: 4 }}>
+          <div style={{ color: "var(--ink)", fontSize: 17, marginTop: 4 }}>
             {summary.label}
           </div>
-          <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 4 }}>
+          <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 4 }}>
             {summary.totalRuns} run{summary.totalRuns === 1 ? "" : "s"} · {summary.wins}W /{" "}
             {summary.losses}L · {winRate}% win rate
           </div>
@@ -921,10 +921,10 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
           style={{
             color:
               summary.recommendationSeverity === "urgent"
-                ? "#fb7185"
+                ? "var(--ink)"
                 : summary.recommendationSeverity === "tune"
-                  ? "#fde68a"
-                  : "#67e8f9",
+                  ? "var(--ink)"
+                  : "var(--data)",
             fontSize: 11,
             letterSpacing: 1.1,
             textAlign: "right",
@@ -958,9 +958,9 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
 
       <div
         style={{
-          borderTop: "1px solid rgba(148,163,184,0.18)",
+          borderTop: "1px solid var(--rule-strong)",
           paddingTop: 10,
-          color: "#cbd5e1",
+          color: "var(--ink-2)",
           fontSize: 12,
           lineHeight: 1.45,
         }}
@@ -969,10 +969,10 @@ function ScenarioSummaryCard({ summary }: { summary: ScenarioSummary }) {
           style={{
             color:
               summary.recommendationSeverity === "urgent"
-                ? "#fb7185"
+                ? "var(--ink)"
                 : summary.recommendationSeverity === "tune"
-                  ? "#fde68a"
-                  : "#67e8f9",
+                  ? "var(--ink)"
+                  : "var(--data)",
             fontSize: 10,
             letterSpacing: 1.2,
             textTransform: "uppercase",
@@ -1004,9 +1004,9 @@ function RunCard({
   return (
     <article
       style={{
-        border: "1px solid rgba(148,163,184,0.24)",
-        background: "rgba(15,23,42,0.74)",
-        borderRadius: 18,
+        border: "1px solid var(--rule-strong)",
+        background: "var(--paper-2)",
+        borderRadius: 0,
         padding: 14,
         display: "grid",
         gap: 12,
@@ -1024,20 +1024,20 @@ function RunCard({
           >
             {status}
           </div>
-          <div style={{ color: "#f8fafc", fontSize: 17, marginTop: 4 }}>
+          <div style={{ color: "var(--ink)", fontSize: 17, marginTop: 4 }}>
             {profile}
           </div>
-          <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>
+          <div style={{ color: "var(--ink-muted)", fontSize: 11, marginTop: 4 }}>
             {scenario} · {run.filename}
           </div>
         </div>
 
         <div style={{ textAlign: "right", display: "grid", gap: 8, justifyItems: "end" }}>
           <div>
-            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>
               SCORE
             </div>
-            <div style={{ color: "#f8fafc", fontSize: 20 }}>
+            <div style={{ color: "var(--ink)", fontSize: 20 }}>
               {safeNumber(telemetry.score)}
             </div>
           </div>
@@ -1054,10 +1054,10 @@ function RunCard({
               }
             }}
             style={{
-              border: "1px solid rgba(251,113,133,0.38)",
-              background: "rgba(127,29,29,0.22)",
-              color: "#fecdd3",
-              borderRadius: 10,
+              border: "1px solid var(--spot)",
+              background: "var(--spot-tint)",
+              color: "var(--ink)",
+              borderRadius: 0,
               padding: "7px 9px",
               cursor: "pointer",
               fontSize: 10,
@@ -1089,11 +1089,11 @@ function RunCard({
       {actionTotal(telemetry) === 0 && (
         <div
           style={{
-            border: "1px solid rgba(251,191,36,0.34)",
-            background: "rgba(120,53,15,0.18)",
-            borderRadius: 12,
+            border: "1px solid var(--spot)",
+            background: "var(--spot-tint)",
+            borderRadius: 0,
             padding: 10,
-            color: "#fde68a",
+            color: "var(--ink)",
             fontSize: 12,
             lineHeight: 1.4,
           }}
@@ -1104,9 +1104,9 @@ function RunCard({
 
       <div
         style={{
-          border: "1px solid rgba(103,232,249,0.2)",
-          background: "rgba(8,47,73,0.14)",
-          borderRadius: 12,
+          border: "1px solid var(--data)",
+          background: "var(--data-tint)",
+          borderRadius: 0,
           padding: 10,
           display: "grid",
           gap: 8,
@@ -1114,7 +1114,7 @@ function RunCard({
       >
         <div
           style={{
-            color: "#67e8f9",
+            color: "var(--data)",
             fontSize: 10,
             letterSpacing: 1.2,
             textTransform: "uppercase",
@@ -1137,9 +1137,9 @@ function RunCard({
 
       <div
         style={{
-          border: "1px solid rgba(148,163,184,0.18)",
-          background: "rgba(2,6,23,0.34)",
-          borderRadius: 12,
+          border: "1px solid var(--rule-strong)",
+          background: "var(--paper)",
+          borderRadius: 0,
           padding: 10,
           display: "grid",
           gap: 7,
@@ -1148,7 +1148,7 @@ function RunCard({
         <label
           htmlFor={"run-note-" + run.id}
           style={{
-            color: "#67e8f9",
+            color: "var(--data)",
             fontSize: 10,
             letterSpacing: 1.2,
             textTransform: "uppercase",
@@ -1165,10 +1165,10 @@ function RunCard({
           style={{
             width: "100%",
             resize: "vertical",
-            border: "1px solid rgba(148,163,184,0.24)",
-            background: "rgba(15,23,42,0.82)",
-            color: "#e2e8f0",
-            borderRadius: 10,
+            border: "1px solid var(--rule-strong)",
+            background: "var(--paper-2)",
+            color: "var(--ink)",
+            borderRadius: 0,
             padding: 9,
             fontSize: 12,
             lineHeight: 1.4,
@@ -1180,9 +1180,9 @@ function RunCard({
 
       <div
         style={{
-          borderTop: "1px solid rgba(148,163,184,0.18)",
+          borderTop: "1px solid var(--rule-strong)",
           paddingTop: 10,
-          color: "#94a3b8",
+          color: "var(--ink-muted)",
           fontSize: 12,
           lineHeight: 1.45,
         }}
@@ -1824,19 +1824,18 @@ export default function PlaytestRunsPage() {
       style={{
         minHeight: "100vh",
         background:
-          "radial-gradient(circle at 50% 20%, rgba(14,116,144,0.12), transparent 32%), #020617",
-        color: "#f8fafc",
+          "var(--paper)",
+        color: "var(--ink)",
         padding: 22,
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontFamily: "var(--font-body)",
       }}
     >
       <section style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gap: 16 }}>
         <header
           style={{
-            border: "1px solid rgba(148,163,184,0.22)",
-            background: "rgba(2,6,23,0.72)",
-            borderRadius: 20,
+            border: "1px solid var(--rule-strong)",
+            background: "var(--paper)",
+            borderRadius: 0,
             padding: 18,
             display: "grid",
             gridTemplateColumns: "1fr auto",
@@ -1848,10 +1847,10 @@ export default function PlaytestRunsPage() {
             <div style={{ fontSize: 24, letterSpacing: 4 }}>
               PLAYTEST RUNS
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 13, marginTop: 6 }}>
               Import exported Under Control run JSON files and compare balance patterns.
             </div>
-            <div style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 6 }}>
               Export from <strong>/playable-v01</strong>, then import the downloaded JSON here.
             </div>
           </div>
@@ -1860,10 +1859,10 @@ export default function PlaytestRunsPage() {
             <a
               href="/playable-v01"
               style={{
-                border: "1px solid rgba(251,191,36,0.42)",
-                background: "rgba(120,53,15,0.26)",
-                color: "#fde68a",
-                borderRadius: 14,
+                border: "1px solid var(--spot)",
+                background: "var(--spot-tint)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 textDecoration: "none",
                 letterSpacing: 1.2,
@@ -1875,10 +1874,10 @@ export default function PlaytestRunsPage() {
 
             <label
               style={{
-                border: "1px solid rgba(103,232,249,0.5)",
-                background: "rgba(8,47,73,0.45)",
-                color: "#cffafe",
-                borderRadius: 14,
+                border: "1px solid var(--data)",
+                background: "var(--data-tint)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 cursor: "pointer",
                 letterSpacing: 1.3,
@@ -1911,10 +1910,10 @@ export default function PlaytestRunsPage() {
               onClick={() => downloadJson(reviewExportFilename, reviewExportPayload)}
               disabled={runs.length === 0}
               style={{
-                border: "1px solid rgba(251,191,36,0.44)",
-                background: "rgba(120,53,15,0.28)",
-                color: runs.length === 0 ? "#64748b" : "#fde68a",
-                borderRadius: 14,
+                border: "1px solid var(--spot)",
+                background: "var(--spot-tint)",
+                color: runs.length === 0 ? "var(--ink-muted)" : "var(--ink)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 cursor: runs.length === 0 ? "not-allowed" : "pointer",
                 letterSpacing: 1.2,
@@ -1929,10 +1928,10 @@ export default function PlaytestRunsPage() {
               onClick={() => downloadCsv(runCsvFilename, runCsvRows)}
               disabled={runs.length === 0}
               style={{
-                border: "1px solid rgba(103,232,249,0.44)",
-                background: "rgba(8,47,73,0.34)",
-                color: runs.length === 0 ? "#64748b" : "#cffafe",
-                borderRadius: 14,
+                border: "1px solid var(--data)",
+                background: "var(--data-tint)",
+                color: runs.length === 0 ? "var(--ink-muted)" : "var(--ink)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 cursor: runs.length === 0 ? "not-allowed" : "pointer",
                 letterSpacing: 1.2,
@@ -1947,10 +1946,10 @@ export default function PlaytestRunsPage() {
               onClick={() => downloadCsv(scenarioCsvFilename, scenarioCsvRows)}
               disabled={runs.length === 0}
               style={{
-                border: "1px solid rgba(103,232,249,0.44)",
-                background: "rgba(8,47,73,0.34)",
-                color: runs.length === 0 ? "#64748b" : "#cffafe",
-                borderRadius: 14,
+                border: "1px solid var(--data)",
+                background: "var(--data-tint)",
+                color: runs.length === 0 ? "var(--ink-muted)" : "var(--ink)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 cursor: runs.length === 0 ? "not-allowed" : "pointer",
                 letterSpacing: 1.2,
@@ -1965,10 +1964,10 @@ export default function PlaytestRunsPage() {
               onClick={deleteLowConfidenceRuns}
               disabled={lowConfidenceRunCount === 0}
               style={{
-                border: "1px solid rgba(251,191,36,0.36)",
-                background: "rgba(120,53,15,0.22)",
-                color: lowConfidenceRunCount === 0 ? "#64748b" : "#fde68a",
-                borderRadius: 14,
+                border: "1px solid var(--spot)",
+                background: "var(--spot-tint)",
+                color: lowConfidenceRunCount === 0 ? "var(--ink-muted)" : "var(--ink)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 cursor: lowConfidenceRunCount === 0 ? "not-allowed" : "pointer",
                 letterSpacing: 1.2,
@@ -1988,10 +1987,10 @@ export default function PlaytestRunsPage() {
               }}
               disabled={runs.length === 0}
               style={{
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(15,23,42,0.6)",
-                color: runs.length === 0 ? "#64748b" : "#cbd5e1",
-                borderRadius: 14,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper-2)",
+                color: runs.length === 0 ? "var(--ink-muted)" : "var(--ink-2)",
+                borderRadius: 0,
                 padding: "12px 14px",
                 cursor: runs.length === 0 ? "not-allowed" : "pointer",
                 letterSpacing: 1.2,
@@ -2017,11 +2016,11 @@ export default function PlaytestRunsPage() {
           style={{
             border:
               "1px dashed " +
-              (dragActive ? "rgba(103,232,249,0.9)" : "rgba(103,232,249,0.38)"),
-            background: dragActive ? "rgba(8,47,73,0.42)" : "rgba(8,47,73,0.18)",
-            borderRadius: 20,
+              (dragActive ? "var(--data)" : "var(--data)"),
+            background: dragActive ? "var(--data-tint)" : "var(--data-tint)",
+            borderRadius: 0,
             padding: 18,
-            color: "#cbd5e1",
+            color: "var(--ink-2)",
             fontSize: 13,
             textAlign: "center",
           }}
@@ -2032,9 +2031,9 @@ export default function PlaytestRunsPage() {
 
         <section
           style={{
-            border: "1px solid rgba(148,163,184,0.22)",
-            background: "rgba(15,23,42,0.52)",
-            borderRadius: 20,
+            border: "1px solid var(--rule-strong)",
+            background: "var(--paper-2)",
+            borderRadius: 0,
             padding: 14,
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr auto",
@@ -2053,7 +2052,7 @@ export default function PlaytestRunsPage() {
           >
             <span
               style={{
-                color: "#94a3b8",
+                color: "var(--ink-muted)",
                 fontSize: 10,
                 letterSpacing: 1.2,
                 textTransform: "uppercase",
@@ -2072,14 +2071,14 @@ export default function PlaytestRunsPage() {
                   border:
                     "1px solid " +
                     (activePresetId === preset.id
-                      ? "rgba(251,191,36,0.58)"
-                      : "rgba(148,163,184,0.24)"),
+                      ? "var(--spot)"
+                      : "var(--rule-strong)"),
                   background:
                     activePresetId === preset.id
-                      ? "rgba(120,53,15,0.32)"
-                      : "rgba(15,23,42,0.62)",
-                  color: activePresetId === preset.id ? "#fde68a" : "#cbd5e1",
-                  borderRadius: 999,
+                      ? "var(--spot-tint)"
+                      : "var(--paper-2)",
+                  color: activePresetId === preset.id ? "var(--ink)" : "var(--ink-2)",
+                  borderRadius: 0,
                   padding: "7px 10px",
                   cursor: "pointer",
                   fontSize: 11,
@@ -2093,7 +2092,7 @@ export default function PlaytestRunsPage() {
             {activePresetId === "custom" && (
               <span
                 style={{
-                  color: "#67e8f9",
+                  color: "var(--data)",
                   fontSize: 11,
                   letterSpacing: 1.1,
                   textTransform: "uppercase",
@@ -2105,7 +2104,7 @@ export default function PlaytestRunsPage() {
           </div>
 
           <div>
-            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
               SCENARIO
             </div>
             <select
@@ -2116,10 +2115,10 @@ export default function PlaytestRunsPage() {
               }}
               style={{
                 width: "100%",
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.82)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2134,7 +2133,7 @@ export default function PlaytestRunsPage() {
           </div>
 
           <div>
-            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
               STATUS
             </div>
             <select
@@ -2145,10 +2144,10 @@ export default function PlaytestRunsPage() {
               }}
               style={{
                 width: "100%",
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.82)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2161,7 +2160,7 @@ export default function PlaytestRunsPage() {
           </div>
 
           <div>
-            <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2, marginBottom: 6 }}>
               CONFIDENCE
             </div>
             <select
@@ -2172,10 +2171,10 @@ export default function PlaytestRunsPage() {
               }}
               style={{
                 width: "100%",
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.82)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2195,10 +2194,10 @@ export default function PlaytestRunsPage() {
               setActivePresetId("all");
             }}
             style={{
-              border: "1px solid rgba(148,163,184,0.28)",
-              background: "rgba(15,23,42,0.6)",
-              color: "#cbd5e1",
-              borderRadius: 12,
+              border: "1px solid var(--rule-strong)",
+              background: "var(--paper-2)",
+              color: "var(--ink-2)",
+              borderRadius: 0,
               padding: "10px 12px",
               cursor: "pointer",
               letterSpacing: 1.1,
@@ -2211,12 +2210,12 @@ export default function PlaytestRunsPage() {
           <div
             style={{
               gridColumn: "1 / -1",
-              color: "#64748b",
+              color: "var(--ink-muted)",
               fontSize: 12,
             }}
           >
-            Showing <strong style={{ color: "#cbd5e1" }}>{sortedRuns.length}</strong> of{" "}
-            <strong style={{ color: "#cbd5e1" }}>{runs.length}</strong> imported runs.
+            Showing <strong style={{ color: "var(--ink-2)" }}>{sortedRuns.length}</strong> of{" "}
+            <strong style={{ color: "var(--ink-2)" }}>{runs.length}</strong> imported runs.
           </div>
         </section>
 
@@ -2225,11 +2224,11 @@ export default function PlaytestRunsPage() {
         {message && (
           <section
             style={{
-              border: "1px solid rgba(134,239,172,0.36)",
-              background: "rgba(20,83,45,0.22)",
-              borderRadius: 16,
+              border: "1px solid var(--ink)",
+              background: "var(--paper-2)",
+              borderRadius: 0,
               padding: 14,
-              color: "#bbf7d0",
+              color: "var(--ink)",
               fontSize: 13,
             }}
           >
@@ -2240,11 +2239,11 @@ export default function PlaytestRunsPage() {
         {error && (
           <section
             style={{
-              border: "1px solid rgba(251,113,133,0.45)",
-              background: "rgba(127,29,29,0.22)",
-              borderRadius: 16,
+              border: "1px solid var(--spot)",
+              background: "var(--spot-tint)",
+              borderRadius: 0,
               padding: 14,
-              color: "#fecdd3",
+              color: "var(--ink)",
               fontSize: 13,
             }}
           >
@@ -2254,15 +2253,15 @@ export default function PlaytestRunsPage() {
 
         <section
           style={{
-            border: "1px solid rgba(251,191,36,0.32)",
-            background: "rgba(120,53,15,0.14)",
-            borderRadius: 20,
+            border: "1px solid var(--spot)",
+            background: "var(--spot-tint)",
+            borderRadius: 0,
             padding: 16,
           }}
         >
           <div
             style={{
-              color: "#fde68a",
+              color: "var(--ink)",
               fontSize: 12,
               letterSpacing: 1.5,
               textTransform: "uppercase",
@@ -2274,7 +2273,7 @@ export default function PlaytestRunsPage() {
 
           <div style={{ display: "grid", gap: 8 }}>
             {notes.map((note) => (
-              <div key={note} style={{ color: "#e2e8f0", fontSize: 13 }}>
+              <div key={note} style={{ color: "var(--ink)", fontSize: 13 }}>
                 {note}
               </div>
             ))}
@@ -2283,9 +2282,9 @@ export default function PlaytestRunsPage() {
 
         <section
           style={{
-            border: "1px solid rgba(103,232,249,0.26)",
-            background: "rgba(8,47,73,0.12)",
-            borderRadius: 20,
+            border: "1px solid var(--data)",
+            background: "var(--data-tint)",
+            borderRadius: 0,
             padding: 16,
             display: "grid",
             gap: 14,
@@ -2294,7 +2293,7 @@ export default function PlaytestRunsPage() {
           <div>
             <div
               style={{
-                color: "#67e8f9",
+                color: "var(--data)",
                 fontSize: 12,
                 letterSpacing: 1.5,
                 textTransform: "uppercase",
@@ -2302,7 +2301,7 @@ export default function PlaytestRunsPage() {
             >
               Scenario Tuning Profiles
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 5 }}>
               Save named balance passes and import/export tuning intent separately from run data.
             </div>
           </div>
@@ -2322,10 +2321,10 @@ export default function PlaytestRunsPage() {
               }
               placeholder="Profile name, e.g. Softer Critical Cascade"
               style={{
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.72)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2338,10 +2337,10 @@ export default function PlaytestRunsPage() {
               }
               placeholder="v0.1.1"
               style={{
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.72)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2352,10 +2351,10 @@ export default function PlaytestRunsPage() {
                 type="button"
                 onClick={createScenarioTuningProfile}
                 style={{
-                  border: "1px solid rgba(103,232,249,0.48)",
-                  background: "rgba(8,47,73,0.34)",
-                  color: "#cffafe",
-                  borderRadius: 12,
+                  border: "1px solid var(--data)",
+                  background: "var(--data-tint)",
+                  color: "var(--ink)",
+                  borderRadius: 0,
                   padding: "10px 12px",
                   cursor: "pointer",
                   letterSpacing: 1.1,
@@ -2368,10 +2367,10 @@ export default function PlaytestRunsPage() {
 
               <label
                 style={{
-                  border: "1px solid rgba(251,191,36,0.4)",
-                  background: "rgba(120,53,15,0.24)",
-                  color: "#fde68a",
-                  borderRadius: 12,
+                  border: "1px solid var(--spot)",
+                  background: "var(--spot-tint)",
+                  color: "var(--ink)",
+                  borderRadius: 0,
                   padding: "10px 12px",
                   cursor: "pointer",
                   letterSpacing: 1.1,
@@ -2412,10 +2411,10 @@ export default function PlaytestRunsPage() {
             style={{
               width: "100%",
               resize: "vertical",
-              border: "1px solid rgba(148,163,184,0.24)",
-              background: "rgba(2,6,23,0.72)",
-              color: "#e2e8f0",
-              borderRadius: 12,
+              border: "1px solid var(--rule-strong)",
+              background: "var(--paper)",
+              color: "var(--ink)",
+              borderRadius: 0,
               padding: 10,
               fontSize: 12,
               lineHeight: 1.45,
@@ -2437,10 +2436,10 @@ export default function PlaytestRunsPage() {
             style={{
               width: "100%",
               resize: "vertical",
-              border: "1px solid rgba(148,163,184,0.24)",
-              background: "rgba(2,6,23,0.72)",
-              color: "#e2e8f0",
-              borderRadius: 12,
+              border: "1px solid var(--rule-strong)",
+              background: "var(--paper)",
+              color: "var(--ink)",
+              borderRadius: 0,
               padding: 10,
               fontSize: 12,
               lineHeight: 1.45,
@@ -2450,7 +2449,7 @@ export default function PlaytestRunsPage() {
           />
 
           {tuningProfiles.length === 0 ? (
-            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 13 }}>
               No tuning profiles saved yet.
             </div>
           ) : (
@@ -2459,9 +2458,9 @@ export default function PlaytestRunsPage() {
                 <article
                   key={profile.id}
                   style={{
-                    border: "1px solid rgba(148,163,184,0.2)",
-                    background: "rgba(15,23,42,0.52)",
-                    borderRadius: 14,
+                    border: "1px solid var(--rule-strong)",
+                    background: "var(--paper-2)",
+                    borderRadius: 0,
                     padding: 12,
                     display: "grid",
                     gap: 8,
@@ -2471,7 +2470,7 @@ export default function PlaytestRunsPage() {
                     <div>
                       <div
                         style={{
-                          color: "#67e8f9",
+                          color: "var(--data)",
                           fontSize: 10,
                           letterSpacing: 1.2,
                           textTransform: "uppercase",
@@ -2479,7 +2478,7 @@ export default function PlaytestRunsPage() {
                       >
                         {profile.version} · {new Date(profile.createdAt).toLocaleString()}
                       </div>
-                      <div style={{ color: "#f8fafc", fontSize: 15, marginTop: 4 }}>
+                      <div style={{ color: "var(--ink)", fontSize: 15, marginTop: 4 }}>
                         {profile.name}
                       </div>
                     </div>
@@ -2489,10 +2488,10 @@ export default function PlaytestRunsPage() {
                         type="button"
                         onClick={() => exportScenarioTuningProfile(profile)}
                         style={{
-                          border: "1px solid rgba(103,232,249,0.36)",
-                          background: "rgba(8,47,73,0.24)",
-                          color: "#cffafe",
-                          borderRadius: 10,
+                          border: "1px solid var(--data)",
+                          background: "var(--data-tint)",
+                          color: "var(--ink)",
+                          borderRadius: 0,
                           padding: "7px 9px",
                           cursor: "pointer",
                           fontSize: 10,
@@ -2506,10 +2505,10 @@ export default function PlaytestRunsPage() {
                         type="button"
                         onClick={() => deleteScenarioTuningProfile(profile.id)}
                         style={{
-                          border: "1px solid rgba(251,113,133,0.34)",
-                          background: "rgba(127,29,29,0.18)",
-                          color: "#fecdd3",
-                          borderRadius: 10,
+                          border: "1px solid var(--spot)",
+                          background: "var(--spot-tint)",
+                          color: "var(--ink)",
+                          borderRadius: 0,
                           padding: "7px 9px",
                           cursor: "pointer",
                           fontSize: 10,
@@ -2522,7 +2521,7 @@ export default function PlaytestRunsPage() {
                   </div>
 
                   {profile.summary && (
-                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
+                    <div style={{ color: "var(--ink-2)", fontSize: 12, lineHeight: 1.45 }}>
                       {profile.summary}
                     </div>
                   )}
@@ -2533,14 +2532,14 @@ export default function PlaytestRunsPage() {
                         <div
                           key={profile.id + "-" + index}
                           style={{
-                            borderLeft: "2px solid rgba(103,232,249,0.44)",
+                            borderLeft: "2px solid var(--data)",
                             paddingLeft: 9,
-                            color: "#cbd5e1",
+                            color: "var(--ink-2)",
                             fontSize: 12,
                             lineHeight: 1.4,
                           }}
                         >
-                          <strong style={{ color: "#f8fafc" }}>{adjustment.scenario}:</strong>{" "}
+                          <strong style={{ color: "var(--ink)" }}>{adjustment.scenario}:</strong>{" "}
                           {adjustment.change}
                         </div>
                       ))}
@@ -2554,9 +2553,9 @@ export default function PlaytestRunsPage() {
 
         <section
           style={{
-            border: "1px solid rgba(251,191,36,0.32)",
-            background: "rgba(120,53,15,0.12)",
-            borderRadius: 20,
+            border: "1px solid var(--spot)",
+            background: "var(--spot-tint)",
+            borderRadius: 0,
             padding: 16,
             display: "grid",
             gap: 14,
@@ -2565,7 +2564,7 @@ export default function PlaytestRunsPage() {
           <div>
             <div
               style={{
-                color: "#fde68a",
+                color: "var(--ink)",
                 fontSize: 12,
                 letterSpacing: 1.5,
                 textTransform: "uppercase",
@@ -2573,7 +2572,7 @@ export default function PlaytestRunsPage() {
             >
               Balance Change Log
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 5 }}>
               Local tuning notebook for balance decisions, playtest observations, and scenario adjustments.
             </div>
           </div>
@@ -2593,10 +2592,10 @@ export default function PlaytestRunsPage() {
               }
               placeholder="Change title / observation"
               style={{
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.72)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2608,10 +2607,10 @@ export default function PlaytestRunsPage() {
                 setChangeLogDraft((draft) => ({ ...draft, scenario: event.currentTarget.value }))
               }
               style={{
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.72)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2633,10 +2632,10 @@ export default function PlaytestRunsPage() {
                 }))
               }
               style={{
-                border: "1px solid rgba(148,163,184,0.28)",
-                background: "rgba(2,6,23,0.72)",
-                color: "#e2e8f0",
-                borderRadius: 12,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 11px",
                 fontSize: 12,
               }}
@@ -2651,10 +2650,10 @@ export default function PlaytestRunsPage() {
               type="button"
               onClick={addBalanceChangeLogEntry}
               style={{
-                border: "1px solid rgba(251,191,36,0.48)",
-                background: "rgba(120,53,15,0.28)",
-                color: "#fde68a",
-                borderRadius: 12,
+                border: "1px solid var(--spot)",
+                background: "var(--spot-tint)",
+                color: "var(--ink)",
+                borderRadius: 0,
                 padding: "10px 12px",
                 cursor: "pointer",
                 letterSpacing: 1.1,
@@ -2675,10 +2674,10 @@ export default function PlaytestRunsPage() {
             style={{
               width: "100%",
               resize: "vertical",
-              border: "1px solid rgba(148,163,184,0.24)",
-              background: "rgba(2,6,23,0.72)",
-              color: "#e2e8f0",
-              borderRadius: 12,
+              border: "1px solid var(--rule-strong)",
+              background: "var(--paper)",
+              color: "var(--ink)",
+              borderRadius: 0,
               padding: 10,
               fontSize: 12,
               lineHeight: 1.45,
@@ -2688,7 +2687,7 @@ export default function PlaytestRunsPage() {
           />
 
           {changeLogEntries.length === 0 ? (
-            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 13 }}>
               No balance notes yet.
             </div>
           ) : (
@@ -2697,9 +2696,9 @@ export default function PlaytestRunsPage() {
                 <article
                   key={entry.id}
                   style={{
-                    border: "1px solid rgba(148,163,184,0.2)",
-                    background: "rgba(15,23,42,0.52)",
-                    borderRadius: 14,
+                    border: "1px solid var(--rule-strong)",
+                    background: "var(--paper-2)",
+                    borderRadius: 0,
                     padding: 12,
                     display: "grid",
                     gap: 7,
@@ -2711,12 +2710,12 @@ export default function PlaytestRunsPage() {
                         style={{
                           color:
                             entry.severity === "urgent"
-                              ? "#fb7185"
+                              ? "var(--ink)"
                               : entry.severity === "tune"
-                                ? "#fde68a"
+                                ? "var(--ink)"
                                 : entry.severity === "watch"
-                                  ? "#67e8f9"
-                                  : "#94a3b8",
+                                  ? "var(--data)"
+                                  : "var(--ink-muted)",
                           fontSize: 10,
                           letterSpacing: 1.2,
                           textTransform: "uppercase",
@@ -2724,10 +2723,10 @@ export default function PlaytestRunsPage() {
                       >
                         {entry.severity} · {entry.scenario}
                       </div>
-                      <div style={{ color: "#f8fafc", fontSize: 14, marginTop: 4 }}>
+                      <div style={{ color: "var(--ink)", fontSize: 14, marginTop: 4 }}>
                         {entry.title}
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>
+                      <div style={{ color: "var(--ink-muted)", fontSize: 11, marginTop: 3 }}>
                         {new Date(entry.createdAt).toLocaleString()}
                       </div>
                     </div>
@@ -2736,10 +2735,10 @@ export default function PlaytestRunsPage() {
                       type="button"
                       onClick={() => deleteBalanceChangeLogEntry(entry.id)}
                       style={{
-                        border: "1px solid rgba(251,113,133,0.34)",
-                        background: "rgba(127,29,29,0.18)",
-                        color: "#fecdd3",
-                        borderRadius: 10,
+                        border: "1px solid var(--spot)",
+                        background: "var(--spot-tint)",
+                        color: "var(--ink)",
+                        borderRadius: 0,
                         padding: "7px 9px",
                         cursor: "pointer",
                         fontSize: 10,
@@ -2752,7 +2751,7 @@ export default function PlaytestRunsPage() {
                   </div>
 
                   {entry.note && (
-                    <div style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
+                    <div style={{ color: "var(--ink-2)", fontSize: 12, lineHeight: 1.45 }}>
                       {entry.note}
                     </div>
                   )}
@@ -2764,9 +2763,9 @@ export default function PlaytestRunsPage() {
 
         <section
           style={{
-            border: "1px solid rgba(103,232,249,0.24)",
-            background: "rgba(8,47,73,0.12)",
-            borderRadius: 20,
+            border: "1px solid var(--data)",
+            background: "var(--data-tint)",
+            borderRadius: 0,
             padding: 16,
             display: "grid",
             gap: 14,
@@ -2775,7 +2774,7 @@ export default function PlaytestRunsPage() {
           <div>
             <div
               style={{
-                color: "#67e8f9",
+                color: "var(--data)",
                 fontSize: 12,
                 letterSpacing: 1.5,
                 textTransform: "uppercase",
@@ -2783,13 +2782,13 @@ export default function PlaytestRunsPage() {
             >
               Scenario Comparison
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 5 }}>
               Grouped run outcomes by seeded scenario.
             </div>
           </div>
 
           {scenarioSummaries.length === 0 ? (
-            <div style={{ color: "#94a3b8", fontSize: 13 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 13 }}>
               Import runs from different scenarios to compare balance.
             </div>
           ) : (
@@ -2809,9 +2808,9 @@ export default function PlaytestRunsPage() {
 
         <section
           style={{
-            border: "1px solid rgba(148,163,184,0.22)",
-            background: "rgba(15,23,42,0.44)",
-            borderRadius: 20,
+            border: "1px solid var(--rule-strong)",
+            background: "var(--paper-2)",
+            borderRadius: 0,
             padding: 16,
             display: "grid",
             gap: 12,
@@ -2820,7 +2819,7 @@ export default function PlaytestRunsPage() {
           <div>
             <div
               style={{
-                color: "#cbd5e1",
+                color: "var(--ink-2)",
                 fontSize: 12,
                 letterSpacing: 1.5,
                 textTransform: "uppercase",
@@ -2828,10 +2827,10 @@ export default function PlaytestRunsPage() {
             >
               Trend View
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 5 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 5 }}>
               Runs shown in import order, filtered by the active review filters.
             </div>
-            <div style={{ color: "#64748b", fontSize: 11, marginTop: 5 }}>
+            <div style={{ color: "var(--ink-muted)", fontSize: 11, marginTop: 5 }}>
               Mini bars: score is relative to loaded runs; integrity and cascade are scaled to 100%.
             </div>
           </div>

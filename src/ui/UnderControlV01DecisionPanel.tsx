@@ -7,19 +7,19 @@ import { getActionPreview, formatDelta } from "../game/v01/preview";
 import type { Advisor, EventTone, GameState, NodeState, PlayerActionType, SystemNode } from "../game/v01/types";
 
 const colors: Record<NodeState, string> = {
-  stable: "#6ee7a8",
-  active: "#67e8f9",
-  warning: "#fbbf24",
-  critical: "#fb7185",
-  unknown: "#94a3b8",
-  suppressed: "#64748b",
+  stable: "var(--ink)",
+  active: "var(--data)",
+  warning: "var(--ink)",
+  critical: "var(--ink)",
+  unknown: "var(--rule-strong)",
+  suppressed: "var(--ink-muted)",
 };
 
 const toneColors: Record<EventTone, string> = {
-  neutral: "#cbd5e1",
-  good: "#86efac",
-  warning: "#fbbf24",
-  critical: "#fb7185",
+  neutral: "var(--ink-2)",
+  good: "var(--ink)",
+  warning: "var(--ink)",
+  critical: "var(--ink)",
 };
 
 const actionCopy: Record<PlayerActionType, { label: string; detail: string; best: string }> = {
@@ -158,16 +158,16 @@ function getOperatorProfile(game: GameState) {
 function Meter({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>
         <span>{label}</span>
         <span>{value}%</span>
       </div>
-      <div style={{ height: 5, borderRadius: 99, background: "rgba(148,163,184,0.18)", overflow: "hidden" }}>
+      <div style={{ height: 5, borderRadius: 0, background: "var(--paper-3)", overflow: "hidden" }}>
         <div
           style={{
             width: value + "%",
             height: "100%",
-            background: value > 66 ? "#67e8f9" : value > 40 ? "#fbbf24" : "#fb7185",
+            background: value > 66 ? "var(--data)" : value > 40 ? "var(--spot)" : "var(--spot)",
           }}
         />
       </div>
@@ -223,11 +223,11 @@ function AdvisorCard({ advisor }: { advisor: Advisor }) {
   return (
     <div
       style={{
-        border: "1px solid " + (active ? "#67e8f9" : "rgba(148,163,184,0.25)"),
-        background: active ? "rgba(8,47,73,0.55)" : "rgba(15,23,42,0.68)",
-        borderRadius: 14,
+        border: "1px solid " + (active ? "var(--data)" : "var(--rule-strong)"),
+        background: active ? "var(--data-tint)" : "var(--paper-2)",
+        borderRadius: 0,
         padding: 12,
-        boxShadow: active ? "0 0 28px rgba(103,232,249,0.14)" : "none",
+        boxShadow: "none",
       }}
     >
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -235,20 +235,20 @@ function AdvisorCard({ advisor }: { advisor: Advisor }) {
           style={{
             width: 42,
             height: 42,
-            borderRadius: 12,
-            background: "linear-gradient(135deg, rgba(103,232,249,0.22), rgba(15,23,42,0.9))",
-            border: "1px solid rgba(103,232,249,0.35)",
+            borderRadius: 0,
+            background: "var(--paper)",
+            border: "1px solid var(--data)",
           }}
         />
         <div>
-          <div style={{ color: "#f8fafc", letterSpacing: 1.6, fontSize: 13 }}>{advisor.name}</div>
-          <div style={{ color: "#94a3b8", fontSize: 11, textTransform: "uppercase" }}>
+          <div style={{ color: "var(--ink)", letterSpacing: 1.6, fontSize: 13 }}>{advisor.name}</div>
+          <div style={{ color: "var(--ink-muted)", fontSize: 11, textTransform: "uppercase" }}>
             {advisor.state.replace("_", " ")}
           </div>
         </div>
       </div>
 
-      <p style={{ color: "#cbd5e1", fontSize: 12, lineHeight: 1.35, minHeight: 34 }}>
+      <p style={{ color: "var(--ink-2)", fontSize: 12, lineHeight: 1.35, minHeight: 34 }}>
         {advisor.recommendation}
       </p>
 
@@ -287,26 +287,26 @@ function ActionButton({
         border:
           "1px solid " +
           (selected
-            ? "rgba(251,191,36,0.72)"
+            ? "var(--spot)"
             : disabled
-              ? "rgba(148,163,184,0.18)"
-              : "rgba(103,232,249,0.45)"),
+              ? "var(--rule-strong)"
+              : "var(--data)"),
         background: selected
-          ? "rgba(120,53,15,0.34)"
+          ? "var(--spot-tint)"
           : disabled
-            ? "rgba(15,23,42,0.62)"
-            : "rgba(8,47,73,0.45)",
-        color: disabled ? "#64748b" : "#f8fafc",
-        borderRadius: 16,
+            ? "var(--paper-2)"
+            : "var(--data-tint)",
+        color: disabled ? "var(--ink-muted)" : "var(--ink)",
+        borderRadius: 0,
         padding: "12px 14px",
         cursor: "pointer",
-        boxShadow: selected ? "0 0 28px rgba(251,191,36,0.16)" : "none",
+        boxShadow: "none",
       }}
     >
       <div style={{ fontSize: 15, letterSpacing: 1.8, marginBottom: 7 }}>{copy.label}</div>
-      <div style={{ fontSize: 12, color: disabled ? "#64748b" : "#cbd5e1" }}>{copy.detail}</div>
-      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>{copy.best}</div>
-      <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 11, color: "#94a3b8" }}>
+      <div style={{ fontSize: 12, color: disabled ? "var(--ink-muted)" : "var(--ink-2)" }}>{copy.detail}</div>
+      <div style={{ fontSize: 11, color: "var(--ink-muted)", marginTop: 8 }}>{copy.best}</div>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, fontSize: 11, color: "var(--ink-muted)" }}>
         <span>COST 1</span>
         <span>CD {cooldown}</span>
       </div>
@@ -351,7 +351,6 @@ function NodeButton({
   onSelect: () => void;
 }) {
   const color = colors[node.state];
-  const urgency = nodeUrgency(node);
   const targetLabel =
     previewAction === "observe"
       ? "SCAN"
@@ -360,10 +359,10 @@ function NodeButton({
         : "TARGET";
   const targetColor =
     previewAction === "observe"
-      ? "#67e8f9"
+      ? "var(--data)"
       : previewAction === "stabilize"
-        ? "#6ee7a8"
-        : "#fde68a";
+        ? "var(--ink)"
+        : "var(--ink)";
 
   return (
     <button
@@ -376,29 +375,25 @@ function NodeButton({
         transform: "translate(-50%, -50%)",
         width: selected ? 86 : 74,
         height: selected ? 86 : 74,
-        borderRadius: "50%",
+        borderRadius: 0,
         border:
           "2px solid " +
           (previewTarget
             ? targetColor
             : selected
-              ? "#f8fafc"
+              ? "var(--ink)"
               : previewAffected
-                ? "#fbbf24"
+                ? "var(--spot)"
                 : color),
-        background: "radial-gradient(circle at center, rgba(15,23,42,0.92), rgba(2,6,23,0.96))",
-        color: "#f8fafc",
-        boxShadow: previewTarget
-          ? "0 0 34px " + targetColor + "99"
-          : previewAffected
-            ? "0 0 26px rgba(251,191,36,0.48)"
-            : "0 0 " + (16 + urgency * 8) + "px " + color + "55",
+        background: "var(--paper)",
+        color: "var(--ink)",
+        boxShadow: "none",
         cursor: "pointer",
         opacity: inRange || operator ? 1 : 0.64,
       }}
       title={node.label}
     >
-      <span style={{ display: "block", margin: "0 auto 3px", width: 9, height: 9, borderRadius: "50%", background: color, boxShadow: "0 0 12px " + color }} />
+      <span style={{ display: "block", margin: "0 auto 3px", width: 9, height: 9, borderRadius: 0, background: color, boxShadow: "none" }} />
       <span style={{ display: "block", fontSize: 10, letterSpacing: 1.1 }}>{node.label}</span>
       <span style={{ display: "block", color, fontSize: 9, marginTop: 4, textTransform: "uppercase", letterSpacing: 1 }}>
         {node.state}
@@ -412,7 +407,7 @@ function NodeButton({
               previewAction === "observe"
                 ? "1px dashed " + targetColor
                 : "1px solid " + targetColor,
-            borderRadius: "50%",
+            borderRadius: 0,
             opacity: 0.86,
           }}
         />
@@ -422,8 +417,8 @@ function NodeButton({
           style={{
             position: "absolute",
             inset: -31,
-            border: "1px dotted rgba(103,232,249,0.48)",
-            borderRadius: "50%",
+            border: "1px dotted var(--data)",
+            borderRadius: 0,
             opacity: 0.74,
           }}
         />
@@ -437,7 +432,7 @@ function NodeButton({
             borderBottom: "2px solid " + targetColor,
             borderLeft: "1px solid transparent",
             borderRight: "1px solid transparent",
-            borderRadius: "50%",
+            borderRadius: 0,
             opacity: 0.86,
           }}
         />
@@ -465,7 +460,7 @@ function NodeButton({
             left: "50%",
             bottom: -18,
             transform: "translateX(-50%)",
-            color: "#fbbf24",
+            color: "var(--ink)",
             fontSize: 9,
             letterSpacing: 1.1,
             whiteSpace: "nowrap",
@@ -475,7 +470,7 @@ function NodeButton({
         </span>
       )}
       {operator && (
-        <span style={{ position: "absolute", inset: -13, border: "1px dashed rgba(248,250,252,0.55)", borderRadius: "50%" }} />
+        <span style={{ position: "absolute", inset: -13, border: "1px dashed var(--ink)", borderRadius: 0 }} />
       )}
     </button>
   );
@@ -622,33 +617,33 @@ export function UnderControlV01DecisionPanel() {
     <main
       style={{
         minHeight: "100vh",
-        background: "radial-gradient(circle at 50% 20%, rgba(14,116,144,0.12), transparent 32%), #020617",
-        color: "#f8fafc",
+        background: "var(--paper)",
+        color: "var(--ink)",
         padding: 12,
-        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontFamily: "var(--font-body)",
       }}
     >
       <section style={{ maxWidth: 1480, margin: "0 auto", display: "grid", gridTemplateRows: "auto 1fr auto", gap: 10 }}>
-        <header style={{ border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.72)", borderRadius: 20, padding: "12px 16px" }}>
+        <header style={{ border: "1px solid var(--rule-strong)", background: "var(--paper)", borderRadius: 0, padding: "12px 16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 18 }}>
-            <div style={{ color: "#94a3b8", fontSize: 12, letterSpacing: 1.4 }}>CYCLE {game.cycle}/{game.maxCycles}</div>
+            <div style={{ color: "var(--ink-muted)", fontSize: 12, letterSpacing: 1.4 }}>CYCLE {game.cycle}/{game.maxCycles}</div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 24, letterSpacing: 5 }}>UNDER CONTROL</div>
-              <div style={{ color: "#fbbf24", fontSize: 12, letterSpacing: 2, marginTop: 4 }}>
+              <div style={{ color: "var(--ink)", fontSize: 12, letterSpacing: 2, marginTop: 4 }}>
                 {game.status === "running" ? (game.cascadeRisk > 68 ? "UNSTABLE" : game.pressure > 50 ? "DEGRADED" : "STABLE") : game.status.toUpperCase()}
               </div>
             </div>
-            <div style={{ textAlign: "right", color: "#94a3b8", fontSize: 12 }}>
+            <div style={{ textAlign: "right", color: "var(--ink-muted)", fontSize: 12 }}>
               <div>SCORE {score}</div>
               <a
                 href="/playtest-runs"
                 style={{
                   display: "inline-block",
                   marginTop: 8,
-                  border: "1px solid rgba(251,191,36,0.36)",
-                  background: "rgba(120,53,15,0.2)",
-                  color: "#fde68a",
-                  borderRadius: 10,
+                  border: "1px solid var(--spot)",
+                  background: "var(--spot-tint)",
+                  color: "var(--ink)",
+                  borderRadius: 0,
                   padding: "7px 8px",
                   textDecoration: "none",
                   fontSize: 11,
@@ -669,10 +664,10 @@ export function UnderControlV01DecisionPanel() {
                   value={selectedScenarioId}
                   onChange={(event) => setSelectedScenarioId(event.currentTarget.value)}
                   style={{
-                    border: "1px solid rgba(148,163,184,0.28)",
-                    background: "rgba(15,23,42,0.88)",
-                    color: "#cbd5e1",
-                    borderRadius: 10,
+                    border: "1px solid var(--rule-strong)",
+                    background: "var(--paper-2)",
+                    color: "var(--ink-2)",
+                    borderRadius: 0,
                     padding: "7px 8px",
                     fontSize: 11,
                   }}
@@ -688,10 +683,10 @@ export function UnderControlV01DecisionPanel() {
                   type="button"
                   onClick={() => dispatch({ type: "reset", scenarioId: selectedScenarioId })}
                   style={{
-                    border: "1px solid rgba(103,232,249,0.42)",
-                    background: "rgba(8,47,73,0.45)",
-                    color: "#cffafe",
-                    borderRadius: 10,
+                    border: "1px solid var(--data)",
+                    background: "var(--data-tint)",
+                    color: "var(--ink)",
+                    borderRadius: 0,
                     padding: "7px 8px",
                     cursor: "pointer",
                     fontSize: 11,
@@ -708,21 +703,21 @@ export function UnderControlV01DecisionPanel() {
             <Meter label="PRESSURE" value={game.pressure} />
           </div>
 
-          <div style={{ marginTop: 10, border: "1px solid rgba(251,191,36,0.35)", background: "rgba(120,53,15,0.18)", borderRadius: 14, padding: "10px 12px", color: "#fde68a", fontSize: 13 }}>
+          <div style={{ marginTop: 10, border: "1px solid var(--spot)", background: "var(--spot-tint)", borderRadius: 0, padding: "10px 12px", color: "var(--ink)", fontSize: 13 }}>
             <strong style={{ letterSpacing: 1.3 }}>{game.scenarioLabel} / CURRENT PRIORITY:</strong>{" "}
             {game.currentPriority}
           </div>
         </header>
 
         <section style={{ display: "grid", gridTemplateColumns: "260px 1fr 270px", gap: 14, minHeight: 560 }}>
-          <aside style={{ border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.72)", borderRadius: 20, padding: 12, display: "grid", gap: 12, alignContent: "start" }}>
-            <div style={{ color: "#e2e8f0", letterSpacing: 2, fontSize: 13 }}>ADVISORS</div>
+          <aside style={{ border: "1px solid var(--rule-strong)", background: "var(--paper)", borderRadius: 0, padding: 12, display: "grid", gap: 12, alignContent: "start" }}>
+            <div style={{ color: "var(--ink)", letterSpacing: 2, fontSize: 13 }}>ADVISORS</div>
             {game.advisors.map((advisor) => (
               <AdvisorCard advisor={advisor} key={advisor.id} />
             ))}
           </aside>
 
-          <section style={{ position: "relative", border: "1px solid rgba(148,163,184,0.22)", background: "linear-gradient(180deg, rgba(15,23,42,0.78), rgba(2,6,23,0.92))", borderRadius: 24, overflow: "hidden", minHeight: 560 }}>
+          <section style={{ position: "relative", border: "1px solid var(--rule-strong)", background: "var(--paper)", borderRadius: 0, overflow: "hidden", minHeight: 560 }}>
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.78 }}>
               {game.nodes.flatMap((node) =>
                 node.connections
@@ -741,10 +736,10 @@ export function UnderControlV01DecisionPanel() {
                         y2={target.y}
                         stroke={
                           previewedRoute
-                            ? "rgba(251,191,36,0.95)"
+                            ? "var(--spot)"
                             : hot
-                              ? "rgba(251,191,36,0.58)"
-                              : "rgba(103,232,249,0.34)"
+                              ? "var(--spot)"
+                              : "var(--data)"
                         }
                         strokeWidth={previewedRoute ? 0.72 : hot ? 0.42 : 0.28}
                         strokeDasharray={previewedRoute ? "1.4 0.9" : undefined}
@@ -758,7 +753,7 @@ export function UnderControlV01DecisionPanel() {
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundImage: "linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px)",
+                backgroundImage: "linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px)",
                 backgroundSize: "44px 44px",
                 maskImage: "radial-gradient(circle at center, black, transparent 82%)",
               }}
@@ -783,10 +778,10 @@ export function UnderControlV01DecisionPanel() {
                   y1={hardGuidedFromNode.y}
                   x2={hardGuidedNextNode.x}
                   y2={hardGuidedNextNode.y}
-                  stroke="rgba(103,232,249,0.98)"
+                  stroke="var(--data)"
                   strokeWidth={0.95}
                   strokeDasharray="1.2 1"
-                  style={{ filter: "drop-shadow(0 0 9px rgba(103,232,249,0.75))" }}
+                  
                 />
               </svg>
             )}
@@ -801,9 +796,9 @@ export function UnderControlV01DecisionPanel() {
                   transform: "translate(-50%, -50%)",
                   width: 112,
                   height: 112,
-                  border: "1px dashed rgba(103,232,249,0.95)",
-                  borderRadius: "50%",
-                  boxShadow: "0 0 32px rgba(103,232,249,0.52)",
+                  border: "1px dashed var(--data)",
+                  borderRadius: 0,
+                  boxShadow: "none",
                   pointerEvents: "none",
                   zIndex: 7,
                 }}
@@ -814,7 +809,7 @@ export function UnderControlV01DecisionPanel() {
                     left: "50%",
                     top: -24,
                     transform: "translateX(-50%)",
-                    color: "#67e8f9",
+                    color: "var(--data)",
                     fontSize: 9,
                     letterSpacing: 1.2,
                     whiteSpace: "nowrap",
@@ -847,9 +842,9 @@ export function UnderControlV01DecisionPanel() {
                 transform: "translate(-50%, -50%)",
                 width: 22,
                 height: 36,
-                borderRadius: "12px 12px 8px 8px",
-                background: "linear-gradient(180deg, #f8fafc, #67e8f9)",
-                boxShadow: "0 0 26px rgba(103,232,249,0.7)",
+                borderRadius: 0,
+                background: "var(--paper)",
+                boxShadow: "none",
                 pointerEvents: "none",
               }}
             />
@@ -860,9 +855,9 @@ export function UnderControlV01DecisionPanel() {
                 left: 18,
                 bottom: 18,
                 right: 18,
-                border: "1px solid rgba(148,163,184,0.22)",
-                background: "rgba(2,6,23,0.88)",
-                borderRadius: 18,
+                border: "1px solid var(--rule-strong)",
+                background: "var(--paper)",
+                borderRadius: 0,
                 padding: 12,
                 display: "grid",
                 gridTemplateColumns: "1fr auto",
@@ -875,17 +870,17 @@ export function UnderControlV01DecisionPanel() {
                   SELECTED NODE / {selectedNode.state.toUpperCase()}
                 </div>
                 <div style={{ fontSize: 18, marginTop: 4 }}>{selectedNode.label}</div>
-                <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+                <div style={{ color: "var(--ink-muted)", fontSize: 12, marginTop: 6 }}>
                   Pressure {selectedNode.pressure}% · Integrity {selectedNode.integrity}% · Hidden risk {selectedNode.observed ? selectedNode.hiddenRisk + "%" : "unresolved"}
                 </div>
                 <div
                   style={{
                     color:
                       previewAction === "observe"
-                        ? "#67e8f9"
+                        ? "var(--data)"
                         : previewAction === "stabilize"
-                          ? "#6ee7a8"
-                          : "#fde68a",
+                          ? "var(--ink)"
+                          : "var(--ink)",
                     fontSize: 11,
                     letterSpacing: 1.2,
                     marginTop: 6,
@@ -901,10 +896,10 @@ export function UnderControlV01DecisionPanel() {
                 onClick={() => dispatch({ type: "move_operator", nodeId: selectedNode.id })}
                 disabled={!inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id}
                 style={{
-                  border: "1px solid rgba(103,232,249,0.45)",
-                  background: !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id ? "rgba(15,23,42,0.5)" : "rgba(8,47,73,0.65)",
-                  color: !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id ? "#64748b" : "#f8fafc",
-                  borderRadius: 14,
+                  border: "1px solid var(--data)",
+                  background: !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id ? "var(--paper-2)" : "var(--data-tint)",
+                  color: !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id ? "var(--ink-muted)" : "var(--ink)",
+                  borderRadius: 0,
                   padding: "11px 14px",
                   cursor: !inRangeIds.has(selectedNode.id) || operatorNode.id === selectedNode.id ? "not-allowed" : "pointer",
                 }}
@@ -914,8 +909,8 @@ export function UnderControlV01DecisionPanel() {
             </div>
           </section>
 
-          <aside style={{ border: "1px solid rgba(148,163,184,0.22)", background: "rgba(2,6,23,0.72)", borderRadius: 20, padding: 14, display: "grid", gap: 14, alignContent: "start" }}>
-            <div style={{ color: "#e2e8f0", letterSpacing: 2, fontSize: 13 }}>SYSTEM STATUS</div>
+          <aside style={{ border: "1px solid var(--rule-strong)", background: "var(--paper)", borderRadius: 0, padding: 14, display: "grid", gap: 14, alignContent: "start" }}>
+            <div style={{ color: "var(--ink)", letterSpacing: 2, fontSize: 13 }}>SYSTEM STATUS</div>
 
             <Meter label="INTEGRITY" value={game.integrity} />
             <Meter label="CASCADE" value={game.cascadeRisk} />
@@ -923,16 +918,16 @@ export function UnderControlV01DecisionPanel() {
 
             <div
               style={{
-                border: "1px solid rgba(148,163,184,0.22)",
-                borderRadius: 14,
+                border: "1px solid var(--rule-strong)",
+                borderRadius: 0,
                 padding: 12,
-                background: "rgba(15,23,42,0.65)",
+                background: "var(--paper-2)",
               }}
             >
-              <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>
+              <div style={{ color: "var(--ink-muted)", fontSize: 11, letterSpacing: 1.4 }}>
                 COMMITTED ACTIONS
               </div>
-              <div style={{ color: "#f8fafc", fontSize: 20, marginTop: 6 }}>
+              <div style={{ color: "var(--ink)", fontSize: 20, marginTop: 6 }}>
                 {totalActions}
               </div>
               <div
@@ -940,7 +935,7 @@ export function UnderControlV01DecisionPanel() {
                   display: "grid",
                   gridTemplateColumns: "repeat(3, 1fr)",
                   gap: 8,
-                  color: "#cbd5e1",
+                  color: "var(--ink-2)",
                   fontSize: 11,
                   marginTop: 8,
                 }}
@@ -951,15 +946,15 @@ export function UnderControlV01DecisionPanel() {
               </div>
             </div>
 
-            <div style={{ border: "1px solid rgba(148,163,184,0.22)", borderRadius: 14, padding: 12, background: "rgba(15,23,42,0.65)" }}>
-              <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>ACTIVE THREATS</div>
+            <div style={{ border: "1px solid var(--rule-strong)", borderRadius: 0, padding: 12, background: "var(--paper-2)" }}>
+              <div style={{ color: "var(--ink-muted)", fontSize: 11, letterSpacing: 1.4 }}>ACTIVE THREATS</div>
               <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
                 {game.nodes
                   .filter((node) => ["critical", "warning", "unknown"].includes(node.state))
                   .sort((a, b) => nodeUrgency(b) - nodeUrgency(a))
                   .slice(0, 4)
                   .map((node) => (
-                    <div key={node.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "#cbd5e1", fontSize: 12 }}>
+                    <div key={node.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, color: "var(--ink-2)", fontSize: 12 }}>
                       <span>{node.label}</span>
                       <span style={{ color: colors[node.state] }}>{node.state}</span>
                     </div>
@@ -967,8 +962,8 @@ export function UnderControlV01DecisionPanel() {
               </div>
             </div>
 
-            <div style={{ border: "1px solid rgba(148,163,184,0.22)", borderRadius: 14, padding: 12, background: "rgba(15,23,42,0.65)" }}>
-              <div style={{ color: "#94a3b8", fontSize: 11, letterSpacing: 1.4 }}>EVENT LOG</div>
+            <div style={{ border: "1px solid var(--rule-strong)", borderRadius: 0, padding: 12, background: "var(--paper-2)" }}>
+              <div style={{ color: "var(--ink-muted)", fontSize: 11, letterSpacing: 1.4 }}>EVENT LOG</div>
               <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
                 {game.events.map((entry, index) => (
                   <div key={entry.cycle + "-" + entry.message + "-" + index} style={{ color: toneColors[entry.tone], fontSize: 12, lineHeight: 1.35 }}>
@@ -983,24 +978,24 @@ export function UnderControlV01DecisionPanel() {
         {game.status !== "running" && (
           <section
             style={{
-              border: "1px solid rgba(251,191,36,0.42)",
+              border: "1px solid var(--spot)",
               background:
                 game.status === "won"
-                  ? "linear-gradient(135deg, rgba(20,83,45,0.34), rgba(2,6,23,0.86))"
-                  : "linear-gradient(135deg, rgba(127,29,29,0.34), rgba(2,6,23,0.86))",
-              borderRadius: 20,
+                  ? "var(--paper)"
+                  : "var(--paper)",
+              borderRadius: 0,
               padding: 16,
               display: "grid",
               gridTemplateColumns: "1.2fr 1fr auto",
               gap: 16,
               alignItems: "center",
-              boxShadow: "0 0 34px rgba(251,191,36,0.1)",
+              boxShadow: "none",
             }}
           >
             <div>
               <div
                 style={{
-                  color: game.status === "won" ? "#86efac" : "#fb7185",
+                  color: game.status === "won" ? "var(--ink)" : "var(--ink)",
                   fontSize: 12,
                   letterSpacing: 1.8,
                   textTransform: "uppercase",
@@ -1011,7 +1006,7 @@ export function UnderControlV01DecisionPanel() {
               <div style={{ fontSize: 22, marginTop: 6, letterSpacing: 1.4 }}>
                 Operator Profile: {operatorProfile.name}
               </div>
-              <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
+              <div style={{ color: "var(--ink-2)", fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>
                 {operatorProfile.summary}
               </div>
             </div>
@@ -1021,37 +1016,37 @@ export function UnderControlV01DecisionPanel() {
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 gap: 10,
-                color: "#cbd5e1",
+                color: "var(--ink-2)",
                 fontSize: 12,
               }}
             >
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>FINAL SCORE</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{score}</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>FINAL SCORE</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{score}</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>AVG TRUST</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{averageAdvisorTrust}%</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>AVG TRUST</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{averageAdvisorTrust}%</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>INTEGRITY</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{game.integrity}%</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>INTEGRITY</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{game.integrity}%</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>CASCADE</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{game.cascadeRisk}%</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>CASCADE</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{game.cascadeRisk}%</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>COMMITTED</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{totalActions}</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>COMMITTED</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{totalActions}</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>CYCLES SURVIVED</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{Math.max(1, game.cycle - 1)}</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>CYCLES SURVIVED</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{Math.max(1, game.cycle - 1)}</div>
               </div>
               <div>
-                <div style={{ color: "#94a3b8", fontSize: 10, letterSpacing: 1.2 }}>RECKLESS</div>
-                <div style={{ color: "#f8fafc", fontSize: 18 }}>{game.recklessActions}</div>
+                <div style={{ color: "var(--ink-muted)", fontSize: 10, letterSpacing: 1.2 }}>RECKLESS</div>
+                <div style={{ color: "var(--ink)", fontSize: 18 }}>{game.recklessActions}</div>
               </div>
             </div>
 
@@ -1060,10 +1055,10 @@ export function UnderControlV01DecisionPanel() {
                 type="button"
                 onClick={() => downloadRunTelemetry(telemetryFilename, runTelemetry)}
                 style={{
-                  border: "1px solid rgba(103,232,249,0.5)",
-                  background: "rgba(8,47,73,0.45)",
-                  color: "#cffafe",
-                  borderRadius: 14,
+                  border: "1px solid var(--data)",
+                  background: "var(--data-tint)",
+                  color: "var(--ink)",
+                  borderRadius: 0,
                   padding: "12px 14px",
                   cursor: "pointer",
                   letterSpacing: 1.3,
@@ -1077,10 +1072,10 @@ export function UnderControlV01DecisionPanel() {
                 type="button"
                 onClick={() => dispatch({ type: "reset", scenarioId: selectedScenarioId })}
                 style={{
-                  border: "1px solid rgba(251,191,36,0.58)",
-                  background: "rgba(120,53,15,0.38)",
-                  color: "#fde68a",
-                  borderRadius: 14,
+                  border: "1px solid var(--spot)",
+                  background: "var(--spot-tint)",
+                  color: "var(--ink)",
+                  borderRadius: 0,
                   padding: "12px 14px",
                   cursor: "pointer",
                   letterSpacing: 1.3,
@@ -1095,9 +1090,9 @@ export function UnderControlV01DecisionPanel() {
 
         <footer
           style={{
-            border: "1px solid rgba(148,163,184,0.22)",
-            background: "rgba(2,6,23,0.72)",
-            borderRadius: 20,
+            border: "1px solid var(--rule-strong)",
+            background: "var(--paper)",
+            borderRadius: 0,
             padding: 14,
             display: "grid",
             gridTemplateColumns: "0.8fr 0.8fr 0.8fr 1.45fr auto auto",
@@ -1118,22 +1113,22 @@ export function UnderControlV01DecisionPanel() {
 
           <section
             style={{
-              border: "1px solid " + (actionPreview.allowed ? "rgba(103,232,249,0.35)" : "rgba(251,113,133,0.45)"),
-              background: actionPreview.allowed ? "rgba(8,47,73,0.34)" : "rgba(127,29,29,0.22)",
-              borderRadius: 16,
+              border: "1px solid " + (actionPreview.allowed ? "var(--data)" : "var(--spot)"),
+              background: actionPreview.allowed ? "var(--data-tint)" : "var(--spot-tint)",
+              borderRadius: 0,
               padding: 14,
               minWidth: 320,
             }}
           >
-            <div style={{ color: actionPreview.allowed ? "#67e8f9" : "#fb7185", fontSize: 11, letterSpacing: 1.3, textTransform: "uppercase" }}>
+            <div style={{ color: actionPreview.allowed ? "var(--data)" : "var(--ink)", fontSize: 11, letterSpacing: 1.3, textTransform: "uppercase" }}>
               Decision Preview / {actionPreview.action}
             </div>
 
-            <div style={{ color: "#e2e8f0", fontSize: 13, marginTop: 6, lineHeight: 1.35 }}>
-              <strong style={{ color: "#f8fafc" }}>Target:</strong> {selectedNode.label} · {actionPreview.summary}
+            <div style={{ color: "var(--ink)", fontSize: 13, marginTop: 6, lineHeight: 1.35 }}>
+              <strong style={{ color: "var(--ink)" }}>Target:</strong> {selectedNode.label} · {actionPreview.summary}
             </div>
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", color: "#94a3b8", fontSize: 12, marginTop: 8 }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", color: "var(--ink-muted)", fontSize: 12, marginTop: 8 }}>
               <span>Pressure {formatDelta(actionPreview.targetPressureDelta)}</span>
               <span>Integrity {formatDelta(actionPreview.targetIntegrityDelta)}</span>
               <span>Cascade {formatDelta(actionPreview.cascadeRiskDelta)}</span>
@@ -1142,7 +1137,7 @@ export function UnderControlV01DecisionPanel() {
             </div>
 
             {actionPreview.advisorEffects.length > 0 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", color: "#cbd5e1", fontSize: 11, marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", color: "var(--ink-2)", fontSize: 11, marginTop: 8 }}>
                 {actionPreview.advisorEffects.map((effect) => (
                   <span key={effect.id + "-" + effect.note}>
                     {effect.id.toUpperCase()} trust {formatDelta(effect.trustDelta)}
@@ -1152,7 +1147,7 @@ export function UnderControlV01DecisionPanel() {
             )}
 
             {actionPreview.affectedNodes.length > 0 && (
-              <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 8 }}>
+              <div style={{ color: "var(--ink-muted)", fontSize: 11, marginTop: 8 }}>
                 Load transfer:{" "}
                 {actionPreview.affectedNodes
                   .slice(0, 3)
@@ -1168,7 +1163,7 @@ export function UnderControlV01DecisionPanel() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: 10,
-                  color: "#67e8f9",
+                  color: "var(--data)",
                   fontSize: 11,
                   marginTop: 8,
                 }}
@@ -1189,10 +1184,10 @@ export function UnderControlV01DecisionPanel() {
                     }
                   }}
                   style={{
-                    border: "1px solid rgba(103,232,249,0.5)",
-                    background: "rgba(8,47,73,0.55)",
-                    color: "#cffafe",
-                    borderRadius: 9,
+                    border: "1px solid var(--data)",
+                    background: "var(--data-tint)",
+                    color: "var(--ink)",
+                    borderRadius: 0,
                     padding: "6px 8px",
                     cursor: "pointer",
                     fontSize: 10,
@@ -1206,7 +1201,7 @@ export function UnderControlV01DecisionPanel() {
             )}
 
             {actionPreview.warnings.length > 0 && (
-              <div style={{ color: "#fbbf24", fontSize: 11, marginTop: 8 }}>
+              <div style={{ color: "var(--ink)", fontSize: 11, marginTop: 8 }}>
                 {actionPreview.warnings[0]}
               </div>
             )}
@@ -1217,10 +1212,10 @@ export function UnderControlV01DecisionPanel() {
               onClick={() => dispatch({ type: "perform_action", action: actionPreview.action })}
               style={{
                 marginTop: 10,
-                border: "1px solid " + (actionPreview.allowed ? "rgba(251,191,36,0.58)" : "rgba(148,163,184,0.2)"),
-                background: actionPreview.allowed ? "rgba(120,53,15,0.38)" : "rgba(15,23,42,0.45)",
-                color: actionPreview.allowed ? "#fde68a" : "#64748b",
-                borderRadius: 10,
+                border: "1px solid " + (actionPreview.allowed ? "var(--spot)" : "var(--rule-strong)"),
+                background: actionPreview.allowed ? "var(--spot-tint)" : "var(--paper-2)",
+                color: actionPreview.allowed ? "var(--ink)" : "var(--ink-muted)",
+                borderRadius: 0,
                 padding: "8px 10px",
                 cursor: actionPreview.allowed ? "pointer" : "not-allowed",
                 letterSpacing: 1.2,
@@ -1236,10 +1231,10 @@ export function UnderControlV01DecisionPanel() {
             onClick={() => dispatch({ type: "advance_cycle" })}
             disabled={game.status !== "running"}
             style={{
-              border: "1px solid rgba(251,191,36,0.45)",
-              background: "rgba(120,53,15,0.3)",
-              color: game.status === "running" ? "#fde68a" : "#64748b",
-              borderRadius: 16,
+              border: "1px solid var(--spot)",
+              background: "var(--spot-tint)",
+              color: game.status === "running" ? "var(--ink)" : "var(--ink-muted)",
+              borderRadius: 0,
               padding: "0 18px",
               cursor: game.status === "running" ? "pointer" : "not-allowed",
               letterSpacing: 1.6,
@@ -1252,10 +1247,10 @@ export function UnderControlV01DecisionPanel() {
             type="button"
             onClick={() => dispatch({ type: "reset", scenarioId: selectedScenarioId })}
             style={{
-              border: "1px solid rgba(148,163,184,0.28)",
-              background: "rgba(15,23,42,0.6)",
-              color: "#cbd5e1",
-              borderRadius: 16,
+              border: "1px solid var(--rule-strong)",
+              background: "var(--paper-2)",
+              color: "var(--ink-2)",
+              borderRadius: 0,
               padding: "0 18px",
               cursor: "pointer",
               letterSpacing: 1.4,
