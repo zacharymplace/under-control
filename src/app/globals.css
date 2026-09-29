@@ -747,3 +747,22 @@ pre { overflow-x: auto; max-width: 100%; }
   .uc-header-center, .uc-header-right { text-align: left; }
   .uc-legibility-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* The playable and playtest pages set their grids with inline styles, which cannot take media queries.
+   Attribute selectors collapse the wide ones: fixed-width and auto columns below 900px, every inline grid below 640px. */
+@media (max-width: 900px) {
+  [style*="grid-template-columns:260px"],
+  [style*="grid-template-columns:1fr auto"],
+  [style*="grid-template-columns:1.2fr"],
+  [style*="grid-template-columns:0.8fr"],
+  [style*="grid-template-columns:1fr 1fr 1fr auto"],
+  [style*="grid-template-columns:1fr 140px"],
+  [style*="grid-template-columns:1fr 150px"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  [style*="grid-template-columns"] > * { min-width: 0; }
+}
+@media (max-width: 640px) {
+  [style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+  [style*="display:flex"] { flex-wrap: wrap !important; }
+}
