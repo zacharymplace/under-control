@@ -1844,7 +1844,7 @@ export default function PlaytestRunsPage() {
           }}
         >
           <div>
-            <div style={{ fontSize: 24, letterSpacing: 4 }}>
+            <div style={{ fontSize: 24, letterSpacing: 2, fontFamily: "var(--font-display)" }}>
               PLAYTEST RUNS
             </div>
             <div style={{ color: "var(--ink-muted)", fontSize: 13, marginTop: 6 }}>

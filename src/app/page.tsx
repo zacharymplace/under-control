@@ -26,7 +26,7 @@ export default function HomePage() {
             padding: 22,
           }}
         >
-          <div style={{ fontSize: 28, letterSpacing: 5 }}>UNDER CONTROL</div>
+          <div style={{ fontSize: 28, letterSpacing: 2, fontFamily: "var(--font-display)" }}>UNDER CONTROL</div>
           <div style={{ color: "var(--ink-muted)", fontSize: 14, marginTop: 8 }}>
             Playable systems arena and telemetry review lab.
           </div>
