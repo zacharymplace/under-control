@@ -2316,9 +2316,10 @@ export default function PlaytestRunsPage() {
           >
             <input
               value={tuningProfileDraft.name}
-              onChange={(event) =>
-                setTuningProfileDraft((draft) => ({ ...draft, name: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setTuningProfileDraft((draft) => ({ ...draft, name: value }));
+              }}
               placeholder="Profile name, e.g. Softer Critical Cascade"
               style={{
                 border: "1px solid var(--rule-strong)",
@@ -2332,9 +2333,10 @@ export default function PlaytestRunsPage() {
 
             <input
               value={tuningProfileDraft.version}
-              onChange={(event) =>
-                setTuningProfileDraft((draft) => ({ ...draft, version: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setTuningProfileDraft((draft) => ({ ...draft, version: value }));
+              }}
               placeholder="v0.1.1"
               style={{
                 border: "1px solid var(--rule-strong)",
@@ -2403,9 +2405,10 @@ export default function PlaytestRunsPage() {
 
           <textarea
             value={tuningProfileDraft.summary}
-            onChange={(event) =>
-              setTuningProfileDraft((draft) => ({ ...draft, summary: event.currentTarget.value }))
-            }
+            onChange={(event) => {
+              const { value } = event.currentTarget;
+              setTuningProfileDraft((draft) => ({ ...draft, summary: value }));
+            }}
             placeholder="Profile summary: what this balance pass is trying to test..."
             rows={2}
             style={{
@@ -2425,12 +2428,13 @@ export default function PlaytestRunsPage() {
 
           <textarea
             value={tuningProfileDraft.adjustmentsText}
-            onChange={(event) =>
+            onChange={(event) => {
+              const { value } = event.currentTarget;
               setTuningProfileDraft((draft) => ({
                 ...draft,
-                adjustmentsText: event.currentTarget.value,
-              }))
-            }
+                adjustmentsText: value,
+              }));
+            }}
             placeholder={"Scenario adjustments, one per line. Example:\nCritical Cascade: reduce starting cascade by 6\nHidden Dependency: strengthen observe prompt\nRecovery Window: no change"}
             rows={4}
             style={{
@@ -2587,9 +2591,10 @@ export default function PlaytestRunsPage() {
           >
             <input
               value={changeLogDraft.title}
-              onChange={(event) =>
-                setChangeLogDraft((draft) => ({ ...draft, title: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setChangeLogDraft((draft) => ({ ...draft, title: value }));
+              }}
               placeholder="Change title / observation"
               style={{
                 border: "1px solid var(--rule-strong)",
@@ -2603,9 +2608,10 @@ export default function PlaytestRunsPage() {
 
             <select
               value={changeLogDraft.scenario}
-              onChange={(event) =>
-                setChangeLogDraft((draft) => ({ ...draft, scenario: event.currentTarget.value }))
-              }
+              onChange={(event) => {
+                const { value } = event.currentTarget;
+                setChangeLogDraft((draft) => ({ ...draft, scenario: value }));
+              }}
               style={{
                 border: "1px solid var(--rule-strong)",
                 background: "var(--paper)",
@@ -2625,12 +2631,13 @@ export default function PlaytestRunsPage() {
 
             <select
               value={changeLogDraft.severity}
-              onChange={(event) =>
+              onChange={(event) => {
+                const { value } = event.currentTarget;
                 setChangeLogDraft((draft) => ({
                   ...draft,
-                  severity: event.currentTarget.value as BalanceChangeLogEntry["severity"],
-                }))
-              }
+                  severity: value as BalanceChangeLogEntry["severity"],
+                }));
+              }}
               style={{
                 border: "1px solid var(--rule-strong)",
                 background: "var(--paper)",
@@ -2666,9 +2673,10 @@ export default function PlaytestRunsPage() {
 
           <textarea
             value={changeLogDraft.note}
-            onChange={(event) =>
-              setChangeLogDraft((draft) => ({ ...draft, note: event.currentTarget.value }))
-            }
+            onChange={(event) => {
+              const { value } = event.currentTarget;
+              setChangeLogDraft((draft) => ({ ...draft, note: value }));
+            }}
             placeholder="Describe what changed, why, and what to watch in the next runs..."
             rows={3}
             style={{
